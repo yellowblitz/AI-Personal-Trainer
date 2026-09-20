@@ -3,3 +3,15 @@
 a{color:var(--green);font-size:13px;align-self:center}#apiKey{text-align:left}
 
 #weekDays{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:16px 0}.day-button{padding:12px 6px;min-width:0;border:1px solid var(--line);text-align:left;background:var(--panel)}.day-button.selected{border:2px solid var(--green);background:#2c402b}.day-button span{display:block;font-size:11px;margin-top:7px;overflow-wrap:anywhere}.day-button small{font-size:9px;letter-spacing:0;line-height:1.5}.schedule-row{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:10px 0}.day-check{display:flex;gap:7px;align-items:center;font-size:13px}.day-check input{width:20px;min-height:24px;accent-color:var(--green)}#proposalDetails ul{padding-left:20px;font-size:13px;line-height:1.8}#proposalDetails h3{margin-bottom:6px}#proposal{border-color:#91b969}#messages{max-height:65vh}.message{overflow-wrap:anywhere}.message small{margin-bottom:10px}.message.error{border:1px solid #a9765c}#updateNotice{border-color:var(--green)}
+
+.fields.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.set-list{margin:16px 0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.set-head,.set-row{display:grid;grid-template-columns:.55fr 1fr 1fr 1fr;gap:8px;align-items:center;padding:9px 10px}
+.set-head{background:#142019;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.set-row{border-top:1px solid var(--line)}
+.set-row.done{background:#203423}
+.set-row label{margin:0}.set-row input{margin:0;padding:9px 7px}
+.set-row .set-button{padding:9px 6px;min-height:38px;font-size:11px}
+.body-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#coachMemory{text-align:left}
+@media(max-width:480px){.set-head,.set-row{grid-template-columns:.5fr .9fr 1fr 1.05fr;gap:5px;padding:8px 6px}.set-row input{padding:8px 4px}.body-grid{grid-template-columns:1fr 1fr}.body-grid label:last-child{grid-column:1/-1}nav button{font-size:11px;padding:11px 6px}}
