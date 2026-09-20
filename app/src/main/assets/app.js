@@ -235,7 +235,7 @@ async function lookupDemoVideos(c){
    candidates[0]?.score>=.88&&(!candidates[1]||candidates[0].score-candidates[1].score>=.12)
   )?candidates[0].item:null;
   const videos=(match?.videos||[]).map(v=>({url:safeWgerVideoUrl(v.video),author:String(v.license_author||'').slice(0,120),title:String(v.license_title||'').slice(0,160),isMain:!!v.is_main,duration:Number(v.duration)||0})).filter(v=>v.url).sort((a,b)=>Number(b.isMain)-Number(a.isMain)).slice(0,4);
-  if(videos.length){demoMetaCache[c.id]={videos,usedAt:new Date().toISOString(),source:'wger'};saveDemoMetaCache();}
+  if(videos.length){demoMetaCache[c.id]={...(demoMetaCache[c.id]||{}),videos,usedAt:new Date().toISOString(),videoSource:'wger'};saveDemoMetaCache();}
   return videos;
  }catch{return [];}
 }
