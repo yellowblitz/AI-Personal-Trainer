@@ -11,10 +11,10 @@ const week=makeWeek();
 const response=value=>({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(value)}]}}]});
 
 test('ChatGPT context contains current plan and logged set performance without app commands',()=>{
- const p=structuredClone(week.days[0].plan);p.exercises[0].done=2;p.exercises[0].setReps=[12,9,8];
+ const p=structuredClone(week.days[0].plan);p.exercises[0].done=2;p.exercises[0].setReps=[12,9,8];p.exercises[0].rir=0;p.exercises[0].note='Second set was hard';
  const recent=summarizeHistory([{date:'2026-09-20T10:00:00Z',day:'mon',plan:p}],catalog,20);
  const text=buildChatGPTContext({week,profile,memory:'Prefer controlled reps.',recentTraining:recent},catalog);
- assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 9 reps/);assert.match(text,/RELEVANT EXERCISE LIBRARY SAMPLE/);assert.doesNotMatch(text,/Return only JSON/);
+ assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 target 12 reps BW -> actual 9 reps BW/);assert.match(text,/RIR 0/);assert.match(text,/Second set was hard/);assert.match(text,/RELEVANT EXERCISE LIBRARY SAMPLE/);assert.doesNotMatch(text,/Return only JSON/);
 });
 
 test('interpreter request makes Gemini a translator rather than a coach',()=>{
