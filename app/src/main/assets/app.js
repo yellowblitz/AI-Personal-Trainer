@@ -133,8 +133,8 @@ async function refreshNextWeekRecommendation(trigger='manual'){
  if(!apiKey){if(trigger==='manual')toast('Add your Gemini API key in Settings first.');return;}
  recommendationBusy=true;renderNextWeekRecommendation();
  try{
-  const message='Create a proposal for my recommended training week NEXT WEEK. Use my current week as the baseline and recentTraining as progression evidence. Preserve my enabled training days and time budgets unless the logged performance clearly supports a change. Recommend exact exercises, set-by-set reps, rest, and loads. Progress conservatively from completed performance and never increase based only on uncompleted targets. This is a next-week recommendation only; do not claim the current week was changed.';
-  const data=await askGemini({message,week,selectedDay:selected,proposal:null,history:[],profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),model:geminiModel},catalog,apiKey);
+  const message='Create a proposal for my recommended training week NEXT WEEK. Use my current week as the baseline and recentTraining as progression evidence. Compare plannedReps/plannedWeight with actualReps/actualWeight for every completed set, and use exercise-level RIR and notes. If actual reps missed target, especially with RIR 0-1, do not progress that prescription and consider reducing load/reps/volume. If targets were met with RIR 2-4+, gradual progression may be appropriate. Consider exercisePreferences: repeated removals are a signal to avoid an exercise and repeated completed/added exercises are a preference signal unless programming needs suggest otherwise. Preserve enabled training days and time budgets unless evidence supports a change. Recommend exact exercises, set-by-set reps, rest, and loads. This is a next-week recommendation only; do not claim the current week was changed.';
+  const data=await askGemini({message,week,selectedDay:selected,proposal:null,history:[],profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:geminiModel},catalog,apiKey);
   if(data.action!=='proposal'||!data.week)throw new Error('Gemini did not return a next-week plan.');
   nextWeekRecommendation={week:normalizeWeek(data.week),generatedAt:new Date().toISOString(),historyCount:history.length,stale:false,note:String(data.reply||'').slice(0,1200)};
   saveNextWeekRecommendation();
@@ -355,13 +355,40 @@ $('finish').onclick=()=>{
 };
 function tick(){const left=secondsLeft(timer);$('timerLabel').textContent=timer.day?dayName(timer.day)+' · REST':'REST BETWEEN SETS';$('timer').hidden=!timer.end&&timer.paused==null;$('time').textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;$('pause').textContent=timer.paused!=null?'Resume':'Pause';if(timer.end&&left===0){timer={};save();$('timer').hidden=true;toast('Rest complete — ready for your next set.');navigator.vibrate?.([150,80,150]);}}
 $('pause').onclick=()=>{timer=timer.paused!=null?{...timer,end:Date.now()+timer.paused*1000,paused:null}:{...timer,end:null,paused:secondsLeft(timer)};save();tick();};$('plus').onclick=()=>{if(timer.paused!=null)timer.paused+=15;else timer.end=Math.max(timer.end||0,Date.now())+15000;save();tick();};$('skip').onclick=()=>{timer={};save();tick();};setInterval(tick,250);document.addEventListener('visibilitychange',tick);
+
+function chartSvg(points,keyA,keyB=null,labelA='Actual',labelB='Target'){
+ const values=points.flatMap(p=>[Number(p[keyA])||0,keyB==null?null:Number(p[keyB])||0].filter(v=>v!==null));
+ if(points.length<2||!values.some(v=>v>0))return '<div class="chart-empty">More sessions needed</div>';
+ const w=320,h=112,pad=14,min=Math.min(...values),max=Math.max(...values),span=Math.max(1,max-min);
+ const xy=(value,i)=>[(pad+i*(w-pad*2)/Math.max(1,points.length-1)).toFixed(1),(h-pad-(Number(value)-min)*(h-pad*2)/span).toFixed(1)];
+ const line=key=>points.map((p,i)=>xy(p[key],i).join(',')).join(' ');
+ const start=new Date(points[0].date).toLocaleDateString(undefined,{month:'short',day:'numeric'}),end=new Date(points.at(-1).date).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+ return '<svg class="progress-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-label="'+escape(labelA+(keyB?' and '+labelB:''))+' progression"><polyline class="chart-line actual" points="'+line(keyA)+'"/>'+(keyB?'<polyline class="chart-line target" points="'+line(keyB)+'"/>':'')+'</svg><div class="chart-axis"><span>'+escape(start)+'</span><span>'+escape(end)+'</span></div><div class="chart-legend"><span class="actual">'+escape(labelA)+'</span>'+(keyB?'<span class="target">'+escape(labelB)+'</span>':'')+'</div>';
+}
+function renderProgressCharts(){
+ if(!$('progressExercise')||!$('progressCharts'))return;
+ const id=$('progressExercise').value;
+ if(!id){$('progressCharts').innerHTML='<div class="notice">Complete an exercise to see progression.</div>';return;}
+ const points=exerciseProgress(history,id),hasLoad=points.some(p=>p.actualVolume>0||p.estimated1RM>0);
+ $('progressCharts').innerHTML='<div class="progress-chart"><h3>Reps · target vs actual</h3>'+chartSvg(points,'actualReps','plannedReps','Actual','Target')+'</div>'+(hasLoad?'<div class="progress-chart"><h3>Training volume</h3>'+chartSvg(points,'actualVolume','plannedVolume','Actual','Target')+'</div><div class="progress-chart"><h3>Estimated strength</h3>'+chartSvg(points,'estimated1RM',null,'Est. 1RM')+'</div>':'')+(points.some(p=>p.rir!=null)?'<div class="progress-chart"><h3>Reps in reserve</h3>'+chartSvg(points,'rir',null,'RIR')+'</div>':'');
+}
 function renderHistory(){
+ const used=[...new Set(history.flatMap(h=>(h.plan?.exercises||[]).filter(e=>normalizeExercise(e).done>0).map(e=>e.id)))];
+ const select=$('progressExercise'),previous=select.value;
+ select.innerHTML=used.map(id=>'<option value="'+escape(id)+'">'+escape(catalog.find(c=>c.id===id)?.name||id)+'</option>').join('');
+ if(used.includes(previous))select.value=previous;else if(used.length)select.value=used[0];
+ $('progressionCard').hidden=!used.length;renderProgressCharts();select.onchange=renderProgressCharts;
  $('historyList').innerHTML=history.length?history.map(h=>{
-  const p=normalizePlan(h.plan),sets=completedSetTotal(p);
-  const exercises=p.exercises.filter(e=>e.done>0).map(raw=>{const e=normalizeExercise(raw),name=catalog.find(c=>c.id===e.id)?.name||e.id;const detail=Array.from({length:e.done},(_,i)=>'S'+(i+1)+': '+e.setReps[i]+' reps'+(e.setWeights[i]>0?' @ '+e.setWeights[i]+' lb':' · bodyweight')).join(' · ');return '<p class="small muted"><b>'+escape(name)+'</b><br>'+escape(detail)+'</p>';}).join('');
-  return '<article class="card"><span class="tag">'+escape(new Date(h.date).toLocaleString())+'</span><h2>'+escape(p.name)+'</h2><p>'+sets+' sets completed</p>'+exercises+'</article>';
+  const p=normalizePlan(h.plan),comparison=comparePlanPerformance(p),sets=completedSetTotal(p);
+  const exercises=p.exercises.filter(e=>e.done>0).map(raw=>{
+   const e=normalizeExercise(raw),name=catalog.find(c=>c.id===e.id)?.name||e.id;
+   const detail=Array.from({length:e.done},(_,i)=>'S'+(i+1)+' '+e.plannedReps[i]+'→'+e.setReps[i]+(e.setWeights[i]>0?' @ '+e.setWeights[i]+' lb':' BW')).join(' · ');
+   return '<p class="small muted"><b>'+escape(name)+'</b>'+(e.rir!=null?' · RIR '+(e.rir===4?'4+':e.rir):'')+'<br>'+escape(detail)+(e.note?'<br>“'+escape(e.note)+'”':'')+'</p>';
+  }).join('');
+  return '<details class="card history-session"><summary><div><span class="tag">'+escape(new Date(h.date).toLocaleString())+'</span><h2>'+escape(p.name)+'</h2></div><span>'+comparison.metRepSets+'/'+sets+' sets on target</span></summary>'+exercises+'</details>';
  }).join(''):'<div class="notice">No saved workouts yet.</div>';
 }
+
 function renderProfilePage(){
  $('profileGoal').value=profile.goal;$('profileExperience').value=profile.experience;$('profileEquipment').value=profile.equipment;
  $('heightFeet').value=profile.heightIn==null?'':Math.floor(profile.heightIn/12);$('heightInches').value=profile.heightIn==null?'':Math.round(profile.heightIn%12);$('weightLb').value=profile.weightLb??'';
@@ -372,14 +399,16 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.datas
 $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('heightInches').value.trim(),weight=$('weightLb').value.trim();const height=ft===''&&inch===''?null:Number(ft||0)*12+Number(inch||0);const next=normalizeProfile({goal:$('profileGoal').value,experience:$('profileExperience').value,equipment:$('profileEquipment').value,heightIn:height,weightLb:weight===''?null:Number(weight)});if((height!==null&&next.heightIn===null)||(weight!==''&&next.weightLb===null))return toast('Check your height and weight values.');profile=next;saveProfile();markNextWeekStale();renderProfilePage();drawProposal();toast('Profile saved.');};
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
+
 $('settings').onclick=()=>{
- modal('<h2>Settings</h2><p class="small muted">v'+APP_VERSION+' · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><label for="geminiModel">Gemini model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste key"><div class="row"><button id="showKey" class="secondary">Show</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get key ↗</a></div><button id="saveSettings" class="primary wide">Save</button><button id="clearKey" class="secondary wide">Remove key</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button>');
+ modal('<h2>Settings</h2><p class="small muted">v'+APP_VERSION+' · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><label for="geminiModel">Gemini model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste key"><div class="row"><button id="showKey" class="secondary">Show</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get key ↗</a></div><button id="saveSettings" class="primary wide">Save</button><button id="clearKey" class="secondary wide">Remove key</button><button id="clearDemoCache" class="secondary wide">Clear demo cache ('+Object.keys(demoMetaCache).length+')</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">Demo videos are never bulk-downloaded. Only videos you open can enter the Android WebView cache.</p>');
  $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;$('appTheme').value=theme;
  $('showKey').onclick=()=>{const show=$('apiKey').type==='password';$('apiKey').type=show?'text':'password';$('showKey').textContent=show?'Hide':'Show';};
  $('appTheme').onchange=()=>applyTheme($('appTheme').value);
  const setKey=value=>{try{if(window.TrainerKeys&&!window.TrainerKeys.saveKey(value))throw new Error();}catch{toast('Could not save your key.');return false;}apiKey=value;return true;};
  $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('geminiModel').value,nextTheme=$('appTheme').value;if(value&&/\s/.test(value))return toast('API key cannot contain spaces.');if(value!==apiKey&&!setKey(value))return;geminiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('geminiModel',JSON.stringify(geminiModel));applyTheme(nextTheme);$('modal').close();render();toast('Settings saved.');};
  $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('Gemini key removed.');}};
+ $('clearDemoCache').onclick=()=>{demoMetaCache={};localStorage.removeItem('demoMetaCache');wgerExerciseIndexPromise=null;try{window.TrainerShare?.clearMediaCache?.();}catch{};$('clearDemoCache').textContent='Clear demo cache (0)';toast('Demo cache cleared.');};
  $('viewErrorReports').onclick=showErrorReports;
 };
 function renderHandoff(){
@@ -552,7 +581,7 @@ $('chatForm').onsubmit=async e=>{
  const previous=messages.filter(m=>!m.error).slice(-50);
  messages.push({role:'user',content:message});saveChat();drawMessages();busy=true;render();$('clearChat').disabled=true;$('send').disabled=true;$('send').textContent='Coach is thinking…';
  try{
-  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),model:geminiModel},catalog,apiKey);
+  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:geminiModel},catalog,apiKey);
   messages.push({role:'assistant',content:data.reply});
   if(data.fallbackFrom&&data.modelUsed){const from=MODELS.find(m=>m.id===data.fallbackFrom)?.name||data.fallbackFrom,to=MODELS.find(m=>m.id===data.modelUsed)?.name||data.modelUsed;messages.push({role:'assistant',content:from+' was busy, so I automatically completed this request with '+to+'.'});}
   if(typeof data.memory==='string'&&data.memory.trim()){coachMemory=data.memory.trim().slice(0,4000);saveMemory();}
