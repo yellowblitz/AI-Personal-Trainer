@@ -55,7 +55,7 @@ export function fitPlanDuration(plan,targetMinutes,catalog){
  const target=int(targetMinutes,5,180,45),max=target+5;
  const signature=[...new Set(p.exercises.map(e=>eq(catalog.find(c=>c.id===e.id)?.equipment)))];
  const sameEquipment=signature.length===1?signature[0]:null;
- const candidatePool=catalog.filter(c=>!p.exercises.some(e=>e.id===c.id)&&(!sameEquipment||eq(c.equipment)===sameEquipment));
+ const candidatePool=sameEquipment?catalog.filter(c=>!p.exercises.some(e=>e.id===c.id)&&eq(c.equipment)===sameEquipment):[];
  const minExercises=target>=55?6:target>=40?5:target>=25?4:2;
  while(estimatePlanMinutes(p)<target&&p.exercises.length<Math.min(8,Math.max(minExercises,p.exercises.length+1))&&candidatePool.length){
   const c=candidatePool.shift();
