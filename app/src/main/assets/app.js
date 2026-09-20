@@ -1,13 +1,14 @@
-import {DAYS,dayName,makeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
+import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
 import {askGemini} from './gemini.js';
-import {templates,makePlan,validPlan,mergePlan,secondsLeft} from './core.js';
+import {templates,makePlan,validPlan,secondsLeft} from './core.js';
+import {normalizeExercise,normalizePlan,resizeSets,setSetValue,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory} from './training.js';
 const $=id=>document.getElementById(id);
 const catalog=await (await fetch('catalog.json')).json(), ids=catalog.map(e=>e.id);
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const legacy=read('plan',null);
 let week=read('week',null);
 if(!validWeek(week,ids))week=makeWeek(validPlan(legacy,ids)?legacy:undefined);
-for(const d of week.days)if(d.plan)d.plan.exercises.forEach(e=>e.done=Math.max(0,Math.min(e.sets,Number.isInteger(e.done)?e.done:0)));
+week=normalizeWeek(week);
 let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().getDay()+6)%7]);
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
@@ -15,12 +16,17 @@ if(!Array.isArray(history))history=[];
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null);
 const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss','Mobility / athleticism'];
 const LEVELS=['Beginner','Intermediate','Advanced'];
-const normalizeProfile=value=>({goal:GOALS.includes(value?.goal)?value.goal:'General fitness',experience:LEVELS.includes(value?.experience)?value.experience:'Beginner',equipment:typeof value?.equipment==='string'?value.equipment.trim().slice(0,500):''});
-let profile=normalizeProfile(read('profile',{}));
+const cleanNumber=(value,min,max)=>Number.isFinite(Number(value))&&Number(value)>=min&&Number(value)<=max?Number(value):null;
+const normalizeProfile=value=>({goal:GOALS.includes(value?.goal)?value.goal:'General fitness',experience:LEVELS.includes(value?.experience)?value.experience:'Beginner',equipment:typeof value?.equipment==='string'?value.equipment.trim().slice(0,500):'',heightIn:cleanNumber(value?.heightIn,36,96),weightLb:cleanNumber(value?.weightLb,50,1000)});
+const profileKey=value=>JSON.stringify(normalizeProfile(value));
+const validProfile=value=>!!value&&GOALS.includes(value.goal)&&LEVELS.includes(value.experience)&&typeof value.equipment==='string'&&(value.heightIn===null||(Number.isFinite(value.heightIn)&&value.heightIn>=36&&value.heightIn<=96))&&(value.weightLb===null||(Number.isFinite(value.weightLb)&&value.weightLb>=50&&value.weightLb<=1000));
+const profileChanges=(a,b)=>{const x=normalizeProfile(a),y=normalizeProfile(b),out=[];if(x.goal!==y.goal)out.push(`Goal: ${x.goal} → ${y.goal}`);if(x.experience!==y.experience)out.push(`Experience: ${x.experience} → ${y.experience}`);if(x.equipment!==y.equipment)out.push('Available equipment updated');if(x.heightIn!==y.heightIn)out.push(`Height: ${x.heightIn==null?'not set':Math.floor(x.heightIn/12)+"' "+(x.heightIn%12)+"\""} → ${y.heightIn==null?'not set':Math.floor(y.heightIn/12)+"' "+(y.heightIn%12)+"\""}`);if(x.weightLb!==y.weightLb)out.push(`Weight: ${x.weightLb??'not set'} → ${y.weightLb??'not set'} lb`);return out;};
+let profile=normalizeProfile(read('profile',{})),coachMemory=typeof read('coachMemory','')==='string'?read('coachMemory','').slice(0,4000):'';
 const saveProfile=()=>localStorage.setItem('profile',JSON.stringify(profile));
+const saveMemory=()=>localStorage.setItem('coachMemory',JSON.stringify(coachMemory));
 if(!Array.isArray(messages))messages=[];
-messages=messages.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-80);
-if(!pending||!validWeek(pending.week,ids)||typeof pending.base!=='string')pending=null;
+messages=messages.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-200);
+if(pending){const hasWeek=pending.week&&validWeek(pending.week,ids)&&typeof pending.base==='string';const hasProfile=pending.profile&&validProfile(pending.profile)&&typeof pending.profileBase==='string';if(!hasWeek&&!hasProfile)pending=null;}
 const currentDay=()=>week.days[DAYS.indexOf(selected)];
 function selectDay(id){selected=id;plan=currentDay().plan||makePlan();localStorage.setItem('selectedDay',JSON.stringify(selected));}
 try { apiKey=window.TrainerKeys?.getKey()||''; } catch {}
@@ -31,7 +37,7 @@ function save(){
  localStorage.setItem('week',JSON.stringify(week));localStorage.setItem('selectedDay',JSON.stringify(selected));
  localStorage.setItem('plan',JSON.stringify(plan));localStorage.setItem('timer',JSON.stringify(timer));
 }
-function saveChat(){messages=messages.slice(-80);localStorage.setItem('chat',JSON.stringify(messages));localStorage.setItem('proposal',JSON.stringify(pending));}
+function saveChat(){messages=messages.slice(-200);localStorage.setItem('chat',JSON.stringify(messages));localStorage.setItem('proposal',JSON.stringify(pending));saveMemory();}
 
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4500);}
 function modal(html){clearInterval(demoInterval);$('modalBody').innerHTML=html;$('modal').showModal();}
