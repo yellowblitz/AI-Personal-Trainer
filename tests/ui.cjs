@@ -22,9 +22,21 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="profilePage"]').click();await page.locator('#profileGoal').selectOption('Strength');await page.locator('#profileExperience').selectOption('Intermediate');await page.locator('#profileEquipment').fill('Bodyweight, functional trainer, adjustable dumbbells');await page.locator('#heightFeet').fill('5');await page.locator('#heightInches').fill('10');await page.locator('#weightLb').fill('180');await page.locator('#saveProfilePage').click();
   await page.locator('#settings').click();await page.locator('#geminiModel').selectOption('gemini-3.7-flash');await page.locator('#apiKey').fill('test-gemini-key');await page.locator('#saveSettings').click();
 
-  let captured=null;
+  let captured=null,capturedHandoff=null;
   await page.route('https://generativelanguage.googleapis.com/**',async route=>{
-   const body=route.request().postDataJSON();captured=JSON.parse(body.contents[0].parts[0].text);assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'high');
+   const body=route.request().postDataJSON(),system=body.systemInstruction.parts[0].text;assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'high');
+   if(system.includes('deterministic command translator')){
+    capturedHandoff=JSON.parse(body.contents[0].parts[0].text);
+    const data={summary:'Apply ChatGPT push-day changes.',warnings:[],commands:[
+     {type:'set_day',day:'mon',enabled:true,minutes:60},
+     {type:'replace_plan',day:'mon',name:'ChatGPT Push',exercises:[
+      {id:'Dumbbell_Bench_Press',sets:3,reps:10,setReps:[10,9,8],weight:0,setWeights:[0,0,0],rest:120},
+      {id:'Cable_Crossover',sets:3,reps:12,setReps:[12,12,10],weight:0,setWeights:[0,0,0],rest:90}
+     ]}
+    ]};
+    await route.fulfill({json:{candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(data)}]}}]}});return;
+   }
+   captured=JSON.parse(body.contents[0].parts[0].text);
    const request=captured.request.toLowerCase();let data;
    if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:captured.coachMemory||''};}
    else if(request.includes('bodyweight')){
@@ -40,7 +52,14 @@ const assert=require('node:assert/strict');
    }
    await route.fulfill({json:{candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(data)}]}}]}});
   });
-  const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
+  // ChatGPT handoff: Android share/paste text -> Gemini command translation -> local review/apply.
+  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT handoff/);
+  await page.evaluate(()=>window.receiveTrainerShare('ChatGPT recommends a revised Monday Push workout for about one hour, warm-up excluded.'));
+  assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);
+  await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/replace workout with ChatGPT Push/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
+  await page.locator('#applyHandoff').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.equal(await page.locator('#planName').textContent(),'ChatGPT Push');assert.equal(await page.locator('#exercises .card').count(),2);
+
+  const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#coach details').evaluate(el=>el.open=true);await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
 
   await chat('What did you learn from my last workout?');assert.ok(captured.recentTraining.length>0);assert.equal(captured.recentTraining[0].exercises[0].sets[1].reps,9);assert.equal(captured.userProfile.heightIn,70);
   await chat('Make Monday a 60 minute bodyweight-only workout');await page.waitForSelector('#proposal:not([hidden])');const proposalText=await page.locator('#proposalDetails').textContent(),proposalMinutes=Number(proposalText.match(/Estimated session: ~(\d+) min/)?.[1]);assert.ok(proposalMinutes>=60);assert.match(await page.locator('[data-tab="coach"]').textContent(),/Draft/);
@@ -57,6 +76,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.locator('[data-select-day="sun"]').click();assert.equal(await page.locator('#trainingDetails').isVisible(),false);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Per-set logging, flexible exercise counts, model selection, error diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
+  console.log('Per-set logging, ChatGPT share handoff, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
