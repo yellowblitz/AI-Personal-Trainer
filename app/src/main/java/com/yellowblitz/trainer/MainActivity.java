@@ -15,6 +15,8 @@ public class MainActivity extends Activity {
     private WebView web;
     private String pendingSharedText;
     private boolean pageReady = false;
+    private int systemTopInset = 0;
+    private int systemBottomInset = 0;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -23,8 +25,14 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(0xff101915);
         web = new WebView(this);
         web.setOnApplyWindowInsetsListener((v, insets) -> {
-            v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
-                insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            systemTopInset = Math.max(0, insets.getSystemWindowInsetTop());
+            systemBottomInset = Math.max(0, insets.getSystemWindowInsetBottom());
+            // Keep horizontal insets native, but expose vertical insets to CSS.
+            // Fixed-position HTML elements (bottom nav/rest timer) ignore WebView padding on
+            // edge-to-edge Android, so CSS must move them above the system bars explicitly.
+            v.setPadding(Math.max(0, insets.getSystemWindowInsetLeft()), 0,
+                Math.max(0, insets.getSystemWindowInsetRight()), 0);
+            applySystemInsetsToWeb();
             return insets;
         });
         setContentView(web);
@@ -49,6 +57,7 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView view, String url) {
                 if (url != null && url.startsWith("https://appassets.androidplatform.net/assets/index.html")) {
                     pageReady = true;
+                    applySystemInsetsToWeb();
                     flushSharedText();
                 }
             }
@@ -67,6 +76,17 @@ public class MainActivity extends Activity {
             }
         });
         web.loadUrl("https://appassets.androidplatform.net/assets/index.html");
+    }
+
+    private void applySystemInsetsToWeb() {
+        if (!pageReady || web == null) return;
+        final int top = systemTopInset;
+        final int bottom = systemBottomInset;
+        web.post(() -> web.evaluateJavascript(
+            "document.documentElement.style.setProperty('--system-top-inset','" + top + "px');" +
+            "document.documentElement.style.setProperty('--system-bottom-inset','" + bottom + "px');",
+            null
+        ));
     }
 
     private void captureSharedText(Intent intent) {
