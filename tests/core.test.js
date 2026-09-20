@@ -22,6 +22,6 @@ test('last performance skips unperformed sessions and never shows planned unfini
  const {lastExercisePerformance}=await import('../app/src/main/assets/training.js');
  const p=makePlan();p.exercises[0].done=2;p.exercises[0].setReps=[12,8,30];p.exercises[0].setWeights=[20,15,100];
  const history=[{date:'2026-09-21',plan:makePlan()},{date:'2026-09-20',plan:p}];
- assert.deepEqual(lastExercisePerformance(history,p.exercises[0].id),{date:'2026-09-20',sets:[{reps:12,weight:20},{reps:8,weight:15}]});
+ assert.deepEqual(lastExercisePerformance(history,p.exercises[0].id),{date:'2026-09-20',rir:null,note:'',sets:[{reps:12,weight:20,plannedReps:12,plannedWeight:0},{reps:8,weight:15,plannedReps:12,plannedWeight:0}]});
  assert.equal(lastExercisePerformance(history,'unknown'),null);
 });
