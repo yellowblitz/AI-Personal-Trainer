@@ -221,9 +221,9 @@ public class MainActivity extends Activity {
 
         String script =
             "(function(){" +
-            "document.documentElement.style.colorScheme='${chatScheme}';" +
-            "document.documentElement.classList.toggle('dark',${darkClass});" +
-            "document.documentElement.dataset.trainerTheme='${currentTheme}';" +
+            "document.documentElement.style.colorScheme='" + chatScheme + "';" +
+            "document.documentElement.classList.toggle('dark'," + darkClass + ");" +
+            "document.documentElement.dataset.trainerTheme='" + currentTheme + "';" +
             "const STYLE_ID='trainer-focus-style';let s=document.getElementById(STYLE_ID);" +
             "if(!s){s=document.createElement('style');s.id=STYLE_ID;document.head.appendChild(s);}" +
             "s.textContent=\"" +
