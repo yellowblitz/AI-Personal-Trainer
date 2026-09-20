@@ -158,41 +158,56 @@ function showNextWeekRecommendation(){
 
 
 const normName=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-const muscleZones={
- 'abdominals':['front-core'],'biceps':['front-arm'],'triceps':['back-arm'],'forearms':['front-forearm','back-forearm'],
- 'chest':['front-chest'],'shoulders':['front-shoulder','back-shoulder'],'lats':['back-lat'],'middle back':['back-mid'],
- 'lower back':['back-low'],'traps':['back-trap'],'quadriceps':['front-thigh'],'hamstrings':['back-thigh'],
- 'glutes':['back-glute'],'calves':['front-calf','back-calf'],'adductors':['front-inner-thigh'],'abductors':['front-outer-thigh']
+
+const ANATOMICAL_NAMES={
+ abs:'Abdominals',adductors:'Adductors',biceps:'Biceps',calves:'Calves',chest:'Chest',deltoids:'Deltoids',
+ forearm:'Forearms',gluteal:'Glutes',hamstring:'Hamstrings','lower-back':'Lower back',neck:'Neck',obliques:'Obliques',
+ quadriceps:'Quadriceps',tibialis:'Tibialis anterior',trapezius:'Trapezius',triceps:'Triceps','upper-back':'Back / lats'
 };
-function muscleMapSVG(c,large=false){
- const primary=[...(c?.primaryMuscles||[]),c?.muscle].filter(Boolean).map(x=>String(x).toLowerCase());
- const secondary=(c?.secondaryMuscles||[]).filter(Boolean).map(x=>String(x).toLowerCase());
- const cls=id=>primary.some(m=>(muscleZones[m]||[]).includes(id))?'primary':secondary.some(m=>(muscleZones[m]||[]).includes(id))?'secondary':'';
- const body=back=>'<svg viewBox="0 0 72 132" role="img" aria-label="'+(back?'Back':'Front')+' muscle map">'
-   +'<circle class="body-base" cx="36" cy="12" r="8"/><rect class="body-base" x="25" y="22" width="22" height="41" rx="10"/>'
-   +'<path class="body-base" d="M25 27 L14 55 L19 59 L30 38 M47 27 L58 55 L53 59 L42 38"/>'
-   +'<path class="body-base" d="M29 60 L24 103 L31 104 L36 70 L41 104 L48 103 L43 60"/>'
-   +'<ellipse class="muscle-zone '+cls(back?'back-shoulder':'front-shoulder')+'" cx="26" cy="29" rx="5" ry="7"/>'
-   +'<ellipse class="muscle-zone '+cls(back?'back-shoulder':'front-shoulder')+'" cx="46" cy="29" rx="5" ry="7"/>'
-   +(back
-    ?'<path class="muscle-zone '+cls('back-trap')+'" d="M31 23 L41 23 L44 35 L28 35 Z"/>'
-     +'<path class="muscle-zone '+cls('back-lat')+'" d="M27 34 L35 38 L32 55 L25 49 Z"/><path class="muscle-zone '+cls('back-lat')+'" d="M45 34 L37 38 L40 55 L47 49 Z"/>'
-     +'<rect class="muscle-zone '+cls('back-mid')+'" x="31" y="36" width="10" height="17" rx="4"/><rect class="muscle-zone '+cls('back-low')+'" x="30" y="52" width="12" height="9" rx="3"/>'
-     +'<ellipse class="muscle-zone '+cls('back-arm')+'" cx="54" cy="45" rx="4" ry="11"/><ellipse class="muscle-zone '+cls('back-arm')+'" cx="18" cy="45" rx="4" ry="11"/>'
-     +'<ellipse class="muscle-zone '+cls('back-forearm')+'" cx="58" cy="59" rx="3" ry="9"/><ellipse class="muscle-zone '+cls('back-forearm')+'" cx="14" cy="59" rx="3" ry="9"/>'
-     +'<ellipse class="muscle-zone '+cls('back-glute')+'" cx="31" cy="67" rx="7" ry="6"/><ellipse class="muscle-zone '+cls('back-glute')+'" cx="41" cy="67" rx="7" ry="6"/>'
-     +'<ellipse class="muscle-zone '+cls('back-thigh')+'" cx="29" cy="84" rx="5" ry="13"/><ellipse class="muscle-zone '+cls('back-thigh')+'" cx="43" cy="84" rx="5" ry="13"/>'
-     +'<ellipse class="muscle-zone '+cls('back-calf')+'" cx="27" cy="109" rx="4" ry="10"/><ellipse class="muscle-zone '+cls('back-calf')+'" cx="45" cy="109" rx="4" ry="10"/>'
-    :'<path class="muscle-zone '+cls('front-chest')+'" d="M27 31 Q36 25 45 31 L42 41 Q36 45 30 41 Z"/>'
-     +'<rect class="muscle-zone '+cls('front-core')+'" x="31" y="42" width="10" height="18" rx="4"/>'
-     +'<ellipse class="muscle-zone '+cls('front-arm')+'" cx="54" cy="44" rx="4" ry="10"/><ellipse class="muscle-zone '+cls('front-arm')+'" cx="18" cy="44" rx="4" ry="10"/>'
-     +'<ellipse class="muscle-zone '+cls('front-forearm')+'" cx="58" cy="59" rx="3" ry="9"/><ellipse class="muscle-zone '+cls('front-forearm')+'" cx="14" cy="59" rx="3" ry="9"/>'
-     +'<ellipse class="muscle-zone '+cls('front-thigh')+'" cx="29" cy="83" rx="5" ry="14"/><ellipse class="muscle-zone '+cls('front-thigh')+'" cx="43" cy="83" rx="5" ry="14"/>'
-     +'<ellipse class="muscle-zone '+cls('front-inner-thigh')+'" cx="34" cy="82" rx="3" ry="12"/><ellipse class="muscle-zone '+cls('front-outer-thigh')+'" cx="47" cy="80" rx="3" ry="11"/>'
-     +'<ellipse class="muscle-zone '+cls('front-calf')+'" cx="27" cy="109" rx="4" ry="10"/><ellipse class="muscle-zone '+cls('front-calf')+'" cx="45" cy="109" rx="4" ry="10"/>')
-   +'</svg>';
- return '<div class="muscle-map '+(large?'large':'')+'"><div>'+body(false)+'<small>Front</small></div><div>'+body(true)+'<small>Back</small></div></div>';
+const FRONT_ONLY=new Set(['abs','biceps','chest','obliques','quadriceps','tibialis']);
+const BACK_ONLY=new Set(['gluteal','hamstring','lower-back','upper-back']);
+const safeMuscleSlugs=value=>(Array.isArray(value)?value:[]).map(x=>String(x||'').trim().toLowerCase()).filter(x=>ANATOMICAL_NAMES[x]);
+function anatomyView(primary,large=false){
+ if(large)return 'dual';
+ const p=primary[0];
+ return BACK_ONLY.has(p)?'back':'front';
 }
+function anatomyImageUrl(primary,secondary=[],large=false){
+ const p=[...new Set(safeMuscleSlugs(primary))],s=[...new Set(safeMuscleSlugs(secondary).filter(x=>!p.includes(x)))];
+ if(!p.length)return '';
+ const layers='DC2626:'+p.join(',')+(s.length?'|F59E0B:'+s.join(','):'');
+ const view=anatomyView(p,large);
+ return 'https://api.anatome.dev/generateImage?gender=male&view='+view+'&layers='+encodeURIComponent(layers)+'&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw';
+}
+function anatomyLabel(primary,secondary=[]){
+ const p=safeMuscleSlugs(primary).map(x=>ANATOMICAL_NAMES[x]),s=safeMuscleSlugs(secondary).filter(x=>!primary.includes(x)).map(x=>ANATOMICAL_NAMES[x]);
+ return '<div class="muscle-legend"><span><i class="primary-dot"></i>Primary: '+escape(p.join(', ')||'Unknown')+'</span>'+(s.length?'<span><i class="secondary-dot"></i>Secondary: '+escape(s.join(', '))+'</span>':'')+'</div>';
+}
+function musclePicture(c,large=false,info=null){
+ const primary=safeMuscleSlugs(info?.anatome_primary_slugs?.length?info.anatome_primary_slugs:[c.muscleSlug]);
+ const secondary=safeMuscleSlugs(info?.anatome_secondary_slugs||[]);
+ const url=anatomyImageUrl(primary,secondary,large);
+ if(!url)return '';
+ return '<div class="muscle-picture '+(large?'large':'')+'"><img loading="lazy" src="'+escape(url)+'" alt="'+escape((primary.map(x=>ANATOMICAL_NAMES[x]).join(', ')||c.muscle)+' highlighted on an anatomical body diagram')+'">'+(large?anatomyLabel(primary,secondary):'<small>'+escape(ANATOMICAL_NAMES[primary[0]]||c.muscle)+'</small>')+'</div>';
+}
+async function lookupExerciseInfo(c){
+ const cached=demoMetaCache[c.id]?.exerciseInfo;
+ if(cached){demoMetaCache[c.id].usedAt=new Date().toISOString();saveDemoMetaCache();return cached;}
+ try{
+  const response=await fetch(c.exerciseInfoUrl,{credentials:'omit',cache:'no-store'});
+  if(!response.ok)throw new Error('exercise info unavailable');
+  const raw=await response.json(),data=raw?.exercise||raw?.data||raw;
+  const info={
+   anatome_primary_slugs:safeMuscleSlugs(data?.anatome_primary_slugs?.length?data.anatome_primary_slugs:[c.muscleSlug]),
+   anatome_secondary_slugs:safeMuscleSlugs(data?.anatome_secondary_slugs||[]),
+   primaryMuscles:Array.isArray(data?.primaryMuscles)?data.primaryMuscles.slice(0,8):[c.muscle],
+   secondaryMuscles:Array.isArray(data?.secondaryMuscles)?data.secondaryMuscles.slice(0,8):[]
+  };
+  demoMetaCache[c.id]={...(demoMetaCache[c.id]||{}),exerciseInfo:info,usedAt:new Date().toISOString(),source:'anatome'};
+  saveDemoMetaCache();return info;
+ }catch{return {anatome_primary_slugs:[c.muscleSlug],anatome_secondary_slugs:[],primaryMuscles:[c.muscle],secondaryMuscles:[]};}
+}
+
 let wgerExerciseIndexPromise=null;
 function safeWgerVideoUrl(value){
  try{const u=new URL(value);return u.protocol==='https:'&&(u.hostname==='wger.de'||u.hostname.endsWith('.wger.de'))?u.href:null;}catch{return null;}
@@ -203,35 +218,57 @@ async function lookupDemoVideos(c){
  try{
   if(!wgerExerciseIndexPromise)wgerExerciseIndexPromise=fetch('https://wger.de/api/v2/exerciseinfo/?limit=1000',{credentials:'omit',cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('wger unavailable');return r.json();});
   const data=await wgerExerciseIndexPromise,items=Array.isArray(data?.results)?data.results:[];
-  const wanted=normName(c.name);
-  const match=items.find(item=>{
-   const names=[];
-   for(const t of item?.translations||[]){if(t?.name)names.push(t.name);for(const a of t?.aliases||[])if(a?.alias)names.push(a.alias);}
-   return names.some(n=>normName(n)===wanted);
-  });
+  const wanted=normName(c.name),wantedTokens=new Set(wanted.split(' ').filter(Boolean));
+  const candidates=items.map(item=>{
+   const names=[];for(const t of item?.translations||[]){if(t?.name)names.push(t.name);for(const a of t?.aliases||[])if(a?.alias)names.push(a.alias);}
+   if(names.some(n=>normName(n)===wanted))return {item,score:2};
+   let best=0;
+   for(const n of names){
+    const ts=new Set(normName(n).split(' ').filter(Boolean));if(!ts.size||!wantedTokens.size)continue;
+    let hit=0;for(const t of wantedTokens)if(ts.has(t))hit++;
+    const coverage=hit/wantedTokens.size,specificity=hit/ts.size,score=coverage*.7+specificity*.3;
+    if(score>best)best=score;
+   }
+   return {item,score:best};
+  }).sort((a,b)=>b.score-a.score);
+  const match=candidates[0]?.score===2||(
+   candidates[0]?.score>=.88&&(!candidates[1]||candidates[0].score-candidates[1].score>=.12)
+  )?candidates[0].item:null;
   const videos=(match?.videos||[]).map(v=>({url:safeWgerVideoUrl(v.video),author:String(v.license_author||'').slice(0,120),title:String(v.license_title||'').slice(0,160),isMain:!!v.is_main,duration:Number(v.duration)||0})).filter(v=>v.url).sort((a,b)=>Number(b.isMain)-Number(a.isMain)).slice(0,4);
   if(videos.length){demoMetaCache[c.id]={videos,usedAt:new Date().toISOString(),source:'wger'};saveDemoMetaCache();}
   return videos;
  }catch{return [];}
 }
+
 function startImageDemo(c){
  const media=$('demoMedia');if(!media)return;
  media.innerHTML='<img id="demoImage" class="demo" src="'+c.images[0]+'" alt="Exercise demonstration"><button id="demoToggle" class="secondary">Pause</button>';
  let frame=0;const play=()=>setInterval(()=>{const img=$('demoImage');if(img)img.src=c.images[(++frame)%c.images.length];},1200);demoInterval=play();
  $('demoToggle').onclick=()=>{if(demoInterval){clearInterval(demoInterval);demoInterval=null;$('demoToggle').textContent='Play';}else{demoInterval=play();$('demoToggle').textContent='Pause';}};
 }
+function renderAnimatedDemo(c){
+ const media=$('demoMedia');if(!media)return;
+ if(!c.demoGif){startImageDemo(c);return;}
+ media.innerHTML='<img id="demoGif" class="demo-gif" src="'+escape(c.demoGif)+'" alt="Animated demonstration for '+escape(c.name)+'"><p class="small muted">Animated demo · exact library match</p>';
+ const img=$('demoGif');if(img)img.onerror=()=>startImageDemo(c);
+}
 async function openExerciseDemo(c){
- modal('<h2>'+escape(c.name)+'</h2>'+muscleMapSVG(c,true)+'<div id="demoMedia" class="demo-media"><div class="notice">Finding an exercise video…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Videos are requested only after you open a demo. Available wger videos are CC-licensed per source entry; image fallback is free-exercise-db.</p>');
- const videos=await lookupDemoVideos(c);
+ modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Full-motion videos are used only when a high-confidence open-source match is available. Every exercise also has an exact on-demand animated demo. Media is cached only after you open it.</p>');
+ const [info,videos]=await Promise.all([lookupExerciseInfo(c),lookupDemoVideos(c)]);
  if(!$('modal').open||!$('demoMedia'))return;
- if(!videos.length){startImageDemo(c);return;}
+ $('anatomyDetail').innerHTML=musclePicture(c,true,info);
  const renderVideo=index=>{
-  const v=videos[index];$('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video>'+(videos.length>1?'<div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">View '+(i+1)+'</button>').join('')+'</div>':'')+'<p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+'</p>';
+  const v=videos[index];
+  $('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video><div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">Video '+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>Animated demo</button></div><p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+'</p>';
   $('demoVideo').play?.().catch(()=>{});
  };
- renderVideo(0);
- $('demoMedia').onclick=e=>{const b=e.target.closest('[data-demo-view]');if(b)renderVideo(Number(b.dataset.demoView)||0);};
+ if(videos.length)renderVideo(0);else renderAnimatedDemo(c);
+ $('demoMedia').onclick=e=>{
+  const b=e.target.closest('[data-demo-view]');if(b){renderVideo(Number(b.dataset.demoView)||0);return;}
+  if(e.target.closest('[data-demo-animated]'))renderAnimatedDemo(c);
+ };
 }
+
 function promptExerciseFeedback(index){
  const ex=normalizeExercise(plan.exercises[index]),c=catalog.find(x=>x.id===ex.id);if(!c)return;
  modal('<h2>'+escape(c.name)+'</h2><p>How many more good reps could you have done?</p><div class="rir-grid">'+[0,1,2,3,4].map(v=>'<button data-rir="'+v+'" class="'+(ex.rir===v?'primary':'secondary')+'">'+(v===4?'4+':v)+'</button>').join('')+'</div><label>Note <input id="exerciseNote" maxlength="500" placeholder="Optional: form, setup, fatigue…" value="'+escape(ex.note||'')+'"></label><button id="skipRir" class="secondary wide">Skip</button>');
@@ -251,7 +288,7 @@ function renderExerciseCard(raw,i){
   return '<div class="set-row '+(n<e.done?'done':'')+'"><div class="set-target"><b>Set '+(n+1)+'</b><small>Target '+escape(target)+'</small></div><label>Actual<input aria-label="'+escape(c.name)+' set '+(n+1)+' actual reps" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="reps" min="1" max="50" value="'+reps+'" '+(busy?'disabled':'')+'></label><label>Load<input aria-label="'+escape(c.name)+' set '+(n+1)+' actual load" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="weight" min="0" max="1000" step="0.5" value="'+e.setWeights[n]+'" '+(busy?'disabled':'')+'></label><button class="set-button '+(n<e.done?'done':'')+'" data-set="'+i+'" data-n="'+n+'" '+(busy?'disabled':'')+'>'+(n<e.done?'✓':'Done')+'</button></div>';
  }).join('');
  const feedback=e.done===e.sets?'<button class="secondary" data-feedback="'+i+'">'+(e.rir==null?'Rate effort':'RIR '+(e.rir===4?'4+':e.rir))+'</button>':'';
- return '<article class="card exercise-card"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" class="thumb-button"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div class="exercise-title"><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div>'+muscleMapSVG(c)+'</div>'+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set / target</span><span>Actual</span><span>Load</span><span></span></div>'+rows+'</div><div class="row exercise-actions"><button class="secondary" data-demo="'+e.id+'">Demo</button>'+feedback+'<button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></article>';
+ return '<article class="card exercise-card"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" class="thumb-button"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div class="exercise-title"><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div>'+musclePicture(c)+'</div>'+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set / target</span><span>Actual</span><span>Load</span><span></span></div>'+rows+'</div><div class="row exercise-actions"><button class="secondary" data-demo="'+e.id+'">Demo</button>'+feedback+'<button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></article>';
 }
 
 function render(){
