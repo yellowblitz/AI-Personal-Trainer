@@ -44,7 +44,13 @@ const assert=require('node:assert/strict');
    }
    captured=JSON.parse(body.contents[0].parts[0].text);
    const request=captured.request.toLowerCase();let data;
-   if(request.includes('next week')){const week=structuredClone(captured.currentWeek);week.days[0].plan.name='Next Week Progression';data={reply:'Next week is based on your logged set performance.',action:'proposal',week,profile:null,memory:'Use logged set performance for conservative weekly progression.'};}
+   if(request.includes('next week')){const week=structuredClone(captured.currentWeek);week.days[0].plan={name:'Next Week Progression',exercises:[
+     {id:'Dumbbell_Bench_Press',sets:6,reps:10,setReps:[10,10,10,10,10,10],weight:0,setWeights:[0,0,0,0,0,0],rest:120},
+     {id:'Cable_Crossover',sets:6,reps:12,setReps:[12,12,12,12,12,12],weight:0,setWeights:[0,0,0,0,0,0],rest:90},
+     {id:'Triceps_Pushdown_-_Rope_Attachment',sets:6,reps:12,setReps:[12,12,12,12,12,12],weight:0,setWeights:[0,0,0,0,0,0],rest:90},
+     {id:'Pushups',sets:6,reps:12,setReps:[12,12,12,12,12,12],weight:0,setWeights:[0,0,0,0,0,0],rest:75},
+     {id:'Bodyweight_Squat',sets:6,reps:15,setReps:[15,15,15,15,15,15],weight:0,setWeights:[0,0,0,0,0,0],rest:75}
+    ]};data={reply:'Next week is based on your logged set performance.',action:'proposal',week,profile:null,memory:'Use logged set performance for conservative weekly progression.'};}
    else if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:captured.coachMemory||''};}
    else if(request.includes('bodyweight')){
     const week=structuredClone(captured.currentWeek);week.days[0].minutes=60;week.days[0].plan={name:'Bodyweight 60',exercises:[
