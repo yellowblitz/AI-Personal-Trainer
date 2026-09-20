@@ -25,3 +25,73 @@ a{color:var(--green);font-size:13px;align-self:center}#apiKey{text-align:left}
 :root[data-theme="light"] dialog::backdrop{background:#0005}
 :root[data-theme="light"] .thumb,:root[data-theme="light"] .demo{background:#f8faf8}
 #inlineChatSlot{transition:background .2s ease,border-color .2s ease}
+
+
+/* v0.10 compact UI */
+main{padding-top:14px}
+h1{font-size:clamp(28px,6vw,36px);margin:6px 0 14px}
+h2{font-size:18px}
+.section-title.compact-title{margin:14px 0 10px}
+.card{padding:14px;margin:10px 0}
+.hero{padding:18px;margin:16px 0;border-radius:20px}
+.hero h2{font-size:28px;margin:8px 0}
+.hero p{margin:6px 0 10px;font-size:13px}
+progress{margin:4px 0 14px}
+.fields{margin:12px 0}
+.set-list{margin:12px 0}
+.notice{padding:12px;font-size:12px}
+.micro-label{font-size:9px;letter-spacing:1.6px;color:var(--green);font-weight:800}
+.compact-details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;min-height:34px}
+.compact-details>summary::-webkit-details-marker{display:none}
+.compact-details>summary:after{content:'›';font-size:22px;color:var(--muted);transform:rotate(90deg)}
+.compact-details[open]>summary:after{transform:rotate(-90deg)}
+.compact-details[open]>summary{margin-bottom:10px}
+
+.next-week-card{border-color:color-mix(in srgb,var(--green) 42%,var(--line));padding:13px}
+.next-week-card .section-title{margin:0 0 4px}
+.next-week-card h2{margin:2px 0}
+.next-week-card p{margin:7px 0}
+.next-week-days{display:flex;gap:6px;overflow-x:auto;padding:3px 0 7px;scrollbar-width:thin}
+.next-week-day{flex:0 0 auto;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--input);font-size:11px;white-space:nowrap}
+.next-week-day b{margin-right:4px}
+.next-week-actions{margin-top:4px}
+.next-week-actions button{padding:9px 13px;min-height:38px}
+
+dialog{padding:12px 18px 18px}
+.modal-x{position:sticky;top:0;z-index:6;margin-left:auto;display:block;width:42px;height:42px;min-height:42px;padding:0;border-radius:50%;font-size:28px;line-height:1;background:var(--button);box-shadow:0 3px 12px #0005}
+.modal-bottom-close{margin-top:14px}
+#modalBody>h2:first-child{margin-top:-28px;padding-right:50px}
+
+.exercise-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.exercise-group{display:flex;align-items:center;justify-content:space-between;text-align:left;gap:8px;padding:13px;background:var(--button);border:1px solid var(--line)}
+.exercise-group span{font-weight:750}
+.exercise-group small{margin:0;letter-spacing:0}
+.exercise-browser-head{display:flex;align-items:center;gap:8px;margin:8px 0}
+.exercise-browser-head h3{margin:0;flex:1}
+.exercise-browser-head button{padding:8px 10px;min-height:36px}
+.exercise-results{display:grid;gap:7px;margin-top:8px}
+.exercise-pick{width:100%;text-align:left;padding:11px 13px;background:var(--button);border:1px solid var(--line)}
+.exercise-pick span{display:block;font-weight:700}
+.exercise-pick small{margin-top:3px;letter-spacing:0;font-size:10px}
+.exercise-result-meta{margin:8px 0 3px}
+#exerciseSearch{text-align:left;position:sticky;top:46px;z-index:4;background:var(--input)}
+
+.last-performance{margin:9px 0 4px;padding:8px 10px;border-radius:10px;background:var(--input);line-height:1.45}
+.card-top{gap:11px}
+.thumb{width:64px;height:64px}
+.card h3{font-size:16px}
+.tag{font-size:11px}
+#weekDays{margin:10px 0 12px}
+.day-button{padding:10px 7px}
+.day-button span{margin-top:5px}
+#historyList .card p{margin:7px 0}
+#profilePage .card label+select,#profilePage .card label+textarea{margin-bottom:6px}
+
+@media(max-width:480px){
+  main{padding-left:14px;padding-right:14px}
+  header{padding-left:14px;padding-right:14px}
+  .exercise-group-grid{grid-template-columns:1fr 1fr}
+  dialog{width:min(96vw,620px);padding-left:14px;padding-right:14px}
+  .hero{padding:16px}
+  .card{padding:12px}
+}
