@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.11.0
+# AI Personal Trainer — Android v0.12.0
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -33,10 +33,18 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.11.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
+
+## v0.12.0 — anatomical muscle illustrations and exact demo pairing
+- Replaces the abstract mini muscle map with anatomy-style body illustrations: the primary muscle is highlighted in red and secondary muscles in orange when exact metadata is available.
+- All 873 local exercises now carry a normalized anatomy muscle slug, an exact Anatome exercise-info link, and an exact animated-demo link keyed by the same free-exercise-db exercise ID.
+- Exercise cards show a compact anatomy illustration for the primary muscle group. Opening **Demo** shows a larger anatomy view and loads exact primary/secondary muscle metadata only for that exercise.
+- Demo playback prefers a high-confidence wger full-motion video match when available. An exact per-exercise animated demo is always available as the fallback, with the original start/end images as the final offline-friendly fallback.
+- Anatomy and demo resources are requested on demand and can use the Android WebView cache; the app does not bundle the 873 GIF library in the APK.
+- Matching for optional wger videos now accepts only exact names or high-confidence, clearly separated fuzzy matches to reduce incorrect exercise-video pairings.
 
 ## v0.11.0 — performance feedback and exercise intelligence
 - Exercise cards include compact front/back muscle maps so the primary worked area is visible at a glance.
