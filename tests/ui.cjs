@@ -14,10 +14,16 @@ const assert=require('node:assert/strict');
   const insetLayout=await page.evaluate(()=>{const nav=document.querySelector('nav'),header=document.querySelector('header'),main=document.querySelector('main'),n=nav.getBoundingClientRect(),csNav=getComputedStyle(nav),csHeader=getComputedStyle(header),csMain=getComputedStyle(main);return {navBottom:Math.round(innerHeight-n.bottom),navCssBottom:csNav.bottom,headerPaddingTop:Math.round(parseFloat(csHeader.paddingTop)),mainPaddingBottom:Math.round(parseFloat(csMain.paddingBottom))};});
   assert.equal(insetLayout.navBottom,48);assert.equal(insetLayout.navCssBottom,'48px');assert.equal(insetLayout.headerPaddingTop,50);assert.ok(insetLayout.mainPaddingBottom>=258);
   await page.locator('[data-select-day="mon"]').click();
-  assert.ok(await page.locator('.muscle-map').first().isVisible());
+  assert.ok(await page.locator('.muscle-picture').first().isVisible());assert.match(await page.locator('.muscle-picture img').first().getAttribute('src'),/api\.anatome\.dev\/generateImage/);
+  await page.route('https://api.anatome.dev/**',route=>{
+   const url=route.request().url();
+   if(url.includes('/getExercise'))return route.fulfill({json:{name:'Dumbbell Bench Press',anatome_primary_slugs:['chest'],anatome_secondary_slugs:['triceps','deltoids'],primaryMuscles:['chest'],secondaryMuscles:['triceps','shoulders']}});
+   if(url.includes('/generateImage'))return route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="120" height="180"><rect width="120" height="180" fill="#eee"/><rect x="35" y="45" width="50" height="25" fill="#dc2626"/></svg>'});
+   return route.abort();
+  });
   await page.route('https://wger.de/api/v2/exerciseinfo/**',route=>route.fulfill({json:{results:[{translations:[{name:'Dumbbell Bench Press',aliases:[]}],videos:[{video:'https://wger.de/media/demo.mp4',is_main:true,license_author:'Open demo author',license_title:'CC BY-SA'}]}]}}));
   await page.route('https://wger.de/media/**',route=>route.abort());
-  await page.locator('[data-demo="Dumbbell_Bench_Press"]').first().click();await page.waitForSelector('#demoVideo');assert.equal(await page.locator('.muscle-map.large').isVisible(),true);assert.match(await page.evaluate(()=>localStorage.getItem('demoMetaCache')||''),/Dumbbell_Bench_Press/);await page.locator('#closeModalTop').click();
+  await page.locator('[data-demo="Dumbbell_Bench_Press"]').first().click();await page.waitForSelector('#demoVideo');assert.equal(await page.locator('.muscle-picture.large').isVisible(),true);assert.match(await page.locator('#anatomyDetail').textContent(),/Primary: Chest/);assert.match(await page.locator('#anatomyDetail').textContent(),/Secondary: Triceps, Deltoids/);assert.match(await page.evaluate(()=>localStorage.getItem('demoMetaCache')||''),/anatome_secondary_slugs/);await page.locator('#closeModalTop').click();
 
   // Per-set logging: later sets can differ and survive reload.
   const setRep=n=>page.locator('[data-index="0"][data-set-index="'+n+'"][data-set-field="reps"]');
@@ -119,6 +125,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.waitForFunction(()=>window.chatBounds.at(-1)==='hidden');
   await page.setViewportSize({width:412,height:915});
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Android insets, muscle maps, on-demand demos, actual-vs-planned logging, RIR, progression graphs, grouped picker, ChatGPT handoff, Gemini next-week recommendations and diagnostics tests passed.');
+  console.log('Android insets, anatomical muscle illustrations, exact demo pairing, on-demand video matching, actual-vs-planned logging, RIR, progression graphs, grouped picker, ChatGPT handoff, Gemini next-week recommendations and diagnostics tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
