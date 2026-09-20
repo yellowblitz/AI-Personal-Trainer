@@ -59,3 +59,17 @@ test('Android build registers text sharing and forwards shared text into the han
  assert.match(manifest,/android\.intent\.action\.SEND/);assert.match(manifest,/text\/plain/);assert.match(manifest,/launchMode="singleTop"/);
  assert.match(activity,/EXTRA_TEXT/);assert.match(activity,/window\.receiveTrainerShare/);assert.match(activity,/chatgpt\.com/);
 });
+
+test('embedded ChatGPT uses an isolated WebView, persists login cookies, and applies focus mode only after login',()=>{
+ const activity=readFileSync(new URL('../app/src/main/java/com/yellowblitz/trainer/MainActivity.java',import.meta.url),'utf8');
+ assert.match(activity,/private WebView chatWeb/);
+ assert.match(activity,/cookies\.setAcceptCookie\(true\)/);
+ assert.match(activity,/setAcceptThirdPartyCookies\(chatWeb, true\)/);
+ assert.match(activity,/CookieManager\.getInstance\(\)\.flush\(\)/);
+ assert.match(activity,/trainer-focus-style/);
+ assert.match(activity,/loginPage = host\.endsWith\("auth\.openai\.com"\)/);
+ assert.match(activity,/button\[aria-label\*='voice'/);
+ assert.doesNotMatch(activity,/chatWeb\.addJavascriptInterface/);
+ assert.match(activity,/trainer\.addJavascriptInterface\(new KeyVault/);
+ assert.match(activity,/Use copied response/);
+});
