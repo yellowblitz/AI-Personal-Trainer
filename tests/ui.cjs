@@ -59,7 +59,7 @@ const assert=require('node:assert/strict');
    await route.fulfill({json:{candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(data)}]}}]}});
   });
   // ChatGPT handoff: Android share/paste text -> Gemini command translation -> local review/apply.
-  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT, inside the trainer/);assert.equal(await page.locator('#openChatGPT').textContent(),'Open in-app ChatGPT');
+  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT, inside the trainer/);assert.equal(await page.locator('#openChatGPT').count(),0);assert.equal(await page.locator('#inlineChatSlot').isVisible(),true);
   await page.evaluate(()=>window.receiveTrainerShare('ChatGPT recommends a revised Monday Push workout for about one hour, warm-up excluded.'));
   assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);
   await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);assert.match(await page.locator('#handoffCommands').textContent(),/Dumbbell Bench Press 3 sets · reps 10\/9\/8/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
@@ -88,6 +88,19 @@ const assert=require('node:assert/strict');
   while(await page.locator('#exercises .card').count()<12){await page.locator('#add').click();await page.locator('[data-add]').first().click();}
   assert.equal(await page.locator('#add').isDisabled(),true);await page.reload();await page.waitForSelector('#exercises .card');assert.equal(await page.locator('#exercises .card').count(),12);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  // Simulate the Android bounds bridge: the chat is a slot on the existing tab.
+  await page.evaluate(()=>{window.chatBounds=[];window.TrainerShare={positionChat:(...rect)=>window.chatBounds.push(rect),hideChat:()=>window.chatBounds.push('hidden')};});
+  await page.locator('[data-tab="coach"]').click();
+  await page.waitForFunction(()=>Array.isArray(window.chatBounds.at(-1)));
+  let bounds=await page.evaluate(()=>({rect:window.chatBounds.at(-1),nav:document.querySelector('nav').getBoundingClientRect().top}));
+  assert.ok(bounds.rect[3]>=80);assert.ok(bounds.rect[1]+bounds.rect[3]<=bounds.nav);
+  await page.locator('#settings').click();await page.waitForFunction(()=>window.chatBounds.at(-1)==='hidden');
+  await page.locator('#closeModal').click();await page.waitForFunction(()=>Array.isArray(window.chatBounds.at(-1)));
+  await page.setViewportSize({width:360,height:440});await page.waitForTimeout(100);
+  bounds=await page.evaluate(()=>({rect:window.chatBounds.at(-1),nav:document.querySelector('nav').getBoundingClientRect().top}));
+  assert.ok(Array.isArray(bounds.rect));assert.ok(bounds.rect[3]>=80);assert.ok(bounds.rect[1]+bounds.rect[3]<=bounds.nav);
+  await page.locator('[data-tab="workout"]').click();await page.waitForFunction(()=>window.chatBounds.at(-1)==='hidden');
+  await page.setViewportSize({width:412,height:915});
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
   console.log('Android system-bar insets, embedded ChatGPT handoff UI, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
  }finally{await browser?.close();server.kill();}

@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.8.1
+# AI Personal Trainer — Android v0.8.2
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -28,7 +28,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.8.1-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.8.2-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
@@ -108,3 +108,7 @@ No OpenAI API key or OpenAI API billing is used by the v0.7.0 handoff workflow. 
 - Android system-bar insets are converted from physical pixels to CSS pixels to avoid excessive spacing on dense phone displays.
 
 See `OPEN-SOURCE-REVIEW.md` for inspected reference projects, findings and remaining limitations. Existing offline data and account/key storage are retained. No third-party implementation code was copied.
+
+
+## v0.8.2 — ChatGPT directly on the coach page
+ChatGPT loads automatically in a bounded chat box on the ChatGPT tab. There is no separate Open ChatGPT screen or native back toolbar. The trainer navigation and context/copy controls remain on the same page. Switching tabs hides the chat view without destroying its conversation; returning reuses it. The chat box tracks scrolling, screen/keyboard size and system insets, and hides behind app dialogs. Copy a response, tap **Use copied response**, then review/interpret it below the chat on the same page. Login cookies remain stored. The ChatGPT WebView still has no native JavaScript interfaces.

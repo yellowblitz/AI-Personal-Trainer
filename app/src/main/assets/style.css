@@ -15,3 +15,6 @@ a{color:var(--green);font-size:13px;align-self:center}#apiKey{text-align:left}
 .body-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 #coachMemory{text-align:left}
 @media(max-width:480px){.set-head,.set-row{grid-template-columns:.5fr .9fr 1fr 1.05fr;gap:5px;padding:8px 6px}.set-row input{padding:8px 4px}.body-grid{grid-template-columns:1fr 1fr}.body-grid label:last-child{grid-column:1/-1}nav button{font-size:11px;padding:11px 6px}}
+
+#coach>h1{font-size:26px;letter-spacing:-.6px;margin:0 0 8px}.chat-actions{gap:6px;margin-bottom:12px}.chat-actions button{font-size:12px;padding:10px;flex:1}#inlineChatSlot{height:55dvh;min-height:240px;border:1px solid var(--line);border-radius:12px;background:#101915;overflow:hidden;margin-bottom:16px}#inlineChatFallback{padding:20px}body.coach-active main{padding-top:8px}
+@media(max-height:520px){body.coach-active header,body.coach-active #coach>h1,body.coach-active #coach>p{display:none}body.coach-active main{padding-top:calc(6px + var(--system-top-inset))}body.coach-active #inlineChatSlot{height:calc(100dvh - 145px - var(--system-top-inset) - var(--system-bottom-inset));min-height:100px}body.coach-active .chat-actions{margin-bottom:6px}}

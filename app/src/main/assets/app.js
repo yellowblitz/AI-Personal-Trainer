@@ -16,7 +16,7 @@ let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.8.1';
+const APP_VERSION='0.8.2';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -111,7 +111,7 @@ function renderProfilePage(){
  $('heightFeet').value=profile.heightIn==null?'':Math.floor(profile.heightIn/12);$('heightInches').value=profile.heightIn==null?'':Math.round(profile.heightIn%12);$('weightLb').value=profile.weightLb??'';
  $('coachMemory').value=coachMemory;
 }
-function showTab(tab){document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==tab);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='history')renderHistory();if(tab==='profilePage')renderProfilePage();if(tab==='coach')renderHandoff();}
+function showTab(tab){document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==tab);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='history')renderHistory();if(tab==='profilePage')renderProfilePage();if(tab==='coach')renderHandoff();document.body.classList.toggle('coach-active',tab==='coach');window.scrollTo(0,0);window.syncInlineChat?.();}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('heightInches').value.trim(),weight=$('weightLb').value.trim();const height=ft===''&&inch===''?null:Number(ft||0)*12+Number(inch||0);const next=normalizeProfile({goal:$('profileGoal').value,experience:$('profileExperience').value,equipment:$('profileEquipment').value,heightIn:height,weightLb:weight===''?null:Number(weight)});if((height!==null&&next.heightIn===null)||(weight!==''&&next.weightLb===null))return toast('Check your height and weight values.');profile=next;saveProfile();renderProfilePage();drawProposal();toast('Training profile saved.');};
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
@@ -128,7 +128,7 @@ $('settings').onclick=()=>{
 function renderHandoff(){
  if(!$('handoffPreview'))return;
  $('handoffPreview').hidden=!handoffDraft;
- $('interpretHandoff').disabled=busy;$('copyChatGPTContext').disabled=busy;$('openChatGPT').disabled=busy;
+ $('interpretHandoff').disabled=busy;$('copyChatGPTContext').disabled=busy;$('useCopiedResponse').disabled=busy;
  if(!handoffDraft)return;
  const preview=handoffDraft.preview,batch=handoffDraft.batch;
  $('handoffSummary').innerHTML='<p>'+escape(batch.summary||'ChatGPT changes interpreted.')+'</p>';
@@ -143,7 +143,41 @@ function copyTrainerContext(){
  if(navigator.clipboard?.writeText){navigator.clipboard.writeText(context).then(()=>toast('Trainer context copied. Paste it into ChatGPT.')).catch(()=>showManualContext(context));}else showManualContext(context);
 }
 $('copyChatGPTContext').onclick=copyTrainerContext;
-$('openChatGPT').onclick=()=>{try{if(window.TrainerShare?.openChatGPT){window.TrainerShare.openChatGPT();return;}}catch{}toast('Embedded ChatGPT is available in the Android app build.');};
+// Anchor the isolated Android WebView to a box on this same page.
+let chatFrame=0;
+function syncInlineChat(){
+ cancelAnimationFrame(chatFrame);
+ chatFrame=requestAnimationFrame(()=>{
+  const bridge=window.TrainerShare,slot=$('inlineChatSlot');
+  if(!bridge?.positionChat)return;
+  if($('coach').hidden||$('modal').open||document.hidden){bridge.hideChat();return;}
+  const rect=slot.getBoundingClientRect(),nav=document.querySelector('nav').getBoundingClientRect();
+  const viewport=window.visualViewport;
+  const top=Math.max(rect.top,viewport?.offsetTop||0);
+  let bottom=Math.min(rect.bottom,nav.top,(viewport?.offsetTop||0)+(viewport?.height||innerHeight));
+  if(!$('timer').hidden)bottom=Math.min(bottom,$('timer').getBoundingClientRect().top);
+  if(bottom-top<80){bridge.hideChat();return;}
+  $('inlineChatFallback').hidden=true;
+  bridge.positionChat(rect.left,top,rect.width,bottom-top,innerWidth);
+ });
+}
+window.syncInlineChat=syncInlineChat;
+window.showTrainerWorkout=()=>showTab('workout');
+window.addEventListener('scroll',syncInlineChat,{passive:true});
+window.addEventListener('resize',syncInlineChat);
+window.visualViewport?.addEventListener('resize',syncInlineChat);
+window.visualViewport?.addEventListener('scroll',syncInlineChat);
+document.addEventListener('visibilitychange',syncInlineChat);
+new ResizeObserver(syncInlineChat).observe($('inlineChatSlot'));
+new MutationObserver(syncInlineChat).observe($('modal'),{attributes:true,attributeFilter:['open']});
+new MutationObserver(syncInlineChat).observe($('timer'),{attributes:true,attributeFilter:['hidden']});
+$('reloadChatGPT').onclick=()=>{window.TrainerShare?.reloadChat?.();syncInlineChat();};
+$('useCopiedResponse').onclick=async()=>{
+ try{
+  if(window.TrainerShare?.useCopiedResponse){window.TrainerShare.useCopiedResponse();return;}
+  window.receiveTrainerShare(await navigator.clipboard.readText());
+ }catch{toast('Paste the copied response in the box below.');}
+};
 window.receiveTrainerShare=value=>{
  const shared=typeof value==='string'?value.trim().slice(0,24000):'';if(!shared)return;
  $('handoffText').value=shared;handoffDraft=null;showTab('coach');renderHandoff();$('handoffText').scrollIntoView({block:'center',behavior:'smooth'});toast('Copied ChatGPT response received. Review it, then interpret with Gemini.');

@@ -48,12 +48,6 @@ public class MainActivity extends Activity {
             systemBottomInset = Math.max(0, insets.getSystemWindowInsetBottom());
             web.setPadding(Math.max(0, insets.getSystemWindowInsetLeft()), 0,
                 Math.max(0, insets.getSystemWindowInsetRight()), 0);
-            chatContainer.setPadding(
-                Math.max(0, insets.getSystemWindowInsetLeft()),
-                systemTopInset,
-                Math.max(0, insets.getSystemWindowInsetRight()),
-                systemBottomInset
-            );
             applySystemInsetsToWeb();
             return insets;
         });
@@ -115,25 +109,6 @@ public class MainActivity extends Activity {
         LinearLayout shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.VERTICAL);
         shell.setBackgroundColor(0xff101915);
-
-        LinearLayout toolbar = new LinearLayout(this);
-        toolbar.setOrientation(LinearLayout.HORIZONTAL);
-        toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        toolbar.setPadding(dp(8), dp(6), dp(8), dp(6));
-        toolbar.setBackgroundColor(0xff152019);
-
-        Button back = toolbarButton("‹ Trainer");
-        back.setOnClickListener(v -> closeEmbeddedChatGPT());
-
-        toolbar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        View spacer = new View(this);
-        toolbar.addView(spacer, new LinearLayout.LayoutParams(0, dp(44), 1f));
-
-        Button useCopy = toolbarButton("Use copied response");
-        useCopy.setOnClickListener(v -> useClipboardAsTrainerResponse());
-        toolbar.addView(useCopy, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        shell.addView(toolbar, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         chatWeb = new WebView(this);
         chatWeb.setBackgroundColor(0xff101915);
@@ -220,33 +195,29 @@ public class MainActivity extends Activity {
         chatWeb.evaluateJavascript(script, null);
     }
 
-    private Button toolbarButton(String label) {
-        Button button = new Button(this);
-        button.setText(label);
-        button.setTextColor(0xffedf2ed);
-        button.setTextSize(12);
-        button.setAllCaps(false);
-        button.setBackgroundColor(0xff2a3c30);
-        button.setPadding(dp(10), 0, dp(10), 0);
-        return button;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
-
-    private void openEmbeddedChatGPT() {
+    // The trusted trainer page supplies the rectangle of its inline chat slot.
+    // ChatGPT stays in an isolated native WebView, sized only to that rectangle.
+    private void positionInlineChat(double x, double y, double width, double height, double viewportWidth) {
+        if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(width)
+                || !Double.isFinite(height) || !Double.isFinite(viewportWidth) || viewportWidth <= 0) return;
         runOnUiThread(() -> {
+            float scale = web.getWidth() / (float) viewportWidth;
+            int left = Math.max(0, Math.round((float)x * scale));
+            int top = Math.max(0, Math.round((float)y * scale));
+            int right = Math.min(root.getWidth(), Math.round((float)(x + width) * scale));
+            int bottom = Math.min(root.getHeight(), Math.round((float)(y + height) * scale));
+            if (right <= left || bottom <= top) { closeEmbeddedChatGPT(); return; }
+            FrameLayout.LayoutParams bounds = new FrameLayout.LayoutParams(right-left, bottom-top);
+            bounds.leftMargin = left;
+            bounds.topMargin = top;
+            chatContainer.setLayoutParams(bounds);
             chatContainer.setVisibility(View.VISIBLE);
-            chatContainer.bringToFront();
             if (chatWeb.getUrl() == null) chatWeb.loadUrl("https://chatgpt.com/");
         });
     }
 
     private void closeEmbeddedChatGPT() {
         chatContainer.setVisibility(View.GONE);
-        web.bringToFront();
-        root.requestApplyInsets();
     }
 
     private void useClipboardAsTrainerResponse() {
@@ -262,7 +233,6 @@ public class MainActivity extends Activity {
             return;
         }
         pendingSharedText = value.toString().trim().substring(0, Math.min(value.toString().trim().length(), 50000));
-        closeEmbeddedChatGPT();
         flushSharedText();
     }
 
@@ -273,7 +243,7 @@ public class MainActivity extends Activity {
         final int bottom = Math.round(systemBottomInset / density);
         web.post(() -> web.evaluateJavascript(
             "document.documentElement.style.setProperty('--system-top-inset','" + top + "px');" +
-            "document.documentElement.style.setProperty('--system-bottom-inset','" + bottom + "px');",
+            "document.documentElement.style.setProperty('--system-bottom-inset','" + bottom + "px'); if(window.syncInlineChat) window.syncInlineChat();",
             null
         ));
     }
@@ -297,7 +267,6 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         captureSharedText(intent);
-        closeEmbeddedChatGPT();
         flushSharedText();
     }
 
@@ -310,15 +279,25 @@ public class MainActivity extends Activity {
                 clipboard.setPrimaryClip(ClipData.newPlainText("Trainer context for ChatGPT", safe));
             });
         }
-        @JavascriptInterface public void openChatGPT() {
-            openEmbeddedChatGPT();
+        @JavascriptInterface public void positionChat(double x, double y, double width, double height, double viewportWidth) {
+            positionInlineChat(x, y, width, height, viewportWidth);
+        }
+        @JavascriptInterface public void hideChat() {
+            runOnUiThread(() -> closeEmbeddedChatGPT());
+        }
+        @JavascriptInterface public void reloadChat() {
+            runOnUiThread(() -> { if (chatWeb.getUrl() != null) chatWeb.reload(); });
+        }
+        // Use copied response: clipboard is read only after an explicit trainer button tap.
+        @JavascriptInterface public void useCopiedResponse() {
+            runOnUiThread(() -> useClipboardAsTrainerResponse());
         }
     }
 
     @Override public void onBackPressed() {
         if (chatContainer != null && chatContainer.getVisibility() == View.VISIBLE) {
             if (chatWeb != null && chatWeb.canGoBack()) chatWeb.goBack();
-            else closeEmbeddedChatGPT();
+            else web.evaluateJavascript("window.showTrainerWorkout && window.showTrainerWorkout();", null);
             return;
         }
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
