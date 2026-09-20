@@ -20,13 +20,14 @@ const assert=require('node:assert/strict');
   // Set a 60-minute Monday and body/profile context.
   await page.locator('[data-tab="workout"]').click();await page.locator('#editWeek').click();await page.locator('[data-minutes="mon"]').fill('60');await page.locator('#saveWeek').click();assert.match(await page.locator('#sessionLabel').textContent(),/60 MIN/);
   await page.locator('[data-tab="profilePage"]').click();await page.locator('#profileGoal').selectOption('Strength');await page.locator('#profileExperience').selectOption('Intermediate');await page.locator('#profileEquipment').fill('Bodyweight, functional trainer, adjustable dumbbells');await page.locator('#heightFeet').fill('5');await page.locator('#heightInches').fill('10');await page.locator('#weightLb').fill('180');await page.locator('#saveProfilePage').click();
-  await page.locator('#settings').click();await page.locator('#apiKey').fill('test-gemini-key');await page.locator('#saveSettings').click();
+  await page.locator('#settings').click();await page.locator('#geminiModel').selectOption('gemini-3.7-flash');await page.locator('#apiKey').fill('test-gemini-key');await page.locator('#saveSettings').click();
 
   let captured=null;
   await page.route('https://generativelanguage.googleapis.com/**',async route=>{
-   const body=route.request().postDataJSON();captured=JSON.parse(body.contents[0].parts[0].text);assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');
+   const body=route.request().postDataJSON();captured=JSON.parse(body.contents[0].parts[0].text);assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'high');
    const request=captured.request.toLowerCase();let data;
-   if(request.includes('bodyweight')){
+   if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:'Keep memory.'};}
+   else if(request.includes('bodyweight')){
     const week=structuredClone(captured.currentWeek);week.days[0].minutes=60;week.days[0].plan={name:'Bodyweight 60',exercises:[
      {id:'Pushups',sets:3,reps:12,rest:75,weight:0,setReps:[12,10,8],setWeights:[0,0,0]},
      {id:'Bodyweight_Squat',sets:3,reps:15,rest:75,weight:0,setReps:[15,12,10],setWeights:[0,0,0]}
@@ -46,6 +47,8 @@ const assert=require('node:assert/strict');
   await page.locator('#applyProposal').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.ok(await page.locator('#exercises .card').count()>=6);assert.match(await page.locator('#summary').textContent(),/~6[0-5] min estimated/);const tags=await page.locator('#exercises .tag').allTextContents();assert.ok(tags.every(t=>/body only/i.test(t)));
 
   await chat('Update my saved body weight to 175 lb');await page.waitForSelector('#proposal:not([hidden])');assert.match(await page.locator('#proposalDetails').textContent(),/180 → 175 lb/);await page.locator('#applyProposal').click();assert.equal(await page.locator('#profilePage').isVisible(),true);assert.equal(await page.locator('#weightLb').inputValue(),'175');
+  await chat('Make an invalid plan for testing');assert.match(await page.locator('#messages').textContent(),/error report was saved/i);
+  await page.locator('#settings').click();assert.equal(await page.locator('#geminiModel').inputValue(),'gemini-3.7-flash');assert.match(await page.locator('#viewErrorReports').textContent(),/Error reports \(1\)/);await page.locator('#viewErrorReports').click();const report=await page.locator('#errorReportText').inputValue();assert.match(report,/proposal_validation/);assert.match(report,/unsupported exercise id invented-exercise/);assert.match(report,/gemini-3.7-flash/);assert.equal(report.includes('test-gemini-key'),false);await page.locator('#closeModal').click();
 
   // Starting a new visible conversation keeps long-term coach memory.
   await page.locator('[data-tab="coach"]').click();await page.locator('#clearChat').click();await page.locator('#confirmClearChat').click();await page.locator('[data-tab="profilePage"]').click();assert.match(await page.locator('#coachMemory').inputValue(),/175 lb/);
@@ -54,6 +57,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.locator('[data-select-day="sun"]').click();assert.equal(await page.locator('#trainingDetails').isVisible(),false);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Per-set logging, adaptive history, time-fit bodyweight planning, body profile and coach memory tests passed.');
+  console.log('Per-set logging, model selection, error diagnostics, adaptive history, time-fit planning, body profile and coach memory tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
