@@ -1,0 +1,160 @@
+[
+  {
+    "id": "Cable_Squat",
+    "name": "Cable Squat",
+    "muscle": "quadriceps",
+    "equipment": "cable",
+    "source": "trainer-common",
+    "muscleSlug": "quadriceps",
+    "secondaryMuscleSlugs": [
+      "gluteal",
+      "hamstring"
+    ],
+    "demoGif": "",
+    "exerciseInfoUrl": "",
+    "demoLookupNames": [
+      "Cable Squat",
+      "Cable Squats"
+    ],
+    "aliases": [
+      "low cable squat",
+      "functional trainer squat"
+    ],
+    "instructions": [
+      "Set the cable handles on a low setting and stand far enough from the machine to keep light tension throughout the movement.",
+      "Stand with your feet around shoulder width, brace your torso, and keep the handles in a comfortable position without letting the stack pull you forward.",
+      "Sit the hips down and back while bending the knees. Keep the knees tracking over the toes and maintain a controlled, neutral-spine position.",
+      "Drive through the mid-foot to stand tall, then repeat without letting the weight stack slam."
+    ],
+    "images": [
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Aquadriceps%7CF59E0B%3Agluteal%2Chamstring&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw",
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Aquadriceps%7CF59E0B%3Agluteal%2Chamstring&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw"
+    ],
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "gluteal",
+      "hamstring"
+    ]
+  },
+  {
+    "id": "Cable_Romanian_Deadlift",
+    "name": "Cable Romanian Deadlift",
+    "muscle": "hamstrings",
+    "equipment": "cable",
+    "source": "trainer-common",
+    "muscleSlug": "hamstring",
+    "secondaryMuscleSlugs": [
+      "gluteal",
+      "lower-back"
+    ],
+    "demoGif": "",
+    "exerciseInfoUrl": "",
+    "demoLookupNames": [
+      "Cable Romanian Deadlift",
+      "Cable RDL",
+      "Romanian Deadlift With Cable"
+    ],
+    "aliases": [
+      "cable rdl",
+      "functional trainer rdl"
+    ],
+    "instructions": [
+      "Attach handles or a straight-bar attachment to a low cable and stand tall with the resistance in front of your thighs.",
+      "Keep a small bend in the knees, brace your trunk, and push the hips backward while keeping the spine neutral.",
+      "Lower only as far as you can maintain control and feel a strong hamstring stretch without rounding the back.",
+      "Drive the hips forward to return to standing and finish with the glutes rather than leaning backward."
+    ],
+    "images": [
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Ahamstring%7CF59E0B%3Agluteal%2Clower-back&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw",
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Ahamstring%7CF59E0B%3Agluteal%2Clower-back&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw"
+    ],
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "gluteal",
+      "lower-back"
+    ]
+  },
+  {
+    "id": "Bulgarian_Split_Squat",
+    "name": "Bulgarian Split Squat",
+    "muscle": "quadriceps",
+    "equipment": "dumbbell",
+    "source": "trainer-common",
+    "muscleSlug": "quadriceps",
+    "secondaryMuscleSlugs": [
+      "gluteal",
+      "hamstring"
+    ],
+    "demoGif": "",
+    "exerciseInfoUrl": "",
+    "demoLookupNames": [
+      "Bulgarian Split Squat",
+      "Dumbbell Bulgarian Split Squat"
+    ],
+    "aliases": [
+      "rear foot elevated split squat",
+      "rfess",
+      "dumbbell bulgarian split squat"
+    ],
+    "instructions": [
+      "Stand a comfortable stride in front of a bench and place the top of the rear foot on the bench. Hold dumbbells at your sides if using load.",
+      "Keep most of your pressure through the front foot and lower under control by bending the front knee and hip.",
+      "Descend until you reach a comfortable depth while keeping the front knee tracking with the toes and the pelvis controlled.",
+      "Drive through the front foot to return to the start, complete the set, then switch legs."
+    ],
+    "images": [
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Aquadriceps%7CF59E0B%3Agluteal%2Chamstring&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw",
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Aquadriceps%7CF59E0B%3Agluteal%2Chamstring&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw"
+    ],
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": [
+      "gluteal",
+      "hamstring"
+    ]
+  },
+  {
+    "id": "Cable_Leg_Curl",
+    "name": "Cable Leg Curl",
+    "muscle": "hamstrings",
+    "equipment": "cable",
+    "source": "trainer-common",
+    "muscleSlug": "hamstring",
+    "secondaryMuscleSlugs": [
+      "calves"
+    ],
+    "demoGif": "",
+    "exerciseInfoUrl": "",
+    "demoLookupNames": [
+      "Cable Leg Curl",
+      "Standing Cable Leg Curl",
+      "Cable Hamstring Curl"
+    ],
+    "aliases": [
+      "standing cable leg curl",
+      "cable hamstring curl",
+      "ankle strap leg curl"
+    ],
+    "instructions": [
+      "Attach an ankle cuff to a low cable and secure it around one ankle. Hold the machine or another stable support for balance.",
+      "Stand tall with the working thigh kept mostly still and the knee slightly behind or directly under the hip.",
+      "Flex the knee to bring the heel toward the glute without swinging the hip or arching the lower back.",
+      "Pause briefly, lower the foot slowly against the cable tension, complete the set, then switch legs."
+    ],
+    "images": [
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Ahamstring%7CF59E0B%3Acalves&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw",
+      "https://api.anatome.dev/generateImage?gender=male&view=dual&layers=DC2626%3Ahamstring%7CF59E0B%3Acalves&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw"
+    ],
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "calves"
+    ]
+  }
+]
