@@ -32,6 +32,26 @@ jobs:
         with:
           packages: platform-tools platforms;android-35 build-tools;35.0.0
           log-accepted-android-sdk-licenses: false
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/ai-personal-trainer-debug.jks
+          key: ai-personal-trainer-debug-signing-v1
+      - name: Ensure stable development signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/ai-personal-trainer-debug.jks" ]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/ai-personal-trainer-debug.jks" \
+              -storepass android \
+              -keypass android \
+              -alias trainerdev \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=AI Personal Trainer Development,O=yellowblitz,C=US"
+          fi
+          echo "AI_TRAINER_KEYSTORE=$HOME/.android/ai-personal-trainer-debug.jks" >> "$GITHUB_ENV"
+          keytool -list -v -keystore "$HOME/.android/ai-personal-trainer-debug.jks" -storepass android -alias trainerdev | grep -E "SHA256:|Valid from"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -39,7 +59,7 @@ jobs:
         run: gradle :app:assembleDebug :app:lintDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: AI-Personal-Trainer-0.5.1-debug
+          name: AI-Personal-Trainer-0.6.0-debug
           path: app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         if: always()

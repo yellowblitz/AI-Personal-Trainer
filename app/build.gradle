@@ -1,7 +1,23 @@
 plugins { id 'com.android.application' }
+def stableKeystorePath = System.getenv('AI_TRAINER_KEYSTORE')
 android {
     namespace 'com.yellowblitz.trainer'
     compileSdk 35
-    defaultConfig { applicationId 'com.yellowblitz.trainer'; minSdk 26; targetSdk 35; versionCode 6; versionName '0.5.1' }
+    signingConfigs {
+        stableDebug {
+            if (stableKeystorePath) {
+                storeFile file(stableKeystorePath)
+                storePassword 'android'
+                keyAlias 'trainerdev'
+                keyPassword 'android'
+            }
+        }
+    }
+    defaultConfig { applicationId 'com.yellowblitz.trainer'; minSdk 26; targetSdk 35; versionCode 7; versionName '0.6.0' }
+    buildTypes {
+        debug {
+            if (stableKeystorePath) signingConfig signingConfigs.stableDebug
+        }
+    }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
