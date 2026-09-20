@@ -10,6 +10,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Gravity;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -21,11 +22,14 @@ public class MainActivity extends Activity {
     private FrameLayout root;
     private WebView web;
     private WebView chatWeb;
-    private LinearLayout chatContainer;
+    private FrameLayout chatContainer;
+    private LinearLayout chatActions;
     private String pendingSharedText;
     private boolean pageReady = false;
     private int systemTopInset = 0;
     private int systemBottomInset = 0;
+    private int systemLeftInset = 0;
+    private int systemRightInset = 0;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -46,15 +50,11 @@ public class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             systemTopInset = Math.max(0, insets.getSystemWindowInsetTop());
             systemBottomInset = Math.max(0, insets.getSystemWindowInsetBottom());
-            web.setPadding(Math.max(0, insets.getSystemWindowInsetLeft()), 0,
-                Math.max(0, insets.getSystemWindowInsetRight()), 0);
-            chatContainer.setPadding(
-                Math.max(0, insets.getSystemWindowInsetLeft()),
-                systemTopInset,
-                Math.max(0, insets.getSystemWindowInsetRight()),
-                systemBottomInset
-            );
+            systemLeftInset = Math.max(0, insets.getSystemWindowInsetLeft());
+            systemRightInset = Math.max(0, insets.getSystemWindowInsetRight());
+            web.setPadding(systemLeftInset, 0, systemRightInset, 0);
             applySystemInsetsToWeb();
+            updateInlineChatBounds();
             return insets;
         });
 
@@ -111,29 +111,9 @@ public class MainActivity extends Activity {
         return trainer;
     }
 
-    private LinearLayout buildEmbeddedChatGPT() {
-        LinearLayout shell = new LinearLayout(this);
-        shell.setOrientation(LinearLayout.VERTICAL);
+    private FrameLayout buildEmbeddedChatGPT() {
+        FrameLayout shell = new FrameLayout(this);
         shell.setBackgroundColor(0xff101915);
-
-        LinearLayout toolbar = new LinearLayout(this);
-        toolbar.setOrientation(LinearLayout.HORIZONTAL);
-        toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        toolbar.setPadding(dp(8), dp(6), dp(8), dp(6));
-        toolbar.setBackgroundColor(0xff152019);
-
-        Button back = toolbarButton("‹ Trainer");
-        back.setOnClickListener(v -> closeEmbeddedChatGPT());
-
-        toolbar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        View spacer = new View(this);
-        toolbar.addView(spacer, new LinearLayout.LayoutParams(0, dp(44), 1f));
-
-        Button useCopy = toolbarButton("Use copied response");
-        useCopy.setOnClickListener(v -> useClipboardAsTrainerResponse());
-        toolbar.addView(useCopy, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
-        shell.addView(toolbar, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         chatWeb = new WebView(this);
         chatWeb.setBackgroundColor(0xff101915);
@@ -172,9 +152,81 @@ public class MainActivity extends Activity {
                 applyChatFocusMode(url);
             }
         });
-        shell.addView(chatWeb, new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        shell.addView(chatWeb, new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // Keep only the two trainer-specific actions. ChatGPT's own extra chrome is hidden.
+        chatActions = new LinearLayout(this);
+        chatActions.setOrientation(LinearLayout.HORIZONTAL);
+        chatActions.setGravity(Gravity.CENTER_VERTICAL);
+        chatActions.setPadding(dp(6), dp(4), dp(6), dp(4));
+        chatActions.setBackgroundColor(0xdd152019);
+
+        Button context = compactButton("Context");
+        context.setOnClickListener(v -> copyTrainerContextFromWeb());
+        Button useCopy = compactButton("Use response");
+        useCopy.setOnClickListener(v -> useClipboardAsTrainerResponse());
+
+        chatActions.addView(context, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, dp(38)));
+        chatActions.addView(useCopy, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, dp(38)));
+
+        FrameLayout.LayoutParams actionsParams = new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP | Gravity.END);
+        actionsParams.topMargin = dp(6);
+        actionsParams.rightMargin = dp(8);
+        shell.addView(chatActions, actionsParams);
         return shell;
+    }
+
+    private Button compactButton(String label) {
+        Button button = new Button(this);
+        button.setText(label);
+        button.setTextColor(0xffedf2ed);
+        button.setTextSize(11);
+        button.setAllCaps(false);
+        button.setBackgroundColor(0xff2a3c30);
+        button.setPadding(dp(9), 0, dp(9), 0);
+        return button;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void updateInlineChatBounds() {
+        if (chatContainer == null || chatContainer.getLayoutParams() == null) return;
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) chatContainer.getLayoutParams();
+        lp.leftMargin = systemLeftInset;
+        lp.rightMargin = systemRightInset;
+        // Leave the trainer's normal header and bottom navigation visible.
+        lp.topMargin = systemTopInset + dp(84);
+        lp.bottomMargin = systemBottomInset + dp(70);
+        chatContainer.setLayoutParams(lp);
+    }
+
+    private void setInlineChatVisible(boolean visible) {
+        runOnUiThread(() -> {
+            if (visible) {
+                updateInlineChatBounds();
+                chatContainer.setVisibility(View.VISIBLE);
+                chatContainer.bringToFront();
+                if (chatWeb.getUrl() == null) chatWeb.loadUrl("https://chatgpt.com/");
+                else applyChatFocusMode(chatWeb.getUrl());
+            } else {
+                chatContainer.setVisibility(View.GONE);
+                web.bringToFront();
+            }
+        });
+    }
+
+    private void copyTrainerContextFromWeb() {
+        if (web == null) return;
+        web.post(() -> web.evaluateJavascript(
+            "window.copyTrainerContextFromNative && window.copyTrainerContextFromNative();",
+            null));
     }
 
     private void applyChatFocusMode(String url) {
@@ -184,15 +236,16 @@ public class MainActivity extends Activity {
         String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
         String lower = url.toLowerCase();
 
-        // Leave authentication pages intact so first-time sign-in remains usable.
-        boolean loginPage = host.endsWith("auth.openai.com")
+        boolean loginUrl = host.endsWith("auth.openai.com")
             || lower.contains("/auth/")
             || lower.contains("/login")
             || lower.contains("/signin");
-        if (loginPage || !host.endsWith("chatgpt.com")) return;
+        if (loginUrl || !host.endsWith("chatgpt.com")) return;
 
         String script =
             "(function(){" +
+            "const auth=[...document.querySelectorAll('a,button')].some(e=>/^(log in|sign up|continue with)/i.test((e.textContent||'').trim()));" +
+            "if(auth)return 'auth';" +
             "const STYLE_ID='trainer-focus-style';" +
             "let s=document.getElementById(STYLE_ID);" +
             "if(!s){s=document.createElement('style');s.id=STYLE_ID;" +
@@ -216,37 +269,8 @@ public class MainActivity extends Activity {
             "});" +
             "};tidy();" +
             "if(!window.__trainerFocusObserver){window.__trainerFocusObserver=new MutationObserver(tidy);window.__trainerFocusObserver.observe(document.documentElement,{childList:true,subtree:true});}" +
-            "})();";
+            "return 'focus';})();";
         chatWeb.evaluateJavascript(script, null);
-    }
-
-    private Button toolbarButton(String label) {
-        Button button = new Button(this);
-        button.setText(label);
-        button.setTextColor(0xffedf2ed);
-        button.setTextSize(12);
-        button.setAllCaps(false);
-        button.setBackgroundColor(0xff2a3c30);
-        button.setPadding(dp(10), 0, dp(10), 0);
-        return button;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
-
-    private void openEmbeddedChatGPT() {
-        runOnUiThread(() -> {
-            chatContainer.setVisibility(View.VISIBLE);
-            chatContainer.bringToFront();
-            if (chatWeb.getUrl() == null) chatWeb.loadUrl("https://chatgpt.com/");
-        });
-    }
-
-    private void closeEmbeddedChatGPT() {
-        chatContainer.setVisibility(View.GONE);
-        web.bringToFront();
-        root.requestApplyInsets();
     }
 
     private void useClipboardAsTrainerResponse() {
@@ -261,8 +285,9 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "Clipboard text is empty.", Toast.LENGTH_SHORT).show();
             return;
         }
-        pendingSharedText = value.toString().trim().substring(0, Math.min(value.toString().trim().length(), 50000));
-        closeEmbeddedChatGPT();
+        String trimmed = value.toString().trim();
+        pendingSharedText = trimmed.substring(0, Math.min(trimmed.length(), 50000));
+        setInlineChatVisible(false);
         flushSharedText();
     }
 
@@ -296,7 +321,7 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         captureSharedText(intent);
-        closeEmbeddedChatGPT();
+        setInlineChatVisible(false);
         flushSharedText();
     }
 
@@ -310,14 +335,17 @@ public class MainActivity extends Activity {
             });
         }
         @JavascriptInterface public void openChatGPT() {
-            openEmbeddedChatGPT();
+            setInlineChatVisible(true);
+        }
+        @JavascriptInterface public void setChatVisible(boolean visible) {
+            setInlineChatVisible(visible);
         }
     }
 
     @Override public void onBackPressed() {
         if (chatContainer != null && chatContainer.getVisibility() == View.VISIBLE) {
             if (chatWeb != null && chatWeb.canGoBack()) chatWeb.goBack();
-            else closeEmbeddedChatGPT();
+            else setInlineChatVisible(false);
             return;
         }
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
