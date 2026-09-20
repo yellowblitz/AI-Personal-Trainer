@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.6.1
+# AI Personal Trainer — Android v0.7.0
 
 Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
@@ -28,7 +28,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.6.1-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.7.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
@@ -63,3 +63,18 @@ Rest deadlines survive background suspension, but alerts only fire while the app
 - HTTP 503 `UNAVAILABLE` / high-demand responses automatically retry the next available selected Flash generation (3.8 → 3.7 → 3.6). If every fallback is busy, the error report records every attempted model.
 - The weekly editor no longer asks for a fixed number of exercises. Only days and approximate training minutes are selected there.
 - Training-minute estimates exclude warm-up. The AI is instructed to treat the minute value as an approximate target rather than an automatic target+5 hard ceiling.
+
+
+## v0.7.0 — ChatGPT handoff
+The recommended coaching workflow now uses regular ChatGPT for the human-facing conversation without requiring an OpenAI API key:
+1. Open **ChatGPT** in the bottom navigation and tap **Copy context**. The copied context contains the local profile, current weekly plan, recent logged set performance, coach memory and the app exercise catalog. It never includes the Gemini API key.
+2. Tap **Open ChatGPT**, paste the context into regular ChatGPT, and continue the coaching conversation there.
+3. Bring a ChatGPT response back by pasting it into the trainer, or on Android use **Share → AI Personal Trainer** when the shared content contains the response text.
+4. Tap **Interpret with Gemini**. Gemini is instructed to act only as a deterministic command translator, not as the coach. It emits a small command batch instead of regenerating the full seven-day plan.
+5. Review the exact local commands, warnings and workout details. Nothing changes until **Apply commands to trainer** is tapped.
+
+Supported handoff commands are intentionally narrow: enable/disable a training day and change its approximate time target, replace one day's workout using catalog exercise IDs, update explicitly requested profile fields, and update durable coach memory. Unknown commands, invalid ranges, duplicate exercises and unsupported exercise IDs are rejected locally. Unmentioned days are preserved. Actual workout progress is still recorded by the app when sets/sessions are completed; recent set-by-set history is included in the context copied to ChatGPT.
+
+The existing direct Gemini coach remains available under an optional expandable section. Gemini 503 fallback and local error reports continue to apply to both direct coaching and ChatGPT-response interpretation.
+
+No OpenAI API key or OpenAI API billing is used by the v0.7.0 handoff workflow. The app opens regular ChatGPT externally and does not scrape or automate the ChatGPT website.
