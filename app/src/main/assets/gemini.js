@@ -79,8 +79,8 @@ export function buildRequest({message,week,selectedDay,proposal=null,history=[],
   'You are a thoughtful, conversational personal trainer. Give useful detailed advice, explain reasons, discuss recovery, technique, progression, goals and equipment, and ask clarifying questions when helpful.',
   'Separate conversation from edits. Advice or discussion uses action=advice with week=null and profile=null. Only when the user explicitly asks to create, change, update or refine saved workout/profile data use action=proposal. You are proposing a draft, never claiming it is already saved or applied.',
   'Use draftWeek as the starting point when it exists; otherwise use currentWeek. Preserve unrelated days. For this workout, use selectedDay.',
-  'Workout duration is a hard planning constraint. The app estimates time as about 5 minutes setup/warm-up, 60 seconds transition per exercise, 3.5 seconds per rep, plus the prescribed rest between sets. Build changed sessions to land at the day target through at most 5 minutes over it. For workouts of 55 minutes or longer, normally use roughly 6-8 exercises unless the user explicitly requests fewer. Do not return a tiny two-exercise workout for a 60-minute request.',
-  'If the user asks for bodyweight-only, use only catalog items whose equipment is body only and include enough exercise variety and volume to meet the duration. Do not silently add dumbbells, machines or cables.',
+  'Workout duration is a planning target, not a hard ceiling. The app estimates training time excluding warm-up, using about 60 seconds transition per exercise, 3.5 seconds per rep, plus prescribed rest between sets. Aim around the requested minutes, but going over is acceptable when it makes the workout better or the user says there is no strict ceiling. The number of exercises is flexible: choose what best fits the split, muscles, equipment, volume and time instead of targeting a fixed exercise count. Do not make a long requested session implausibly short.',
+  'If the user asks for bodyweight-only, use only catalog items whose equipment is body only and include enough useful variety and volume for the requested session. Do not silently add dumbbells, machines or cables.',
   'Every exercise must keep sets separately. setReps and setWeights must each contain exactly one value per set. sets equals both array lengths. reps and weight mirror the first set for compatibility. Later sets may have fewer reps or a different load.',
   'Use recentTraining as evidence for future recommendations. If later sets were repeatedly reduced, avoid blindly increasing them; consider lower later-set reps/load or different volume. If all sets were completed comfortably based on the logged numbers and conversation, gradual progression may be appropriate. Do not diagnose medical problems from performance.',
   'userProfile contains goal, experience, equipment, height and weight when provided. Only propose profile changes when the user explicitly asks to update those saved values. Return a complete updated profile object when proposing one; otherwise profile=null.',
@@ -122,7 +122,7 @@ export function parseResponse(result,catalog,currentWeek,currentProfile,currentM
    if(JSON.stringify(d)!==JSON.stringify(before)){
     const fit=fitPlanDuration(d.plan,d.minutes,catalog);d.plan=fit.plan;if(fit.adjusted)durationAdjusted.push(d.id);
     const estimate=estimatePlanMinutes(d.plan);
-    if(estimate<d.minutes||estimate>d.minutes+5)return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The proposed workout could not be fitted to the requested time budget. An error report was saved.',diagnostic:{category:'duration_fit',model,day:d.id,targetMinutes:d.minutes,estimatedMinutes:estimate}};
+    if(estimate<d.minutes)return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The proposed workout was still substantially shorter than the requested training-time target. An error report was saved.',diagnostic:{category:'duration_fit',model,day:d.id,targetMinutes:d.minutes,estimatedMinutes:estimate}};
    }
   }
   if(!validWeek(nextWeek,catalog.map(e=>e.id)))return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The time-fitted schedule failed validation and was not made executable. An error report was saved.',diagnostic:{category:'post_fit_validation',model,issues:diagnoseWeek(nextWeek,catalog)}};
@@ -136,19 +136,31 @@ export function parseResponse(result,catalog,currentWeek,currentProfile,currentM
 }
 export async function askGemini(input,catalog,apiKey,fetcher=fetch){
  if(typeof apiKey!=='string'||!apiKey.trim())throw diagnosticError('Add your Gemini API key in Settings.',{category:'missing_api_key'});
- const model=MODELS.some(m=>m.id===input.model)?input.model:DEFAULT_MODEL,body=buildRequest({...input,model},catalog),url=geminiUrl(model);
- let response;
- try{response=await fetcher(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey.trim()},body:JSON.stringify(body),signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'error'});}catch(e){throw diagnosticError(e.name==='TimeoutError'?'Gemini timed out. Please try again.':'Could not connect to Gemini. Check your internet connection.',{category:e.name==='TimeoutError'?'timeout':'network',model});}
- if(!response.ok){
-  let provider={};try{provider=await response.json();}catch{}
-  const providerStatus=typeof provider?.error?.status==='string'?provider.error.status.slice(0,80):'',providerMessage=typeof provider?.error?.message==='string'?provider.error.message.slice(0,800):'';
-  const diagnostic={category:'http_error',model,httpStatus:response.status,providerStatus,providerMessage};
-  if(response.status===400)throw diagnosticError('Google rejected the request format (HTTP 400). Open Error reports for Google’s diagnostic.',diagnostic);
-  if([401,403].includes(response.status))throw diagnosticError('Google rejected the API key, permissions, or selected model access. Open Error reports for details.',diagnostic);
-  if(response.status===429)throw diagnosticError('Gemini usage limit reached. Wait and try again, or check your quota in Google AI Studio.',diagnostic);
-  if(response.status===404)throw diagnosticError('The selected Gemini model is unavailable for this API key/project. Try another model.',diagnostic);
-  throw diagnosticError('Gemini is temporarily unavailable. Please try again.',diagnostic);
+ const selectedModel=MODELS.some(m=>m.id===input.model)?input.model:DEFAULT_MODEL;
+ const startIndex=MODELS.findIndex(m=>m.id===selectedModel),candidates=MODELS.slice(startIndex).map(m=>m.id);
+ const body=buildRequest({...input,model:selectedModel},catalog),attempts=[];
+ for(let index=0;index<candidates.length;index++){
+  const model=candidates[index],url=geminiUrl(model);let response;
+  try{response=await fetcher(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey.trim()},body:JSON.stringify(body),signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'error'});}
+  catch(e){throw diagnosticError(e.name==='TimeoutError'?'Gemini timed out. Please try again.':'Could not connect to Gemini. Check your internet connection.',{category:e.name==='TimeoutError'?'timeout':'network',model,attempts});}
+  if(!response.ok){
+   let provider={};try{provider=await response.json();}catch{}
+   const providerStatus=typeof provider?.error?.status==='string'?provider.error.status.slice(0,80):'',providerMessage=typeof provider?.error?.message==='string'?provider.error.message.slice(0,800):'';
+   attempts.push({model,httpStatus:response.status,providerStatus,providerMessage});
+   if(response.status===503&&index<candidates.length-1)continue;
+   const diagnostic={category:'http_error',model,httpStatus:response.status,providerStatus,providerMessage,attempts};
+   if(response.status===400)throw diagnosticError('Google rejected the request format (HTTP 400). Open Error reports for Google’s diagnostic.',diagnostic);
+   if([401,403].includes(response.status))throw diagnosticError('Google rejected the API key, permissions, or selected model access. Open Error reports for details.',diagnostic);
+   if(response.status===429)throw diagnosticError('Gemini usage limit reached. Wait and try again, or check your quota in Google AI Studio.',diagnostic);
+   if(response.status===404)throw diagnosticError('The selected Gemini model is unavailable for this API key/project. Try another model.',diagnostic);
+   if(response.status===503)throw diagnosticError('Gemini models are currently busy. The app also tried the available fallback models. Please try again shortly.',diagnostic);
+   throw diagnosticError('Gemini is temporarily unavailable. Please try again.',diagnostic);
+  }
+  let result;try{result=await response.json();}catch{throw diagnosticError('Gemini returned an unreadable response. Please try again.',{category:'unreadable_http_response',model,attempts});}
+  const parsed=parseResponse(result,catalog,input.week,input.profile,input.memory,model);
+  parsed.modelUsed=model;
+  if(model!==selectedModel)parsed.fallbackFrom=selectedModel;
+  return parsed;
  }
- let result;try{result=await response.json();}catch{throw diagnosticError('Gemini returned an unreadable response. Please try again.',{category:'unreadable_http_response',model});}
- return parseResponse(result,catalog,input.week,input.profile,input.memory,model);
+ throw diagnosticError('Gemini is temporarily unavailable. Please try again.',{category:'http_error',model:selectedModel,attempts});
 }
