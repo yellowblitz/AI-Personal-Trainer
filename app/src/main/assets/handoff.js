@@ -19,12 +19,16 @@ export function buildChatGPTContext({week,profile,memory='',recentTraining=[]},c
  const schedule=w.days.map(d=>d.enabled
   ? dayName(d.id)+' · target '+d.minutes+' training min (warm-up excluded) · '+d.plan.name+'\n  '+d.plan.exercises.map(e=>catalog.find(c=>c.id===e.id)?.name+' '+e.sets+' sets · reps '+e.setReps.join('/')+' · rest '+e.rest+'s'+(e.setWeights.some(x=>x>0)?' · loads '+e.setWeights.join('/')+' lb':'')).join('\n  ')
   : dayName(d.id)+' · Rest').join('\n');
- const recent=(Array.isArray(recentTraining)?recentTraining:[]).slice(0,8).map(h=>h.date+' '+dayName(h.day)+' '+h.name+': '+(h.exercises||[]).map(e=>e.name+' '+(e.sets||[]).map(s=>'S'+s.set+' '+s.reps+' reps'+(s.weight?' @ '+s.weight+' lb':'')).join(', ')).join(' | ')).join('\n');
+ const recent=(Array.isArray(recentTraining)?recentTraining:[]).slice(0,8).map(h=>h.date+' '+dayName(h.day)+' '+h.name+': '+(h.exercises||[]).map(e=>{
+  const sets=(e.sets||[]).map(s=>'S'+s.set+' target '+(s.plannedReps??s.reps)+' reps'+((s.plannedWeight??s.weight)?' @ '+(s.plannedWeight??s.weight)+' lb':' BW')+' -> actual '+(s.actualReps??s.reps)+' reps'+((s.actualWeight??s.weight)?' @ '+(s.actualWeight??s.weight)+' lb':' BW')).join(', ');
+  return e.name+' '+sets+(e.rir!=null?' · RIR '+(e.rir===4?'4+':e.rir):'')+(e.note?' · note: '+text(e.note,300):'');
+ }).join(' | ')).join('\n');
  return [
   'You are my personal training coach in regular ChatGPT. Talk to me naturally and make the coaching decisions; do not output JSON or app commands.',
   'When I ask for workout changes, give clear day-by-day exercise names, sets, reps, load guidance and rest so my trainer app can interpret your response.',
   'My app has a broad exercise library and will later pass your reply to a separate Gemini parser. Use normal, specific exercise names; you do not need to know internal IDs. If a movement has important variants, name the equipment, grip, angle, or stance so the parser can choose the correct one.',
   'Training-minute targets below exclude warm-up and are approximate unless I explicitly give a strict limit. Exercise count is flexible.',
+  'For recent training, distinguish the planned target from actual logged performance. RIR is reps in reserve: 0 means no more good reps, 4+ means at least four. Use target misses, RIR and notes when discussing progression instead of assuming prescribed reps were completed.',
   '',
   'PROFILE',
   'Goal: '+(p.goal||'not set'),
