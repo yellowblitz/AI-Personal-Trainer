@@ -12,6 +12,14 @@ test('full exercise library includes broad equipment variety',()=>{
  assert.ok(catalog.filter(x=>x.equipment==='body only').length>=100);
 });
 
+test('every exercise is paired to an anatomical muscle slug and exact animated demo',()=>{
+ const allowed=new Set(['abs','adductors','biceps','calves','chest','deltoids','forearm','gluteal','hamstring','lower-back','neck','quadriceps','trapezius','triceps','upper-back']);
+ assert.equal(catalog.length,873);
+ assert.ok(catalog.every(x=>allowed.has(x.muscleSlug)));
+ assert.ok(catalog.every(x=>x.demoGif===`https://api.anatome.dev/exerciseGif?id=${encodeURIComponent(x.id)}`));
+ assert.ok(catalog.every(x=>x.exerciseInfoUrl.includes('api.anatome.dev/getExercise?name=')));
+});
+
 test('exact names and common coaching aliases resolve deterministically',()=>{
  assert.equal(resolveExerciseRef('Dumbbell Bench Press',catalog),'Dumbbell_Bench_Press');
  assert.equal(resolveExerciseRef('cable fly',catalog),'Cable_Crossover');
