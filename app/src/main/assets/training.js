@@ -41,7 +41,7 @@ export function totalSets(plan){return (plan?.exercises||[]).reduce((n,e)=>n+nor
 export function completedSetTotal(plan){return (plan?.exercises||[]).reduce((n,e)=>n+completedSets(e),0);}
 export function estimatePlanMinutes(plan){
  const p=normalizePlan(plan);if(!p?.exercises?.length)return 0;
- let seconds=300; // brief warm-up / setup allowance
+ let seconds=0; // workout estimate excludes warm-up; the user's minute target is training time
  for(const ex of p.exercises){
   seconds+=60; // exercise setup / transition
   for(let i=0;i<ex.sets;i++)seconds+=ex.setReps[i]*3.5;
@@ -52,12 +52,13 @@ export function estimatePlanMinutes(plan){
 const eq=x=>(x||'body only').toLowerCase().replace(/\s+/g,' ').trim();
 export function fitPlanDuration(plan,targetMinutes,catalog){
  let p=normalizePlan(structuredClone(plan)),adjusted=false;
- const target=int(targetMinutes,5,180,45),max=target+5;
+ const target=int(targetMinutes,5,180,45);
  const signature=[...new Set(p.exercises.map(e=>eq(catalog.find(c=>c.id===e.id)?.equipment)))];
  const sameEquipment=signature.length===1?signature[0]:null;
  const candidatePool=sameEquipment?catalog.filter(c=>!p.exercises.some(e=>e.id===c.id)&&eq(c.equipment)===sameEquipment):[];
- const minExercises=target>=55?6:target>=40?5:target>=25?4:2;
- while(estimatePlanMinutes(p)<target&&p.exercises.length<Math.min(8,Math.max(minExercises,p.exercises.length+1))&&candidatePool.length){
+ // The minute value is a planning target, not a hard ceiling and not an exercise-count target.
+ // Prefer adding useful exercise variety first when a draft is too short, then add sets if needed.
+ while(estimatePlanMinutes(p)<target&&p.exercises.length<12&&candidatePool.length){
   const c=candidatePool.shift();
   p.exercises.push(normalizeExercise({id:c.id,sets:3,reps:12,rest:75,weight:0,done:0}));
   adjusted=true;
@@ -69,16 +70,6 @@ export function fitPlanDuration(plan,targetMinutes,catalog){
    const e=p.exercises[i];
    if(e.sets<6){p.exercises[i]=resizeSets(e,e.sets+1);changed=adjusted=true;}
   }
-  if(!changed)break;
- }
- guard=0;
- while(estimatePlanMinutes(p)>max&&guard++<80){
-  let changed=false;
-  for(let i=p.exercises.length-1;i>=0&&estimatePlanMinutes(p)>max;i--){
-   const e=p.exercises[i];
-   if(e.sets>2){p.exercises[i]=resizeSets(e,e.sets-1);changed=adjusted=true;}
-  }
-  if(!changed&&p.exercises.length>minExercises){p.exercises.pop();changed=adjusted=true;}
   if(!changed)break;
  }
  return {plan:p,estimatedMinutes:estimatePlanMinutes(p),adjusted};
