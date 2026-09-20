@@ -111,7 +111,7 @@ test('interpreter retries an incomplete explicit day and returns only the comple
    {name:'Cable Leg Curl',sets:3,reps:12,weight:40,rest:75},
    {name:'DB Calf Raise',sets:3,reps:15,weight:30,rest:60}
   ]}];
-  return response({summary:'Leg day',warnings:[],commands});
+  return {ok:true,json:async()=>response({summary:'Leg day',warnings:[],commands})};
  });
  assert.equal(calls,2);assert.equal(batch.commands[0].exercises.length,5);
  assert.deepEqual(batch.commands[0].exercises.map(x=>x.id),['Cable_Squat','Cable_Romanian_Deadlift','Bulgarian_Split_Squat','Cable_Leg_Curl','Standing_Dumbbell_Calf_Raise']);
