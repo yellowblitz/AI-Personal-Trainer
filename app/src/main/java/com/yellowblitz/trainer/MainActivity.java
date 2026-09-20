@@ -44,10 +44,19 @@ public class MainActivity extends Activity {
         chatContainer.setVisibility(View.GONE);
 
         root.setOnApplyWindowInsetsListener((v, insets) -> {
-            systemTopInset = Math.max(0, insets.getSystemWindowInsetTop());
-            systemBottomInset = Math.max(0, insets.getSystemWindowInsetBottom());
-            web.setPadding(Math.max(0, insets.getSystemWindowInsetLeft()), 0,
-                Math.max(0, insets.getSystemWindowInsetRight()), 0);
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets bars = insets.getInsets(
+                    android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
+                systemTopInset = bars.top;
+                systemBottomInset = bars.bottom;
+                web.setPadding(bars.left, 0, bars.right, 0);
+            } else {
+                systemTopInset = Math.max(0, insets.getSystemWindowInsetTop());
+                // The keyboard resizes the view; it must not also become navigation padding.
+                systemBottomInset = Math.max(0, Math.min(insets.getSystemWindowInsetBottom(), insets.getStableInsetBottom()));
+                web.setPadding(Math.max(0, insets.getSystemWindowInsetLeft()), 0,
+                    Math.max(0, insets.getSystemWindowInsetRight()), 0);
+            }
             applySystemInsetsToWeb();
             return insets;
         });
