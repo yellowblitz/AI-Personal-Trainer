@@ -8,7 +8,12 @@ const assert=require('node:assert/strict');
   for(let i=0;i<30;i++){try{await fetch('http://localhost:8000');break;}catch{await new Promise(r=>setTimeout(r,100));}}
   browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:412,height:915}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://localhost:8000');await page.waitForSelector('[data-select-day="mon"]');await page.locator('[data-select-day="mon"]').click();
+  await page.goto('http://localhost:8000');await page.waitForSelector('[data-select-day="mon"]');
+  // Simulate a phone using Android 3-button navigation plus a status bar.
+  await page.evaluate(()=>{document.documentElement.style.setProperty('--system-bottom-inset','48px');document.documentElement.style.setProperty('--system-top-inset','28px');});
+  const insetLayout=await page.evaluate(()=>{const nav=document.querySelector('nav'),header=document.querySelector('header'),main=document.querySelector('main'),n=nav.getBoundingClientRect(),csNav=getComputedStyle(nav),csHeader=getComputedStyle(header),csMain=getComputedStyle(main);return {navBottom:Math.round(innerHeight-n.bottom),navCssBottom:csNav.bottom,headerPaddingTop:Math.round(parseFloat(csHeader.paddingTop)),mainPaddingBottom:Math.round(parseFloat(csMain.paddingBottom))};});
+  assert.equal(insetLayout.navBottom,48);assert.equal(insetLayout.navCssBottom,'48px');assert.equal(insetLayout.headerPaddingTop,50);assert.ok(insetLayout.mainPaddingBottom>=258);
+  await page.locator('[data-select-day="mon"]').click();
 
   // Per-set logging: later sets can differ and survive reload.
   const setRep=n=>page.locator('[data-index="0"][data-set-index="'+n+'"][data-set-field="reps"]');
@@ -76,6 +81,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.locator('[data-select-day="sun"]').click();assert.equal(await page.locator('#trainingDetails').isVisible(),false);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Per-set logging, ChatGPT share handoff, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
+  console.log('Android system-bar insets, per-set logging, ChatGPT share handoff, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

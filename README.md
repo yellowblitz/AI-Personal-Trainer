@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.7.0
+# AI Personal Trainer — Android v0.7.1
 
 Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
@@ -28,7 +28,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.7.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.7.1-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
@@ -78,3 +78,11 @@ Supported handoff commands are intentionally narrow: enable/disable a training d
 The existing direct Gemini coach remains available under an optional expandable section. Gemini 503 fallback and local error reports continue to apply to both direct coaching and ChatGPT-response interpretation.
 
 No OpenAI API key or OpenAI API billing is used by the v0.7.0 handoff workflow. The app opens regular ChatGPT externally and does not scrape or automate the ChatGPT website.
+
+
+## v0.7.1 — Android phone system-bar layout
+- The Android wrapper now reads the real status-bar and navigation-bar insets and exposes them to the packaged web UI.
+- On phones using Android 3-button navigation, the app's bottom navigation sits fully above the system Back/Home/Recents bar instead of underneath it.
+- Fixed bottom UI such as the rest timer is offset by the same bottom inset, and page bottom padding includes that space so content is not hidden.
+- The app header and toast notifications also respect the top status-bar inset.
+- Tablet/browser behavior remains unchanged when system insets are zero.
