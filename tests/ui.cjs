@@ -26,7 +26,7 @@ const assert=require('node:assert/strict');
   await page.route('https://generativelanguage.googleapis.com/**',async route=>{
    const body=route.request().postDataJSON();captured=JSON.parse(body.contents[0].parts[0].text);assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'high');
    const request=captured.request.toLowerCase();let data;
-   if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:'Keep memory.'};}
+   if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:captured.coachMemory||''};}
    else if(request.includes('bodyweight')){
     const week=structuredClone(captured.currentWeek);week.days[0].minutes=60;week.days[0].plan={name:'Bodyweight 60',exercises:[
      {id:'Pushups',sets:3,reps:12,rest:75,weight:0,setReps:[12,10,8],setWeights:[0,0,0]},
