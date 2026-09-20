@@ -216,15 +216,23 @@ public class MainActivity extends Activity {
         String text = "light".equals(currentTheme) ? "#172019" : ("green".equals(currentTheme) ? "#edf2ed" : "#f2f4f7");
         String muted = "light".equals(currentTheme) ? "#667168" : ("green".equals(currentTheme) ? "#a2b2a6" : "#9ca6b2");
         String accent = "light".equals(currentTheme) ? "#5d8d38" : ("green".equals(currentTheme) ? "#c9f581" : "#a9df78");
+        String chatScheme = "light".equals(currentTheme) ? "light" : "dark";
+        String darkClass = "light".equals(currentTheme) ? "false" : "true";
 
         String script =
             "(function(){" +
+            "document.documentElement.style.colorScheme='${chatScheme}';" +
+            "document.documentElement.classList.toggle('dark',${darkClass});" +
+            "document.documentElement.dataset.trainerTheme='${currentTheme}';" +
             "const STYLE_ID='trainer-focus-style';let s=document.getElementById(STYLE_ID);" +
             "if(!s){s=document.createElement('style');s.id=STYLE_ID;document.head.appendChild(s);}" +
             "s.textContent=\"" +
             ":root{--main-surface-primary:" + bg + "!important;--main-surface-secondary:" + panel + "!important;--main-surface-tertiary:" + panel + "!important;--text-primary:" + text + "!important;--text-secondary:" + muted + "!important;--border-light:" + line + "!important;}" +
             "html,body,main{background:" + bg + "!important;color:" + text + "!important;}" +
             "article,[data-message-author-role],.group\\/conversation-turn{color:" + text + "!important;}" +
+            "[data-message-author-role='assistant'],[data-message-author-role='user']{color:" + text + "!important;}" +
+            "[data-message-author-role] :where(p,span,div,li,ol,ul,h1,h2,h3,h4,h5,h6,strong,em,blockquote,table,thead,tbody,tr,th,td),.markdown,.markdown :where(p,span,div,li,ol,ul,h1,h2,h3,h4,h5,h6,strong,em,blockquote,table,thead,tbody,tr,th,td),.prose,.prose :where(p,span,div,li,ol,ul,h1,h2,h3,h4,h5,h6,strong,em,blockquote,table,thead,tbody,tr,th,td){color:" + text + "!important;}" +
+            "[data-message-author-role] pre,[data-message-author-role] code{color:" + text + "!important;}" +
             "#prompt-textarea,[contenteditable='true']{color:" + text + "!important;caret-color:" + accent + "!important;}" +
             "[data-testid='composer'],form:has(#prompt-textarea){background:" + panel + "!important;border-color:" + line + "!important;}" +
             "a{color:" + accent + "!important;}" +
