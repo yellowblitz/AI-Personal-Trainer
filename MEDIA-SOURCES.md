@@ -30,7 +30,7 @@ The trainer now uses the open-source Anatome project for anatomy-style SVG rende
 - Project/API: https://github.com/NextSolutionsStudio/anatome and https://api.anatome.dev
 - Anatome API code and anatomy renderer are published under Apache-2.0.
 - Anatome's exercise bundle is based on the same 873 free-exercise-db exercise IDs used by this app.
-- Every local catalog entry is paired to `/exerciseGif?id=<exercise-id>`; the build verifies that all 873 IDs have an exact GIF in Anatome's published tree.
+- Every one of the 873 free-exercise-db catalog entries is paired to `/exerciseGif?id=<exercise-id>`; the build verifies those IDs against Anatome's published tree. Four supplemental trainer movements outside that 873-entry source use locally defined anatomy mappings and only use motion video when a high-confidence Wger name match is available; they are not assigned a misleading substitute GIF.
 - The GIFs are generated from the free-exercise-db image pairs according to Anatome's documented generation process; they are not Fitbod media.
 - Anatomy SVGs are generated from normalized muscle slugs. The card uses the catalog's primary muscle mapping; the detail view requests that exercise's exact primary/secondary Anatome mapping on demand and caches only metadata for exercises the user opens.
 - Optional wger full-motion videos remain a best-effort enhancement and are shown only after an exact or high-confidence name match. If no such match exists, the exact Anatome animation is used.
