@@ -1,10 +1,10 @@
-# AI Personal Trainer — Android v0.3.0
+# AI Personal Trainer — Android v0.4.0
 
 Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
 ## Set up Gemini
 1. Get a Gemini API key at https://aistudio.google.com/apikey (sign in to Google there).
-2. Install the APK, tap the gear icon, and paste it into **Your Gemini API key**.
+2. Install the APK, tap the gear icon, set your training goal/experience/equipment, and paste your key into **Your Gemini API key**.
 3. Tap **Save key**. On the Workout page, use **Edit week** to choose training days, time budgets and exercises per day.
 4. Open **AI coach** for advice or ask it to plan/refine your week. Advice does not change the planner.
 5. Review the **Proposed weekly changes** card. Keep chatting to refine it, or tap **Apply to weekly planner**. The front page opens a changed day and shows what was applied. **Undo AI edit** restores the previous week during the current app session.
@@ -18,7 +18,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Editable sets, reps, load (lb), and rest seconds.
 - Sequential set completion, automatic rest timer, pause, extend and skip.
 - Device-local workout state and up to 200 saved sessions.
-- Conversational Gemini coach with detailed advice and persistent local chat history (latest 80 messages; up to 30 recent turns sent for context).
+- Conversational Gemini coach with detailed advice and persistent local chat history (latest 80 messages; up to 30 recent turns sent for context). A device-local training profile (goal, experience, equipment) is sent with coach requests so advice and drafts can be more relevant.
 - Advice, proposed drafts and applied workouts are separate states. Drafts persist across app restarts and can be refined or discarded.
 - Per-day diffs show added/removed exercises, sets, reps, load, rest, session title, time budget and training/rest changes.
 - Apply updates the same saved weekly data used by the front page, preserves completed sets on matching days, and supports Undo. No-op responses never display a success/update notification. Drafts cannot overwrite manual changes without a new refinement.
@@ -26,7 +26,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.3.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.4.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production-signed release. Different CI runs can have different debug signing keys; Android may require uninstalling the previous build, which removes local history. A stable production signing key is still needed for reliable upgrades.
 

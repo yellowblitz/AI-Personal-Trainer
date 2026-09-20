@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {askGemini,buildRequest,parseResponse,GEMINI_URL} from '../app/src/main/assets/gemini.js';
 import {makeWeek} from '../app/src/main/assets/week.js';
 const catalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/catalog.json',import.meta.url)));
-const input={message:'Change Monday reps to 10',week:makeWeek(),selectedDay:'mon'};
+const input={message:'Change Monday reps to 10',week:makeWeek(),selectedDay:'mon',profile:{goal:'Strength',experience:'Intermediate',equipment:'Functional trainer and adjustable dumbbells'}};
 const output={reply:'Here is a draft for review.',action:'proposal',week:makeWeek()};
 const result=(value=output,reason='STOP')=>({candidates:[{finishReason:reason,content:{parts:[{text:JSON.stringify(value)}]}}]});
 test('Gemini sends weekly context with fixed HTTPS destination and key only in header',async()=>{
@@ -12,7 +12,7 @@ test('Gemini sends weekly context with fixed HTTPS destination and key only in h
   assert.equal(url,GEMINI_URL);assert.equal(opts.headers['x-goog-api-key'],'my-private-key');
   assert.equal((url+opts.body).includes('my-private-key'),false);assert.equal(opts.redirect,'error');
   const body=JSON.parse(opts.body);assert.equal(body.generationConfig.responseMimeType,'application/json');
-  const context=JSON.parse(body.contents[0].parts[0].text);assert.equal(context.request,input.message);assert.equal(context.currentWeek.days.length,7);
+  const context=JSON.parse(body.contents[0].parts[0].text);assert.equal(context.request,input.message);assert.equal(context.currentWeek.days.length,7);assert.equal(context.userProfile.goal,'Strength');assert.match(context.userProfile.equipment,/Functional trainer/);
   return {ok:true,json:async()=>result()};
  });assert.equal(data.action,'proposal');assert.equal(data.week.days.length,7);
 });
@@ -42,3 +42,5 @@ test('Timeout and network errors do not mutate the saved week',async()=>{
  for(const name of ['TimeoutError','TypeError'])await assert.rejects(askGemini(input,catalog,'key',async()=>{const e=new Error('private');e.name=name;throw e;}),name==='TimeoutError'?/timed out/:/internet/);
  assert.deepEqual(input.week,makeWeek());
 });
+
+test('Training profile is sanitized before it is sent to Gemini',()=>{const data=buildRequest({...input,profile:{goal:'  Strength  ',experience:'Intermediate',equipment:'  Cable machine  ',ignored:'secret'}},catalog);const context=JSON.parse(data.contents[0].parts[0].text);assert.deepEqual(context.userProfile,{goal:'Strength',experience:'Intermediate',equipment:'Cable machine'});assert.equal('ignored' in context.userProfile,false);});
