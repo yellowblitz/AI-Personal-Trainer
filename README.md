@@ -40,11 +40,12 @@ This is a development build, not a production release. Starting with v0.6.0, CI 
 
 ## v0.12.0 — anatomical muscle illustrations and exact demo pairing
 - Replaces the abstract mini muscle map with anatomy-style body illustrations: the primary muscle is highlighted in red and secondary muscles in orange when exact metadata is available.
-- All 873 local exercises now carry a normalized anatomy muscle slug, an exact Anatome exercise-info link, and an exact animated-demo link keyed by the same free-exercise-db exercise ID.
+- The 873 free-exercise-db exercises carry normalized anatomy mappings and exact Anatome demo links. Four common functional-trainer movements that were missing from that source (Cable Squat, Cable Romanian Deadlift, Bulgarian Split Squat, Cable Leg Curl) are included as supplemental trainer exercises with anatomy metadata and conservative on-demand video matching.
 - Exercise cards show a compact anatomy illustration for the primary muscle group. Opening **Demo** shows a larger anatomy view and loads exact primary/secondary muscle metadata only for that exercise.
 - Demo playback prefers a high-confidence wger full-motion video match when available. An exact per-exercise animated demo is always available as the fallback, with the original start/end images as the final offline-friendly fallback.
 - Anatomy and demo resources are requested on demand and can use the Android WebView cache; the app does not bundle the 873 GIF library in the APK.
 - Matching for optional wger videos now accepts only exact names or high-confidence, clearly separated fuzzy matches to reduce incorrect exercise-video pairings.
+- Complete ChatGPT day plans are translated atomically: the interpreter extracts the explicitly prescribed exercise list, expands candidate matching for each name, verifies the final count/order, and retries once if Gemini drops an exercise. A still-incomplete day is rejected instead of partially overwriting the workout.
 
 ## v0.11.0 — performance feedback and exercise intelligence
 - Exercise cards include compact front/back muscle maps so the primary worked area is visible at a glance.
