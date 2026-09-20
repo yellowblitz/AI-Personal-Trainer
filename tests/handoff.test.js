@@ -14,7 +14,7 @@ test('ChatGPT context contains current plan and logged set performance without a
  const p=structuredClone(week.days[0].plan);p.exercises[0].done=2;p.exercises[0].setReps=[12,9,8];
  const recent=summarizeHistory([{date:'2026-09-20T10:00:00Z',day:'mon',plan:p}],catalog,20);
  const text=buildChatGPTContext({week,profile,memory:'Prefer controlled reps.',recentTraining:recent},catalog);
- assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 9 reps/);assert.match(text,/APP EXERCISE CATALOG/);assert.doesNotMatch(text,/Return only JSON/);
+ assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 9 reps/);assert.match(text,/RELEVANT EXERCISE LIBRARY SAMPLE/);assert.doesNotMatch(text,/Return only JSON/);
 });
 
 test('interpreter request makes Gemini a translator rather than a coach',()=>{
@@ -39,8 +39,17 @@ test('validated handoff commands change only requested trainer data',()=>{
 });
 
 test('unsupported exercise IDs and malformed commands never execute',()=>{
- assert.throws(()=>validateCommandBatch({summary:'bad',commands:[{type:'replace_plan',day:'mon',name:'Bad',exercises:[{id:'invented',sets:3,reps:10,rest:90,weight:0}]}]},catalog),/invalid or unsupported/);
+ assert.throws(()=>validateCommandBatch({summary:'bad',commands:[{type:'replace_plan',day:'mon',name:'Bad',exercises:[{id:'invented',sets:3,reps:10,rest:90,weight:0}]}]},catalog),/invalid, unsupported, or ambiguous/);
  assert.throws(()=>validateCommandBatch({summary:'bad',commands:[{type:'delete_everything'}]},catalog),/Unsupported command/);
+});
+
+test('normal ChatGPT exercise names and common aliases resolve to local catalog IDs',()=>{
+ const batch=validateCommandBatch({summary:'Translate natural exercise names.',warnings:[],commands:[{type:'replace_plan',day:'mon',name:'Cable Push',exercises:[
+  {name:'cable fly',sets:3,reps:12,rest:90,weight:20},
+  {exercise:'rope tricep pushdown',sets:3,setReps:[12,11,10],setWeights:[20,20,20],rest:75}
+ ]}]},catalog);
+ assert.equal(batch.commands[0].exercises[0].id,'Cable_Crossover');
+ assert.equal(batch.commands[0].exercises[1].id,'Triceps_Pushdown_-_Rope_Attachment');
 });
 
 test('interpreter falls back on 503 and returns a validated command batch',async()=>{
