@@ -319,7 +319,7 @@ $('applyHandoff').onclick=()=>{
   const hadWorkout=handoffDraft.batch.commands.some(c=>['set_day','replace_plan'].includes(c.type)),hadProfile=handoffDraft.batch.commands.some(c=>c.type==='update_profile');
   $('updateNotice').textContent='Applied ChatGPT handoff: '+result.descriptions.join(' · ');$('updateNotice').hidden=!hadWorkout;
   handoffDraft=null;$('handoffText').value='';$('handoffStatus').textContent='Applied. Continue coaching in the embedded ChatGPT whenever you want another change.';
-  if(hadWorkout||hadProfile)markNextWeekStale();render();renderHandoff();tick();showTab(hadWorkout?'workout':hadProfile?'profilePage':'coach');toast('ChatGPT changes applied.');if(apiKey&&(hadWorkout||hadProfile))refreshNextWeekRecommendation('coach-change');
+  if(hadWorkout||hadProfile)markNextWeekStale();render();renderHandoff();tick();showTab(hadWorkout?'workout':hadProfile?'profilePage':'coach');toast('ChatGPT changes applied.');
  }catch(err){recordErrorReport({category:'handoff_apply_error',message:err.message},handoffDraft?.sourceText||'',err.message);toast(err.message);}
 };
 $('discardHandoff').onclick=()=>{handoffDraft=null;renderHandoff();$('handoffStatus').textContent='Commands discarded. Your trainer data is unchanged.';toast('Handoff commands discarded.');};
@@ -388,7 +388,7 @@ $('applyProposal').onclick=()=>{
   timer={};pending=null;save();saveChat();render();tick();showTab(changes.length?'workout':'profilePage');
   const parts=[];if(changes.length)parts.push('workout: '+changes.map(d=>dayName(d.id)).join(', '));if(pChanges.length)parts.push('profile/body data');
   const note='Applied '+parts.join(' and ')+'.';$('updateNotice').textContent=note;$('updateNotice').hidden=!changes.length;
-  if(changes.length||pChanges.length)markNextWeekStale();messages.push({role:'assistant',content:'You applied the proposed changes: '+parts.join(' and ')+'.'});saveChat();drawMessages();toast(note);if(apiKey&&(changes.length||pChanges.length))refreshNextWeekRecommendation('gemini-change');window.scrollTo({top:0,behavior:'smooth'});
+  if(changes.length||pChanges.length)markNextWeekStale();messages.push({role:'assistant',content:'You applied the proposed changes: '+parts.join(' and ')+'.'});saveChat();drawMessages();toast(note);window.scrollTo({top:0,behavior:'smooth'});
  }catch(err){toast(err.message);}
 };
 $('refineProposal').onclick=()=>{$('chatInput').value='Please refine the draft: ';$('chatInput').focus();$('chatInput').scrollIntoView({block:'center',behavior:'smooth'});};
