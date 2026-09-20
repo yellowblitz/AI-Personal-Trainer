@@ -2,6 +2,7 @@ import {DAYS,cleanWeek,validWeek} from './week.js';
 import {normalizeExercise,normalizePlan} from './training.js';
 import {mergePlan,validPlan} from './core.js';
 import {MODELS,DEFAULT_MODEL,geminiUrl,cleanProfile,validProfile} from './gemini.js';
+import {compactCatalog,resolveExerciseRef} from './exercise-match.js';
 
 const text=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
 const dayName=id=>({mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'})[id]||id;
@@ -12,7 +13,9 @@ const LEVELS=['Beginner','Intermediate','Advanced'];
 
 export function buildChatGPTContext({week,profile,memory='',recentTraining=[]},catalog){
  const p=cleanProfile(profile||{}),w=cleanWeek(week);
- const catalogNames=catalog.map(c=>c.name+' ['+c.id+'] · '+c.equipment+' · '+c.muscle).join('\n');
+ const currentIds=w.days.flatMap(d=>d.enabled&&d.plan?d.plan.exercises.map(e=>e.id):[]);
+ const catalogNames=compactCatalog([p.equipment,...currentIds].join(' '),catalog,{limit:90,includeIds:currentIds})
+  .map(c=>c.name+' ['+c.id+'] · '+c.equipment+' · '+c.muscle).join('\n');
  const schedule=w.days.map(d=>d.enabled
   ? dayName(d.id)+' · target '+d.minutes+' training min (warm-up excluded) · '+d.plan.name+'\n  '+d.plan.exercises.map(e=>catalog.find(c=>c.id===e.id)?.name+' '+e.sets+' sets · reps '+e.setReps.join('/')+' · rest '+e.rest+'s'+(e.setWeights.some(x=>x>0)?' · loads '+e.setWeights.join('/')+' lb':'')).join('\n  ')
   : dayName(d.id)+' · Rest').join('\n');
@@ -20,7 +23,7 @@ export function buildChatGPTContext({week,profile,memory='',recentTraining=[]},c
  return [
   'You are my personal training coach in regular ChatGPT. Talk to me naturally and make the coaching decisions; do not output JSON or app commands.',
   'When I ask for workout changes, give clear day-by-day exercise names, sets, reps, load guidance and rest so my trainer app can interpret your response.',
-  'My app will later pass your reply to a separate Gemini parser that can only execute exercises from the catalog below. If you recommend an exercise outside the catalog, clearly label it as a suggestion that may need a substitute.',
+  'My app has a broad exercise library and will later pass your reply to a separate Gemini parser. Use normal, specific exercise names; you do not need to know internal IDs. If a movement has important variants, name the equipment, grip, angle, or stance so the parser can choose the correct one.',
   'Training-minute targets below exclude warm-up and are approximate unless I explicitly give a strict limit. Exercise count is flexible.',
   '',
   'PROFILE',
@@ -37,13 +40,15 @@ export function buildChatGPTContext({week,profile,memory='',recentTraining=[]},c
   'RECENT TRAINING',
   recent||'No logged sessions yet.',
   '',
-  'APP EXERCISE CATALOG',
+  'RELEVANT EXERCISE LIBRARY SAMPLE ('+catalog.length+' total exercises available)',
   catalogNames
  ].join('\n').slice(0,30000);
 }
 
-function normalizeCommandExercise(e,ids){
- if(!e||typeof e!=='object'||!ids.includes(e.id))return null;
+function normalizeCommandExercise(e,catalog){
+ if(!e||typeof e!=='object')return null;
+ const resolvedId=resolveExerciseRef(e.id??e.name??e.exercise,catalog);
+ if(!resolvedId)return null;
  const sets=int(Number(e.sets),1,10);if(sets===null)return null;
  const repsBase=int(Number(e.reps),1,50);
  const weightBase=finite(Number(e.weight??0),0,1000);
@@ -52,7 +57,7 @@ function normalizeCommandExercise(e,ids){
  if((setReps&&setReps.some(v=>v===null))||(setWeights&&setWeights.some(v=>v===null)))return null;
  const reps=setReps||Array(sets).fill(repsBase??12),weights=setWeights||Array(sets).fill(weightBase??0);
  const rest=int(Number(e.rest??90),15,600);if(rest===null)return null;
- return normalizeExercise({id:e.id,sets,reps:reps[0],weight:weights[0],setReps:reps,setWeights:weights,rest,done:0});
+ return normalizeExercise({id:resolvedId,sets,reps:reps[0],weight:weights[0],setReps:reps,setWeights:weights,rest,done:0});
 }
 
 export function validateCommandBatch(data,catalog){
@@ -67,7 +72,7 @@ export function validateCommandBatch(data,catalog){
    commands.push({type:'set_day',day:raw.day,enabled:raw.enabled,minutes});
   }else if(raw.type==='replace_plan'){
    if(!DAYS.includes(raw.day)||typeof raw.name!=='string'||!raw.name.trim()||!Array.isArray(raw.exercises)||raw.exercises.length<1||raw.exercises.length>12)throw new Error('A replace_plan command is invalid.');
-   const exercises=raw.exercises.map(e=>normalizeCommandExercise(e,ids));if(exercises.some(e=>!e))throw new Error('A replace_plan exercise is invalid or unsupported.');
+   const exercises=raw.exercises.map(e=>normalizeCommandExercise(e,catalog));if(exercises.some(e=>!e))throw new Error('A replace_plan exercise is invalid, unsupported, or ambiguous.');
    if(new Set(exercises.map(e=>e.id)).size!==exercises.length)throw new Error('A replace_plan command contains duplicate exercises.');
    const plan={name:text(raw.name,80),exercises};if(!validPlan(plan,ids))throw new Error('A replacement workout failed validation.');
    commands.push({type:'replace_plan',day:raw.day,name:plan.name,exercises:plan.exercises});
@@ -111,7 +116,9 @@ export function applyCommandBatch(batch,{week,profile,memory=''},catalog){
 
 export function buildInterpreterRequest({sourceText,week,profile,memory='',selectedDay},catalog){
  if(!text(sourceText,24000))throw new Error('Paste or share a ChatGPT response first.');
- const catalogSummary=catalog.map(({id,name,equipment,muscle})=>({id,name,equipment,muscle}));
+ const cleanedWeek=cleanWeek(week),cleanedProfile=cleanProfile(profile||{});
+ const includeIds=cleanedWeek.days.flatMap(d=>d.enabled&&d.plan?d.plan.exercises.map(e=>e.id):[]);
+ const catalogSummary=compactCatalog([sourceText,cleanedProfile.equipment].join('\n'),catalog,{limit:260,includeIds});
  const system=[
   'You are a deterministic command translator for an Android workout planner. You are NOT the coach and must not redesign the workout.',
   'Interpret only concrete changes explicitly stated in the supplied ChatGPT response. Preserve everything not mentioned.',
@@ -121,15 +128,15 @@ export function buildInterpreterRequest({sourceText,week,profile,memory='',selec
   '2) {"type":"replace_plan","day":"...","name":"...","exercises":[{"id":"catalog id","sets":1-10,"setReps":[...],"setWeights":[...],"rest":15-600,"reps":first set reps,"weight":first set load}]}.',
   '3) {"type":"update_profile","fields":{only goal,experience,equipment,heightIn,weightLb fields explicitly changed by ChatGPT}}.',
   '4) {"type":"set_memory","text":"durable coaching context explicitly requested to remember"}.',
-  'Use only exact catalog IDs. Map a normal exercise name to an ID only when the match is unambiguous. Never invent an ID.',
-  'If ChatGPT mentions an unsupported or ambiguous exercise, add a warning and do not silently substitute it.',
+  'The candidate catalog below is relevance-ranked from the full local exercise library. Prefer its exact IDs. The local app also resolves exact exercise names and common aliases, but you must never guess between materially different variants.',
+  'If ChatGPT mentions an unsupported or genuinely ambiguous exercise, add a warning and do not silently substitute it.',
   'For a complete workout/day redesign, use replace_plan. For a rest/training-day or target-time change, use set_day. The minute target excludes warm-up and is approximate unless ChatGPT explicitly says strict.',
   'If ChatGPT gives a PPL split as Day 1/Day 2/Day 3 without weekdays, map those in order onto the currently enabled training days. If there are not enough enabled days, warn instead of inventing extra days.',
   'Do not create progress records from advice text. Actual set completion is recorded by the app itself.',
   'Do not repeat the entire week. Emit only commands for data that should change.',
-  'Catalog: '+JSON.stringify(catalogSummary)
+  'Candidate catalog ('+catalogSummary.length+' of '+catalog.length+' local exercises): '+JSON.stringify(catalogSummary)
  ].join('\n');
- return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify({chatgptResponse:text(sourceText,24000),selectedDay,currentWeek:cleanWeek(week),profile:cleanProfile(profile||{}),memory:text(memory,4000)})}]}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:10000,thinkingConfig:{thinkingLevel:'high'}}};
+ return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify({chatgptResponse:text(sourceText,24000),selectedDay,currentWeek:cleanedWeek,profile:cleanedProfile,memory:text(memory,4000)})}]}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:10000,thinkingConfig:{thinkingLevel:'high'}}};
 }
 
 export async function interpretChatGPTResponse(input,catalog,apiKey,fetcher=fetch){
