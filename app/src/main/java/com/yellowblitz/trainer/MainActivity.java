@@ -107,6 +107,8 @@ public class MainActivity extends Activity {
         WebSettings settings = trainer.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setMediaPlaybackRequiresUserGesture(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -352,6 +354,11 @@ public class MainActivity extends Activity {
         }
         @JavascriptInterface public void setTheme(String theme) {
             runOnUiThread(() -> MainActivity.this.setTheme(theme));
+        }
+        @JavascriptInterface public void clearMediaCache() {
+            // Clear only the trusted trainer WebView HTTP cache. Do not touch the
+            // isolated ChatGPT WebView, cookies, or trainer DOM storage.
+            runOnUiThread(() -> { if (web != null) web.clearCache(false); });
         }
         // Use copied response: clipboard is read only after an explicit trainer button tap.
         @JavascriptInterface public void useCopiedResponse() {
