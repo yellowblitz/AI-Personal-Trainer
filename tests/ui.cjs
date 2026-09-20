@@ -20,7 +20,8 @@ const assert=require('node:assert/strict');
   assert.equal(await setRep(0).inputValue(),'12');await setRep(1).fill('9');await setRep(1).press('Tab');assert.equal(await setRep(0).inputValue(),'12');assert.equal(await setRep(1).inputValue(),'9');
   await page.locator('[data-set="0"][data-n="0"]').click();await page.locator('[data-set="0"][data-n="1"]').click();await page.waitForSelector('#timer:not([hidden])');
   await page.reload();await page.waitForSelector('[data-set="0"][data-n="1"].done');await page.locator('[data-select-day="mon"]').click();assert.equal(await setRep(1).inputValue(),'9');
-  await page.locator('#finish').click();await page.locator('[data-tab="history"]').click();assert.match(await page.locator('#historyList').textContent(),/S1: 12 reps/);assert.match(await page.locator('#historyList').textContent(),/S2: 9 reps/);
+  await page.locator('[data-select-day="wed"]').click();assert.match(await page.locator('#timerLabel').textContent(),/Monday/);await page.locator('#pause').click();await page.reload();await page.waitForSelector('#pause');assert.equal(await page.locator('#pause').textContent(),'Resume');assert.match(await page.locator('#timerLabel').textContent(),/Monday/);await page.locator('[data-select-day="mon"]').click();
+  await page.locator('#finish').click();assert.match(await page.locator('.last-performance').first().textContent(),/S2: 9 reps/);await page.locator('[data-tab="history"]').click();assert.match(await page.locator('#historyList').textContent(),/S1: 12 reps/);assert.match(await page.locator('#historyList').textContent(),/S2: 9 reps/);
 
   // Set a 60-minute Monday and body/profile context.
   await page.locator('[data-tab="workout"]').click();await page.locator('#editWeek').click();assert.equal(await page.locator('[data-count]').count(),0);assert.match(await page.locator('#modalBody').textContent(),/Exercise count is intentionally flexible/);await page.locator('[data-minutes="mon"]').fill('60');await page.locator('#saveWeek').click();assert.match(await page.locator('#sessionLabel').textContent(),/60 MIN/);
@@ -71,14 +72,21 @@ const assert=require('node:assert/strict');
   await page.locator('#applyProposal').click();assert.equal(await page.locator('#workout').isVisible(),true);const exerciseCount=await page.locator('#exercises .card').count();assert.ok(exerciseCount>=2&&exerciseCount<=12);const summaryText=await page.locator('#summary').textContent(),summaryMinutes=Number(summaryText.match(/~(\d+) min estimated/)?.[1]);assert.ok(summaryMinutes>=60);const tags=await page.locator('#exercises .tag').allTextContents();assert.ok(tags.every(t=>/body only/i.test(t)));
 
   await chat('Update my saved body weight to 175 lb');await page.waitForSelector('#proposal:not([hidden])');assert.match(await page.locator('#proposalDetails').textContent(),/180 → 175 lb/);await page.locator('#applyProposal').click();assert.equal(await page.locator('#profilePage').isVisible(),true);assert.equal(await page.locator('#weightLb').inputValue(),'175');
-  await chat('Make an invalid plan for testing');assert.match(await page.locator('#messages').textContent(),/error report was saved/i);
+  await chat('Make an invalid plan for testing test-gemini-key');assert.equal(await page.evaluate(()=>localStorage.getItem('errorReports').includes('test-gemini-key')),false);assert.match(await page.locator('#messages').textContent(),/error report was saved/i);
   await page.locator('#settings').click();assert.equal(await page.locator('#geminiModel').inputValue(),'gemini-3.7-flash');assert.match(await page.locator('#viewErrorReports').textContent(),/Error reports \(1\)/);await page.locator('#viewErrorReports').click();const report=await page.locator('#errorReportText').inputValue();assert.match(report,/proposal_validation/);assert.match(report,/unsupported exercise id invented-exercise/);assert.match(report,/gemini-3.7-flash/);assert.equal(report.includes('test-gemini-key'),false);await page.locator('#closeModal').click();
 
   // Starting a new visible conversation keeps long-term coach memory.
   await page.locator('[data-tab="coach"]').click();await page.locator('#clearChat').click();await page.locator('#confirmClearChat').click();await page.locator('[data-tab="profilePage"]').click();assert.match(await page.locator('#coachMemory').inputValue(),/175 lb/);
-  assert.equal(await page.evaluate(()=>JSON.stringify(localStorage).includes('test-gemini-key')),false);
+  assert.equal(await page.evaluate(()=>JSON.stringify({...localStorage,chat:''}).includes('test-gemini-key')),false);
 
   await page.locator('[data-tab="workout"]').click();await page.locator('[data-select-day="sun"]').click();assert.equal(await page.locator('#trainingDetails').isVisible(),false);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  // Exercise search and the 12-exercise limit must keep the saved week loadable.
+  await page.locator('[data-select-day="mon"]').click();
+  await page.locator('#add').click();await page.locator('#exerciseSearch').fill('zzzz-no-match');assert.equal(await page.locator('#exerciseEmpty').isVisible(),true);
+  await page.locator('#exerciseSearch').fill('');assert.ok(await page.locator('[data-add]:visible').count()>0);await page.locator('#closeModal').click();
+  while(await page.locator('#exercises .card').count()<12){await page.locator('#add').click();await page.locator('[data-add]').first().click();}
+  assert.equal(await page.locator('#add').isDisabled(),true);await page.reload();await page.waitForSelector('#exercises .card');assert.equal(await page.locator('#exercises .card').count(),12);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
   console.log('Android system-bar insets, embedded ChatGPT handoff UI, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');

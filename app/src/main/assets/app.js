@@ -1,7 +1,7 @@
 import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
 import {askGemini,MODELS,DEFAULT_MODEL} from './gemini.js';
-import {templates,makePlan,validPlan,secondsLeft} from './core.js';
-import {normalizeExercise,normalizePlan,resizeSets,setSetValue,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory} from './training.js';
+import {templates,makePlan,validPlan,secondsLeft,normalizeTimer} from './core.js';
+import {normalizeExercise,normalizePlan,resizeSets,setSetValue,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance} from './training.js';
 import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './handoff.js';
 const $=id=>document.getElementById(id);
 const catalog=await (await fetch('catalog.json')).json(), ids=catalog.map(e=>e.id);
@@ -14,7 +14,9 @@ let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().get
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
 if(!Array.isArray(history))history=[];
-const APP_VERSION='0.8.0';
+history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
+timer=normalizeTimer(timer);
+const APP_VERSION='0.8.1';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -43,13 +45,17 @@ function save(){
 }
 function saveChat(){messages=messages.slice(-200);localStorage.setItem('chat',JSON.stringify(messages));localStorage.setItem('proposal',JSON.stringify(pending));saveMemory();}
 const redact=value=>{let out=typeof value==='string'?value:JSON.stringify(value,null,2);if(apiKey)out=out.split(apiKey).join('[REDACTED API KEY]');return out.replace(/AIza[A-Za-z0-9_-]{20,}/g,'[REDACTED API KEY]');};
+// Also scrub reports written by older versions before persisting them again.
+errorReports=JSON.parse(redact(errorReports));
+localStorage.setItem('errorReports',JSON.stringify(errorReports));
 function recordErrorReport(diagnostic,request='',visibleMessage=''){
  const report={id:'E'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),appVersion:APP_VERSION,model:geminiModel,selectedDay:selected,category:diagnostic?.category||'unknown',visibleMessage:String(visibleMessage||'').slice(0,1000),request:String(request||'').slice(0,1200),diagnostic:diagnostic&&typeof diagnostic==='object'?diagnostic:{}};
- errorReports.unshift(report);errorReports=errorReports.slice(0,20);localStorage.setItem('errorReports',JSON.stringify(errorReports));return report;
+ const safeReport=JSON.parse(redact(report));
+ errorReports.unshift(safeReport);errorReports=errorReports.slice(0,20);localStorage.setItem('errorReports',JSON.stringify(errorReports));return safeReport;
 }
 function errorReportText(){
  if(!errorReports.length)return 'No AI error reports saved.';
- return errorReports.map(r=>['AI Personal Trainer error '+r.id,'Time: '+r.time,'App: v'+r.appVersion,'Model: '+r.model,'Category: '+r.category,'Selected day: '+r.selectedDay,'Message: '+r.visibleMessage,'Request: '+r.request,'Diagnostic: '+redact(r.diagnostic)].join('\n')).join('\n\n--------------------\n\n');
+ return errorReports.map(r=>redact(['AI Personal Trainer error '+r.id,'Time: '+r.time,'App: v'+r.appVersion,'Model: '+r.model,'Category: '+r.category,'Selected day: '+r.selectedDay,'Message: '+r.visibleMessage,'Request: '+r.request,'Diagnostic: '+redact(r.diagnostic)].join('\n'))).join('\n\n--------------------\n\n');
 }
 function showErrorReports(){
  modal('<h2>AI error reports</h2><p class="small muted">Reports never include your saved Gemini API key. They contain the failed request text, selected model, error category, and validation/API details so a problem can be diagnosed.</p><textarea id="errorReportText" rows="16" readonly></textarea><div class="row"><button id="copyErrorReport" class="primary">Copy reports</button><button id="clearErrorReports" class="secondary">Clear reports</button></div>');
@@ -63,8 +69,10 @@ function modal(html){clearInterval(demoInterval);$('modalBody').innerHTML=html;$
 $('closeModal').onclick=()=>$('modal').close();$('modal').onclose=()=>{clearInterval(demoInterval);$('modalBody').innerHTML='';};
 function renderExerciseCard(raw,i){
  const e=normalizeExercise(raw),c=catalog.find(x=>x.id===e.id);plan.exercises[i]=e;
+ const previous=lastExercisePerformance(history,e.id);
+ const last=previous?'<p class="small muted last-performance"><b>Last session · '+escape(new Date(previous.date).toLocaleDateString())+'</b><br>'+escape(previous.sets.map((v,n)=>'S'+(n+1)+': '+v.reps+' reps'+(v.weight?' @ '+v.weight+' lb':' · bodyweight')).join(' · '))+'</p>':'';
  const rows=e.setReps.map((reps,n)=>'<div class="set-row '+(n<e.done?'done':'')+'"><b>Set '+(n+1)+'</b><label>Reps<input aria-label="'+escape(c.name)+' set '+(n+1)+' reps" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="reps" min="1" max="50" value="'+reps+'" '+(busy?'disabled':'')+'></label><label>Load (lb)<input aria-label="'+escape(c.name)+' set '+(n+1)+' load" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="weight" min="0" max="1000" step="0.5" value="'+e.setWeights[n]+'" '+(busy?'disabled':'')+'></label><button class="set-button '+(n<e.done?'done':'')+'" data-set="'+i+'" data-n="'+n+'" '+(busy?'disabled':'')+'>'+(n<e.done?'✓ Done':'Complete')+'</button></div>').join('');
- return '<article class="card"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" style="padding:0"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div></div><div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest (s)<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set</span><span>Reps</span><span>Load</span><span>Status</span></div>'+rows+'</div><div class="row" style="margin-top:12px"><button class="secondary" data-demo="'+e.id+'">View demonstration</button><button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></article>';
+ return '<article class="card"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" style="padding:0"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div></div>'+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest (s)<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set</span><span>Reps</span><span>Load</span><span>Status</span></div>'+rows+'</div><div class="row" style="margin-top:12px"><button class="secondary" data-demo="'+e.id+'">View demonstration</button><button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></article>';
 }
 function render(){
  renderWeek();
@@ -74,7 +82,7 @@ function render(){
  $('planName').textContent=active?plan.name:'Rest & recover';const done=completedSetTotal(plan),total=totalSets(plan),estimate=estimatePlanMinutes(plan);
  $('summary').textContent=active?plan.exercises.length+' exercises · '+done+' / '+total+' sets completed · ~'+estimate+' min estimated':'No workout scheduled. Choose another day or edit your week.';$('progress').value=done;$('progress').max=total;$('undo').disabled=!undo||busy;
  $('exercises').innerHTML=plan.exercises.map(renderExerciseCard).join('');
- $('add').disabled=busy;$('newWorkout').disabled=busy;$('finish').disabled=busy;$('settings').disabled=busy;$('editWeek').disabled=busy;drawProposal();
+ $('add').disabled=busy||plan.exercises.length>=12;$('newWorkout').disabled=busy;$('finish').disabled=busy;$('settings').disabled=busy;$('editWeek').disabled=busy;drawProposal();
  const modelName=MODELS.find(m=>m.id===geminiModel)?.name||geminiModel;$('connection').textContent=apiKey?(pending?modelName+' ready · A draft is waiting. Your saved workout has not changed until you apply it.':modelName+' ready · Ask for advice, plan your week, or refine a draft. You choose when to apply changes.'):'Add your Gemini API key in Settings to start coaching. Workout tracking works offline.';
 }
 $('exercises').onchange=e=>{
@@ -85,12 +93,12 @@ $('exercises').onchange=e=>{
  if(e.target.value===''||!validPlan(next,ids)){toast('Please enter a value within the allowed range.');render();return;}
  plan=next;undo=null;save();render();
 };
-$('exercises').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.demo){const c=catalog.find(x=>x.id===b.dataset.demo);modal(`<h2>${escape(c.name)}</h2><img id="demoImage" class="demo" src="${c.images[0]}" alt="Exercise demonstration"><p class="small muted">Looping start/end photos · free-exercise-db · Unlicense</p><button id="demoToggle" class="secondary">Pause images</button><ol>${c.instructions.map(s=>`<li>${escape(s)}</li>`).join('')}</ol>`);let frame=0;const play=()=>setInterval(()=>{$('demoImage').src=c.images[(++frame)%c.images.length];},1300);demoInterval=play();$('demoToggle').onclick=()=>{if(demoInterval){clearInterval(demoInterval);demoInterval=null;$('demoToggle').textContent='Play images';}else{demoInterval=play();$('demoToggle').textContent='Pause images';}};return;}if(busy)return;if(b.dataset.remove!==undefined){if(plan.exercises.length===1)return toast('Keep at least one exercise.');plan.exercises.splice(+b.dataset.remove,1);}if(b.dataset.set!==undefined){const i=+b.dataset.set,n=+b.dataset.n,ex=normalizeExercise(plan.exercises[i]);if(n<ex.done){ex.done=n;timer={};}else if(n===ex.done){ex.done++;timer={end:Date.now()+ex.rest*1000};}else return toast('Complete the next set in order.');plan.exercises[i]=ex;}undo=null;save();render();tick();};
-$('add').onclick=()=>{modal('<h2>Add an exercise</h2>'+catalog.filter(c=>!plan.exercises.some(e=>e.id===c.id)).map(c=>`<button class="wide secondary" data-add="${c.id}">${escape(c.name)}</button>`).join(''));$('modalBody').onclick=e=>{const id=e.target.dataset.add;if(!id)return;plan.exercises.push(normalizeExercise({id,sets:3,reps:12,rest:90,weight:0,done:0}));undo=null;save();render();$('modal').close();};};
+$('exercises').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.demo){const c=catalog.find(x=>x.id===b.dataset.demo);modal(`<h2>${escape(c.name)}</h2><img id="demoImage" class="demo" src="${c.images[0]}" alt="Exercise demonstration"><p class="small muted">Looping start/end photos · free-exercise-db · Unlicense</p><button id="demoToggle" class="secondary">Pause images</button><ol>${c.instructions.map(s=>`<li>${escape(s)}</li>`).join('')}</ol>`);let frame=0;const play=()=>setInterval(()=>{$('demoImage').src=c.images[(++frame)%c.images.length];},1300);demoInterval=play();$('demoToggle').onclick=()=>{if(demoInterval){clearInterval(demoInterval);demoInterval=null;$('demoToggle').textContent='Play images';}else{demoInterval=play();$('demoToggle').textContent='Pause images';}};return;}if(busy)return;if(b.dataset.remove!==undefined){if(plan.exercises.length===1)return toast('Keep at least one exercise.');const removed=plan.exercises[+b.dataset.remove];if(removed.done&&!confirm('Remove this exercise and its unsaved completed sets?'))return;if(timer.day===selected&&timer.exerciseId===removed.id)timer={};plan.exercises.splice(+b.dataset.remove,1);}if(b.dataset.set!==undefined){const i=+b.dataset.set,n=+b.dataset.n,ex=normalizeExercise(plan.exercises[i]);if(n<ex.done){ex.done=n;timer={};}else if(n===ex.done){ex.done++;timer={end:Date.now()+ex.rest*1000,day:selected,exerciseId:ex.id};}else return toast('Complete the next set in order.');plan.exercises[i]=ex;}undo=null;save();render();tick();};
+$('add').onclick=()=>{if(plan.exercises.length>=12)return toast('A session supports up to 12 exercises.');modal('<h2>Add an exercise</h2><input id="exerciseSearch" type="search" placeholder="Search name, muscle or equipment" aria-label="Search exercises"><p id="exerciseEmpty" class="small muted" hidden>No matching exercises.</p>'+catalog.filter(c=>!plan.exercises.some(e=>e.id===c.id)).map(c=>`<button class="wide secondary" data-add="${c.id}">${escape(c.name)}</button>`).join(''));$('exerciseSearch').oninput=()=>{const query=$('exerciseSearch').value.trim().toLowerCase();let shown=0;document.querySelectorAll('[data-add]').forEach(b=>{const c=catalog.find(c=>c.id===b.dataset.add);b.hidden=![c.name,c.muscle,c.equipment].join(' ').toLowerCase().includes(query);if(!b.hidden)shown++;});$('exerciseEmpty').hidden=shown>0;};$('modalBody').onclick=e=>{const id=e.target.dataset.add;if(!id||plan.exercises.length>=12||plan.exercises.some(e=>e.id===id))return;plan.exercises.push(normalizeExercise({id,sets:3,reps:12,rest:90,weight:0,done:0}));undo=null;save();render();$('modal').close();};};
 $('newWorkout').onclick=()=>{modal('<h2>Start a fresh session</h2><p>Save your current session first if you want it in Progress.</p>'+Object.keys(templates).map(day=>`<button class="wide" data-day="${day}">${day}</button>`).join(''));$('modalBody').onclick=e=>{if(!e.target.dataset.day)return;plan=makePlan(e.target.dataset.day);timer={};undo=null;save();render();tick();$('modal').close();};};
 $('finish').onclick=()=>{const count=completedSetTotal(plan);if(!count)return toast('Complete a set before saving.');history.unshift({date:new Date().toISOString(),day:selected,plan:normalizePlan(structuredClone(plan))});history=history.slice(0,200);localStorage.setItem('history',JSON.stringify(history));plan.exercises=plan.exercises.map(e=>({...normalizeExercise(e),done:0}));timer={};undo=null;save();render();tick();toast('Session saved. Your set-by-set performance is now available to the coach.');};
-function tick(){const left=secondsLeft(timer);$('timer').hidden=!timer.end&&timer.paused==null;$('time').textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;$('pause').textContent=timer.paused!=null?'Resume':'Pause';if(timer.end&&left===0){timer={};save();$('timer').hidden=true;toast('Rest complete — ready for your next set.');navigator.vibrate?.([150,80,150]);}}
-$('pause').onclick=()=>{timer=timer.paused!=null?{end:Date.now()+timer.paused*1000}:{paused:secondsLeft(timer)};save();tick();};$('plus').onclick=()=>{if(timer.paused!=null)timer.paused+=15;else timer.end=Math.max(timer.end||0,Date.now())+15000;save();tick();};$('skip').onclick=()=>{timer={};save();tick();};setInterval(tick,250);document.addEventListener('visibilitychange',tick);
+function tick(){const left=secondsLeft(timer);$('timerLabel').textContent=timer.day?dayName(timer.day)+' · REST':'REST BETWEEN SETS';$('timer').hidden=!timer.end&&timer.paused==null;$('time').textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;$('pause').textContent=timer.paused!=null?'Resume':'Pause';if(timer.end&&left===0){timer={};save();$('timer').hidden=true;toast('Rest complete — ready for your next set.');navigator.vibrate?.([150,80,150]);}}
+$('pause').onclick=()=>{timer=timer.paused!=null?{...timer,end:Date.now()+timer.paused*1000,paused:null}:{...timer,end:null,paused:secondsLeft(timer)};save();tick();};$('plus').onclick=()=>{if(timer.paused!=null)timer.paused+=15;else timer.end=Math.max(timer.end||0,Date.now())+15000;save();tick();};$('skip').onclick=()=>{timer={};save();tick();};setInterval(tick,250);document.addEventListener('visibilitychange',tick);
 function renderHistory(){
  $('historyList').innerHTML=history.length?history.map(h=>{
   const p=normalizePlan(h.plan),sets=completedSetTotal(p);
@@ -226,9 +234,13 @@ $('applyProposal').onclick=()=>{
  if(busy||!pending)return;
  try{
   const changes=pending.week?weekChanges(week,pending.week,catalog):[],pChanges=pending.profile?profileChanges(profile,pending.profile):[];
+  if(!changes.length&&!pChanges.length)throw new Error('No changes to apply.');
+  if(pending.profile&&pending.profileBase!==profileKey(profile))throw new Error('Your profile changed after this draft. Ask the coach to refine it again.');
+  if(pending.week&&pending.base!==weekKey(week))throw new Error('Your schedule changed after this draft. Ask the coach to refine it again.');
+  const nextWeek=pending.week&&changes.length?applyProposal(week,{week:pending.week,base:pending.base},ids):week;
+  const nextProfile=pending.profile&&pChanges.length?normalizeProfile(pending.profile):profile;
   undo={week:structuredClone(week),profile:structuredClone(profile),selected,timer:structuredClone(timer)};
-  if(pending.week&&changes.length)week=applyProposal(week,{week:pending.week,base:pending.base},ids);
-  if(pending.profile&&pChanges.length){if(pending.profileBase!==profileKey(profile))throw new Error('Your profile changed after this draft. Ask the coach to refine it again.');profile=normalizeProfile(pending.profile);saveProfile();}
+  week=nextWeek;profile=nextProfile;saveProfile();
   if(changes.length){const target=changes.find(d=>week.days[DAYS.indexOf(d.id)].enabled)?.id||changes[0].id;selectDay(target);}
   timer={};pending=null;save();saveChat();render();tick();showTab(changes.length?'workout':'profilePage');
   const parts=[];if(changes.length)parts.push('workout: '+changes.map(d=>dayName(d.id)).join(', '));if(pChanges.length)parts.push('profile/body data');

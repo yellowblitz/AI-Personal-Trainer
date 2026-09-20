@@ -189,7 +189,7 @@ public class MainActivity extends Activity {
             || lower.contains("/auth/")
             || lower.contains("/login")
             || lower.contains("/signin");
-        if (loginPage || !host.endsWith("chatgpt.com")) return;
+        if (loginPage || !(host.equals("chatgpt.com") || host.endsWith(".chatgpt.com"))) return;
 
         String script =
             "(function(){" +
@@ -268,8 +268,9 @@ public class MainActivity extends Activity {
 
     private void applySystemInsetsToWeb() {
         if (!pageReady || web == null) return;
-        final int top = systemTopInset;
-        final int bottom = systemBottomInset;
+        final float density = getResources().getDisplayMetrics().density;
+        final int top = Math.round(systemTopInset / density);
+        final int bottom = Math.round(systemBottomInset / density);
         web.post(() -> web.evaluateJavascript(
             "document.documentElement.style.setProperty('--system-top-inset','" + top + "px');" +
             "document.documentElement.style.setProperty('--system-bottom-inset','" + bottom + "px');",

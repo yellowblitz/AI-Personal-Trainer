@@ -13,3 +13,15 @@ test('history summary retains each completed set separately',()=>{const p=makePl
 test('estimated duration excludes warm-up and grows with volume',()=>{const one={name:'One',exercises:[normalizeExercise({id:'Pushups',sets:1,reps:10,rest:90,weight:0})]};assert.ok(estimatePlanMinutes(one)<5);const p=makePlan();const first=estimatePlanMinutes(p);p.exercises=p.exercises.map(e=>resizeSets(e,5));assert.ok(estimatePlanMinutes(p)>first);});
 test('duration fitter does not trim a valid workout just because it runs over the target',()=>{const p=makePlan();p.exercises=p.exercises.map(e=>resizeSets(e,6));const before=estimatePlanMinutes(p);const fit=fitPlanDuration(p,20,catalog);assert.equal(fit.estimatedMinutes,before);assert.equal(fit.plan.exercises.length,p.exercises.length);});
 test('rest timer uses wall clock, survives background delay and pause',()=>{assert.equal(secondsLeft({end:10000},1000),9);assert.equal(secondsLeft({end:10000},15000),0);assert.equal(secondsLeft({paused:12},999999),12);});
+
+test('corrupted persisted timers are harmless and paused timers keep remaining time',()=>{
+ for(const value of [null,42,'broken',[],{end:'NaN'},{paused:-5},{end:Infinity}])assert.equal(secondsLeft(value,100),0);
+ assert.equal(secondsLeft({paused:0,end:999999},100),0);
+});
+test('last performance skips unperformed sessions and never shows planned unfinished sets',async()=>{
+ const {lastExercisePerformance}=await import('../app/src/main/assets/training.js');
+ const p=makePlan();p.exercises[0].done=2;p.exercises[0].setReps=[12,8,30];p.exercises[0].setWeights=[20,15,100];
+ const history=[{date:'2026-09-21',plan:makePlan()},{date:'2026-09-20',plan:p}];
+ assert.deepEqual(lastExercisePerformance(history,p.exercises[0].id),{date:'2026-09-20',sets:[{reps:12,weight:20},{reps:8,weight:15}]});
+ assert.equal(lastExercisePerformance(history,'unknown'),null);
+});

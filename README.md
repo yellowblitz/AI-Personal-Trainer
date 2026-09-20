@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.8.0
+# AI Personal Trainer — Android v0.8.1
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -28,7 +28,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.8.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.8.1-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
@@ -96,3 +96,15 @@ No OpenAI API key or OpenAI API billing is used by the v0.7.0 handoff workflow. 
 - The only native controls shown above ChatGPT are **Trainer** and **Use copied response**. Copy a ChatGPT answer using ChatGPT's normal Copy action, then **Use copied response** returns to the trainer and places that text into the Gemini interpreter workflow.
 - The existing Android Share and manual-paste handoff paths remain available as fallbacks.
 - ChatGPT's website DOM can change, so the focus-mode selectors are best-effort and may need maintenance if OpenAI redesigns the site.
+
+
+## v0.8.1 — Open-source review refinements
+- Each exercise shows the last saved, completed set performance for comparison.
+- Exercise picker searches by name, muscle and equipment, and enforces the existing 12-exercise plan format so adding exercises cannot invalidate saved weeks.
+- Removing an exercise with unsaved completed sets requires confirmation.
+- Rest timers identify their training day across day switches, pause/resume and reload. Malformed persisted timers are discarded safely.
+- Combined direct-coach drafts validate both the profile and weekly plan before changing either in memory.
+- Error reports redact the active key and recognizable Gemini keys before storage, including old reports during startup.
+- Android system-bar insets are converted from physical pixels to CSS pixels to avoid excessive spacing on dense phone displays.
+
+See `OPEN-SOURCE-REVIEW.md` for inspected reference projects, findings and remaining limitations. Existing offline data and account/key storage are retained. No third-party implementation code was copied.

@@ -84,3 +84,15 @@ export function summarizeHistory(history,catalog,limit=20){
   };})
  }));
 }
+
+// Use only completed performance, never unperformed targets from a saved session.
+export function lastExercisePerformance(history,id){
+ for(const session of Array.isArray(history)?history:[]){
+  if(!session||!Number.isFinite(Date.parse(session.date)))continue;
+  const raw=session.plan?.exercises?.find(e=>e?.id===id);
+  const ex=normalizeExercise(raw);
+  if(!ex?.done)continue;
+  return {date:session.date,sets:Array.from({length:ex.done},(_,i)=>({reps:ex.setReps[i],weight:ex.setWeights[i]}))};
+ }
+ return null;
+}
