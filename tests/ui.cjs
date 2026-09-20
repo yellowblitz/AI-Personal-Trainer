@@ -47,7 +47,21 @@ const assert=require('node:assert/strict');
    const body=route.request().postDataJSON(),system=body.systemInstruction.parts[0].text;assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'high');
    if(system.includes('deterministic command translator')){
     capturedHandoff=JSON.parse(body.contents[0].parts[0].text);
-    const data={summary:'Apply ChatGPT push-day changes.',warnings:[],commands:[
+    const full=/Friday Legs/i.test(capturedHandoff.chatgptResponse);
+    const data=full?{summary:'Apply complete ChatGPT PPL plan.',warnings:[],commands:[
+     {type:'replace_plan',day:'mon',name:'Push',exercises:[
+      {name:'Cable Chest Press',sets:4,reps:10,weight:60,rest:120},{name:'Incline DB Press',sets:3,reps:10,weight:25,rest:90},
+      {name:'Cable Fly',sets:3,reps:12,weight:30,rest:75},{name:'DB Lateral Raise',sets:3,reps:12,weight:10,rest:60},{name:'Triceps Pushdown',sets:3,reps:12,weight:50,rest:75}
+     ]},
+     {type:'replace_plan',day:'wed',name:'Pull',exercises:[
+      {name:'Lat Pulldown',sets:4,reps:10,weight:70,rest:120},{name:'Seated Row',sets:3,reps:10,weight:70,rest:90},
+      {name:'Rear-Delt Fly',sets:3,reps:12,weight:20,rest:75},{name:'Face Pull',sets:3,reps:12,weight:40,rest:75},{name:'DB Curl',sets:3,reps:10,weight:20,rest:75}
+     ]},
+     {type:'replace_plan',day:'fri',name:'Legs',exercises:[
+      {name:'Cable Squat',sets:4,reps:10,weight:80,rest:120},{name:'Cable RDL',sets:3,reps:10,weight:70,rest:120},
+      {name:'Bulgarian Split Squat',sets:3,reps:10,weight:20,rest:90},{name:'Cable Leg Curl',sets:3,reps:12,weight:40,rest:75},{name:'DB Calf Raise',sets:3,reps:15,weight:30,rest:60}
+     ]}
+    ]}:{summary:'Apply ChatGPT push-day changes.',warnings:[],commands:[
      {type:'set_day',day:'mon',enabled:true,minutes:60},
      {type:'replace_plan',day:'mon',name:'ChatGPT Push',exercises:[
       {id:'Dumbbell_Bench_Press',sets:3,reps:10,setReps:[10,9,8],weight:0,setWeights:[0,0,0],rest:120},
@@ -87,6 +101,13 @@ const assert=require('node:assert/strict');
   await page.locator('#applyHandoff').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.equal(await page.locator('#planName').textContent(),'ChatGPT Push');assert.equal(await page.locator('#exercises .card').count(),2);
   await page.locator('#refreshNextWeek').click();await page.waitForFunction(()=>document.querySelector('#nextWeekStatus').textContent.includes('Ready'));assert.match(await page.locator('#nextWeekDays').textContent(),/Next Week Progression/);assert.equal(await page.locator('#viewNextWeek').isVisible(),true);
   await page.locator('#viewNextWeek').click();assert.equal(await page.locator('#closeModalTop').isVisible(),true);assert.match(await page.locator('#modalBody').textContent(),/Next Week Progression/);await page.locator('#closeModalTop').click();
+
+  // Regression for a real compact ChatGPT PPL response: all 15 strength exercises must survive translation.
+  const fullPpl='Monday Push: Cable Chest Press 60 lb/side 4x10; Incline DB Press 25 lb 3x10; Cable Fly 30 lb/side 3x12; DB Lateral Raise 10 lb 3x12; Triceps Pushdown 50 lb 3x12. Wednesday Pull: Lat Pulldown 70 lb/side 4x10; Seated Row 70 lb/side 3x10; Rear-Delt Fly 20 lb/side 3x12; Face Pull 40 lb 3x12; DB Curl 20 lb 3x10. Friday Legs: Cable Squat 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15; optional 20-min easy bike.';
+  await page.locator('[data-tab="coach"]').click();await page.evaluate(text=>window.receiveTrainerShare(text),fullPpl);await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');
+  assert.match(await page.locator('#handoffCommands').textContent(),/Cable Squat/);assert.match(await page.locator('#handoffCommands').textContent(),/Cable Romanian Deadlift/);assert.match(await page.locator('#handoffCommands').textContent(),/Cable Leg Curl/);
+  await page.locator('#applyHandoff').click();assert.equal(await page.locator('[data-select-day="mon"] span').first().textContent(),'5 exercises · 60m');assert.equal(await page.locator('[data-select-day="wed"] span').first().textContent(),'5 exercises · 60m');assert.equal(await page.locator('[data-select-day="fri"] span').first().textContent(),'5 exercises · 60m');
+  await page.locator('[data-select-day="fri"]').click();assert.equal(await page.locator('#exercises .card').count(),5);assert.match(await page.locator('#exercises').textContent(),/Cable Romanian Deadlift/);assert.match(await page.locator('#exercises').textContent(),/Cable Leg Curl/);
 
   const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#geminiCoach').evaluate(el=>el.open=true);await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
 
