@@ -52,3 +52,10 @@ test('interpreter falls back on 503 and returns a validated command batch',async
  });
  assert.equal(seen.length,2);assert.equal(batch.commands[0].minutes,60);assert.equal(batch.fallbackFrom,'gemini-3.8-flash');assert.equal(batch.modelUsed,'gemini-3.7-flash');
 });
+
+test('Android build registers text sharing and forwards shared text into the handoff UI',()=>{
+ const manifest=readFileSync(new URL('../app/src/main/AndroidManifest.xml',import.meta.url),'utf8');
+ const activity=readFileSync(new URL('../app/src/main/java/com/yellowblitz/trainer/MainActivity.java',import.meta.url),'utf8');
+ assert.match(manifest,/android\.intent\.action\.SEND/);assert.match(manifest,/text\/plain/);assert.match(manifest,/launchMode="singleTop"/);
+ assert.match(activity,/EXTRA_TEXT/);assert.match(activity,/window\.receiveTrainerShare/);assert.match(activity,/chatgpt\.com/);
+});
