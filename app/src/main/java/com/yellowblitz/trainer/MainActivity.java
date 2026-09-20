@@ -26,12 +26,12 @@ public class MainActivity extends Activity {
     private boolean pageReady = false;
     private int systemTopInset = 0;
     private int systemBottomInset = 0;
+    private String currentTheme = "dark";
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         captureSharedText(getIntent());
-        getWindow().setStatusBarColor(0xff101915);
-        getWindow().setNavigationBarColor(0xff101915);
+        applyNativeTheme();
 
         root = new FrameLayout(this);
         web = buildTrainerWebView();
@@ -66,9 +66,44 @@ public class MainActivity extends Activity {
         root.requestApplyInsets();
     }
 
+    private int themeBackground() {
+        if ("light".equals(currentTheme)) return 0xfff5f7f4;
+        if ("green".equals(currentTheme)) return 0xff101915;
+        return 0xff0d1014;
+    }
+
+    private void setTheme(String theme) {
+        if (!"light".equals(theme) && !"green".equals(theme)) theme = "dark";
+        currentTheme = theme;
+        applyNativeTheme();
+    }
+
+    private void applyNativeTheme() {
+        int bg = themeBackground();
+        getWindow().setStatusBarColor(bg);
+        getWindow().setNavigationBarColor(bg);
+        int flags = getWindow().getDecorView().getSystemUiVisibility();
+        if ("light".equals(currentTheme)) {
+            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        } else {
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(flags);
+        if (root != null) root.setBackgroundColor(bg);
+        if (web != null) web.setBackgroundColor(bg);
+        if (chatContainer != null) chatContainer.setBackgroundColor(bg);
+        if (chatWeb != null) {
+            chatWeb.setBackgroundColor(bg);
+            String url = chatWeb.getUrl();
+            if (url != null) applyChatFocusMode(url);
+        }
+    }
+
     private WebView buildTrainerWebView() {
         WebView trainer = new WebView(this);
-        trainer.setBackgroundColor(0xff101915);
+        trainer.setBackgroundColor(themeBackground());
         WebSettings settings = trainer.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -117,10 +152,10 @@ public class MainActivity extends Activity {
     private LinearLayout buildEmbeddedChatGPT() {
         LinearLayout shell = new LinearLayout(this);
         shell.setOrientation(LinearLayout.VERTICAL);
-        shell.setBackgroundColor(0xff101915);
+        shell.setBackgroundColor(themeBackground());
 
         chatWeb = new WebView(this);
-        chatWeb.setBackgroundColor(0xff101915);
+        chatWeb.setBackgroundColor(themeBackground());
         WebSettings chatSettings = chatWeb.getSettings();
         chatSettings.setJavaScriptEnabled(true);
         chatSettings.setDomStorageEnabled(true);
@@ -175,12 +210,24 @@ public class MainActivity extends Activity {
             || lower.contains("/signin");
         if (loginPage || !(host.equals("chatgpt.com") || host.endsWith(".chatgpt.com"))) return;
 
+        String bg = "light".equals(currentTheme) ? "#f5f7f4" : ("green".equals(currentTheme) ? "#101915" : "#0d1014");
+        String panel = "light".equals(currentTheme) ? "#ffffff" : ("green".equals(currentTheme) ? "#1c2922" : "#171b21");
+        String line = "light".equals(currentTheme) ? "#d8ded8" : ("green".equals(currentTheme) ? "#34453a" : "#2c333c");
+        String text = "light".equals(currentTheme) ? "#172019" : ("green".equals(currentTheme) ? "#edf2ed" : "#f2f4f7");
+        String muted = "light".equals(currentTheme) ? "#667168" : ("green".equals(currentTheme) ? "#a2b2a6" : "#9ca6b2");
+        String accent = "light".equals(currentTheme) ? "#5d8d38" : ("green".equals(currentTheme) ? "#c9f581" : "#a9df78");
+
         String script =
             "(function(){" +
-            "const STYLE_ID='trainer-focus-style';" +
-            "let s=document.getElementById(STYLE_ID);" +
-            "if(!s){s=document.createElement('style');s.id=STYLE_ID;" +
+            "const STYLE_ID='trainer-focus-style';let s=document.getElementById(STYLE_ID);" +
+            "if(!s){s=document.createElement('style');s.id=STYLE_ID;document.head.appendChild(s);}" +
             "s.textContent=\"" +
+            ":root{--main-surface-primary:" + bg + "!important;--main-surface-secondary:" + panel + "!important;--main-surface-tertiary:" + panel + "!important;--text-primary:" + text + "!important;--text-secondary:" + muted + "!important;--border-light:" + line + "!important;}" +
+            "html,body,main{background:" + bg + "!important;color:" + text + "!important;}" +
+            "article,[data-message-author-role],.group\\/conversation-turn{color:" + text + "!important;}" +
+            "#prompt-textarea,[contenteditable='true']{color:" + text + "!important;caret-color:" + accent + "!important;}" +
+            "[data-testid='composer'],form:has(#prompt-textarea){background:" + panel + "!important;border-color:" + line + "!important;}" +
+            "a{color:" + accent + "!important;}" +
             "#stage-slideover-sidebar,aside,header," +
             "nav[aria-label*='chat history' i]," +
             "[data-testid='sidebar'],[data-testid='open-sidebar-button']," +
@@ -192,13 +239,11 @@ public class MainActivity extends Activity {
             "button[aria-label*='dictate' i],button[aria-label*='tools' i]{display:none!important;}" +
             "main{margin-left:0!important;width:100%!important;max-width:100%!important;}" +
             "body{overflow-x:hidden!important;}" +
-            "\";document.head.appendChild(s);}" +
-            "const tidy=()=>{" +
-            "document.querySelectorAll('button').forEach(b=>{" +
+            "\";" +
+            "const tidy=()=>{document.querySelectorAll('button').forEach(b=>{" +
             "const a=(b.getAttribute('aria-label')||'').toLowerCase();" +
             "if(a.includes('sidebar')||a.includes('temporary chat')||a.includes('share chat')||a.includes('model selector'))b.style.display='none';" +
-            "});" +
-            "};tidy();" +
+            "});};tidy();" +
             "if(!window.__trainerFocusObserver){window.__trainerFocusObserver=new MutationObserver(tidy);window.__trainerFocusObserver.observe(document.documentElement,{childList:true,subtree:true});}" +
             "})();";
         chatWeb.evaluateJavascript(script, null);
@@ -296,6 +341,9 @@ public class MainActivity extends Activity {
         }
         @JavascriptInterface public void reloadChat() {
             runOnUiThread(() -> { if (chatWeb.getUrl() != null) chatWeb.reload(); });
+        }
+        @JavascriptInterface public void setTheme(String theme) {
+            runOnUiThread(() -> MainActivity.this.setTheme(theme));
         }
         // Use copied response: clipboard is read only after an explicit trainer button tap.
         @JavascriptInterface public void useCopiedResponse() {
