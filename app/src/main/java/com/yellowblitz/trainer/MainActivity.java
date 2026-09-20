@@ -15,7 +15,6 @@ import android.view.WindowInsets;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
@@ -128,18 +127,13 @@ public class MainActivity extends Activity {
         Button back = toolbarButton("‹ Trainer");
         back.setOnClickListener(v -> closeEmbeddedChatGPT());
 
-        TextView title = new TextView(this);
-        title.setText("ChatGPT");
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(17);
-        title.setGravity(android.view.Gravity.CENTER);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        toolbar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)));
-        toolbar.addView(title, new LinearLayout.LayoutParams(0, dp(48), 1f));
+        toolbar.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
+        View spacer = new View(this);
+        toolbar.addView(spacer, new LinearLayout.LayoutParams(0, dp(44), 1f));
 
         Button useCopy = toolbarButton("Use copied response");
         useCopy.setOnClickListener(v -> useClipboardAsTrainerResponse());
-        toolbar.addView(useCopy, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(48)));
+        toolbar.addView(useCopy, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(44)));
         shell.addView(toolbar, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -154,6 +148,8 @@ public class MainActivity extends Activity {
         chatSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         chatSettings.setMediaPlaybackRequiresUserGesture(true);
         chatSettings.setSupportMultipleWindows(false);
+        chatSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        chatSettings.setSaveFormData(true);
 
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
@@ -169,10 +165,57 @@ public class MainActivity extends Activity {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) { }
                 return true;
             }
+            @Override public void onPageFinished(WebView view, String url) {
+                CookieManager.getInstance().flush();
+                applyChatFocusMode(url);
+            }
         });
         shell.addView(chatWeb, new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         return shell;
+    }
+
+    private void applyChatFocusMode(String url) {
+        if (chatWeb == null || url == null) return;
+        Uri uri;
+        try { uri = Uri.parse(url); } catch (Exception e) { return; }
+        String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+        String lower = url.toLowerCase();
+
+        // Leave authentication pages intact so first-time sign-in remains usable.
+        boolean loginPage = host.endsWith("auth.openai.com")
+            || lower.contains("/auth/")
+            || lower.contains("/login")
+            || lower.contains("/signin");
+        if (loginPage || !host.endsWith("chatgpt.com")) return;
+
+        String script =
+            "(function(){" +
+            "const STYLE_ID='trainer-focus-style';" +
+            "let s=document.getElementById(STYLE_ID);" +
+            "if(!s){s=document.createElement('style');s.id=STYLE_ID;" +
+            "s.textContent=\"" +
+            "#stage-slideover-sidebar,aside,header," +
+            "nav[aria-label*='chat history' i]," +
+            "[data-testid='sidebar'],[data-testid='open-sidebar-button']," +
+            "[data-testid='close-sidebar-button'],[data-testid='model-switcher-dropdown-button']," +
+            "[data-testid='share-chat-button'],[data-testid='conversation-options-button']," +
+            "[data-testid='profile-button'],[data-testid='new-chat-button']," +
+            "button[aria-label*='sidebar' i],button[aria-label*='temporary chat' i]," +
+            "button[aria-label*='attach' i],button[aria-label*='voice' i]," +
+            "button[aria-label*='dictate' i],button[aria-label*='tools' i]{display:none!important;}" +
+            "main{margin-left:0!important;width:100%!important;max-width:100%!important;}" +
+            "body{overflow-x:hidden!important;}" +
+            "\";document.head.appendChild(s);}" +
+            "const tidy=()=>{" +
+            "document.querySelectorAll('button').forEach(b=>{" +
+            "const a=(b.getAttribute('aria-label')||'').toLowerCase();" +
+            "if(a.includes('sidebar')||a.includes('temporary chat')||a.includes('share chat')||a.includes('model selector'))b.style.display='none';" +
+            "});" +
+            "};tidy();" +
+            "if(!window.__trainerFocusObserver){window.__trainerFocusObserver=new MutationObserver(tidy);window.__trainerFocusObserver.observe(document.documentElement,{childList:true,subtree:true});}" +
+            "})();";
+        chatWeb.evaluateJavascript(script, null);
     }
 
     private Button toolbarButton(String label) {
@@ -278,7 +321,13 @@ public class MainActivity extends Activity {
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 
+    @Override protected void onPause() {
+        CookieManager.getInstance().flush();
+        super.onPause();
+    }
+
     @Override public void onDestroy() {
+        CookieManager.getInstance().flush();
         if (chatWeb != null) chatWeb.destroy();
         if (web != null) web.destroy();
         super.onDestroy();
