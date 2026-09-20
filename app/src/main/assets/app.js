@@ -184,28 +184,35 @@ function anatomyLabel(primary,secondary=[]){
  return '<div class="muscle-legend"><span><i class="primary-dot"></i>Primary: '+escape(p.join(', ')||'Unknown')+'</span>'+(s.length?'<span><i class="secondary-dot"></i>Secondary: '+escape(s.join(', '))+'</span>':'')+'</div>';
 }
 function musclePicture(c,large=false,info=null){
- const primary=safeMuscleSlugs(info?.anatome_primary_slugs?.length?info.anatome_primary_slugs:[c.muscleSlug]);
- const secondary=safeMuscleSlugs(info?.anatome_secondary_slugs||[]);
+ const primary=safeMuscleSlugs(info?.anatome_primary_slugs?.length?info.anatome_primary_slugs:(Array.isArray(c.anatomePrimarySlugs)&&c.anatomePrimarySlugs.length?c.anatomePrimarySlugs:[c.muscleSlug]));
+ const secondary=safeMuscleSlugs(info?.anatome_secondary_slugs?.length?info.anatome_secondary_slugs:(c.secondaryMuscleSlugs||[]));
  const url=anatomyImageUrl(primary,secondary,large);
  if(!url)return '';
  return '<div class="muscle-picture '+(large?'large':'')+'"><img loading="lazy" src="'+escape(url)+'" alt="'+escape((primary.map(x=>ANATOMICAL_NAMES[x]).join(', ')||c.muscle)+' highlighted on an anatomical body diagram')+'">'+(large?anatomyLabel(primary,secondary):'<small>'+escape(ANATOMICAL_NAMES[primary[0]]||c.muscle)+'</small>')+'</div>';
 }
 async function lookupExerciseInfo(c){
+ const localInfo={
+  anatome_primary_slugs:safeMuscleSlugs(Array.isArray(c.anatomePrimarySlugs)&&c.anatomePrimarySlugs.length?c.anatomePrimarySlugs:[c.muscleSlug]),
+  anatome_secondary_slugs:safeMuscleSlugs(c.secondaryMuscleSlugs||[]),
+  primaryMuscles:Array.isArray(c.primaryMuscles)&&c.primaryMuscles.length?c.primaryMuscles.slice(0,8):[c.muscle],
+  secondaryMuscles:Array.isArray(c.secondaryMuscles)?c.secondaryMuscles.slice(0,8):[]
+ };
  const cached=demoMetaCache[c.id]?.exerciseInfo;
  if(cached){demoMetaCache[c.id].usedAt=new Date().toISOString();saveDemoMetaCache();return cached;}
+ if(!c.exerciseInfoUrl)return localInfo;
  try{
   const response=await fetch(c.exerciseInfoUrl,{credentials:'omit',cache:'no-store'});
   if(!response.ok)throw new Error('exercise info unavailable');
   const raw=await response.json(),data=raw?.exercise||raw?.data||raw;
   const info={
-   anatome_primary_slugs:safeMuscleSlugs(data?.anatome_primary_slugs?.length?data.anatome_primary_slugs:[c.muscleSlug]),
-   anatome_secondary_slugs:safeMuscleSlugs(data?.anatome_secondary_slugs||[]),
-   primaryMuscles:Array.isArray(data?.primaryMuscles)?data.primaryMuscles.slice(0,8):[c.muscle],
-   secondaryMuscles:Array.isArray(data?.secondaryMuscles)?data.secondaryMuscles.slice(0,8):[]
+   anatome_primary_slugs:safeMuscleSlugs(data?.anatome_primary_slugs?.length?data.anatome_primary_slugs:localInfo.anatome_primary_slugs),
+   anatome_secondary_slugs:safeMuscleSlugs(data?.anatome_secondary_slugs?.length?data.anatome_secondary_slugs:localInfo.anatome_secondary_slugs),
+   primaryMuscles:Array.isArray(data?.primaryMuscles)&&data.primaryMuscles.length?data.primaryMuscles.slice(0,8):localInfo.primaryMuscles,
+   secondaryMuscles:Array.isArray(data?.secondaryMuscles)?data.secondaryMuscles.slice(0,8):localInfo.secondaryMuscles
   };
   demoMetaCache[c.id]={...(demoMetaCache[c.id]||{}),exerciseInfo:info,usedAt:new Date().toISOString(),source:'anatome'};
   saveDemoMetaCache();return info;
- }catch{return {anatome_primary_slugs:[c.muscleSlug],anatome_secondary_slugs:[],primaryMuscles:[c.muscle],secondaryMuscles:[]};}
+ }catch{return localInfo;}
 }
 
 let wgerExerciseIndexPromise=null;
@@ -218,16 +225,21 @@ async function lookupDemoVideos(c){
  try{
   if(!wgerExerciseIndexPromise)wgerExerciseIndexPromise=fetch('https://wger.de/api/v2/exerciseinfo/?limit=1000',{credentials:'omit',cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('wger unavailable');return r.json();});
   const data=await wgerExerciseIndexPromise,items=Array.isArray(data?.results)?data.results:[];
-  const wanted=normName(c.name),wantedTokens=new Set(wanted.split(' ').filter(Boolean));
+  const wantedNames=[c.name,...(Array.isArray(c.demoLookupNames)?c.demoLookupNames:[]),...(Array.isArray(c.aliases)?c.aliases:[])].map(normName).filter(Boolean);
+  const wantedTokenSets=wantedNames.map(n=>new Set(n.split(' ').filter(Boolean)));
   const candidates=items.map(item=>{
    const names=[];for(const t of item?.translations||[]){if(t?.name)names.push(t.name);for(const a of t?.aliases||[])if(a?.alias)names.push(a.alias);}
-   if(names.some(n=>normName(n)===wanted))return {item,score:2};
+   const normalized=names.map(normName);
+   if(normalized.some(n=>wantedNames.includes(n)))return {item,score:2};
    let best=0;
-   for(const n of names){
-    const ts=new Set(normName(n).split(' ').filter(Boolean));if(!ts.size||!wantedTokens.size)continue;
-    let hit=0;for(const t of wantedTokens)if(ts.has(t))hit++;
-    const coverage=hit/wantedTokens.size,specificity=hit/ts.size,score=coverage*.7+specificity*.3;
-    if(score>best)best=score;
+   for(const n of normalized){
+    const ts=new Set(n.split(' ').filter(Boolean));if(!ts.size)continue;
+    for(const wantedTokens of wantedTokenSets){
+     if(!wantedTokens.size)continue;
+     let hit=0;for(const t of wantedTokens)if(ts.has(t))hit++;
+     const coverage=hit/wantedTokens.size,specificity=hit/ts.size,score=coverage*.7+specificity*.3;
+     if(score>best)best=score;
+    }
    }
    return {item,score:best};
   }).sort((a,b)=>b.score-a.score);
@@ -242,8 +254,13 @@ async function lookupDemoVideos(c){
 
 function startImageDemo(c){
  const media=$('demoMedia');if(!media)return;
- media.innerHTML='<img id="demoImage" class="demo" src="'+c.images[0]+'" alt="Exercise demonstration"><button id="demoToggle" class="secondary">Pause</button>';
- let frame=0;const play=()=>setInterval(()=>{const img=$('demoImage');if(img)img.src=c.images[(++frame)%c.images.length];},1200);demoInterval=play();
+ const images=[...new Set((c.images||[]).filter(Boolean))];
+ if(images.length<2){
+  media.innerHTML='<img id="demoImage" class="demo" src="'+escape(images[0]||anatomyImageUrl([c.muscleSlug],c.secondaryMuscleSlugs||[],true))+'" alt="Anatomy reference for '+escape(c.name)+'"><p class="small muted">No exact motion demo matched yet · anatomy reference shown</p>';
+  return;
+ }
+ media.innerHTML='<img id="demoImage" class="demo" src="'+escape(images[0])+'" alt="Exercise demonstration"><button id="demoToggle" class="secondary">Pause</button>';
+ let frame=0;const play=()=>setInterval(()=>{const img=$('demoImage');if(img)img.src=images[(++frame)%images.length];},1200);demoInterval=play();
  $('demoToggle').onclick=()=>{if(demoInterval){clearInterval(demoInterval);demoInterval=null;$('demoToggle').textContent='Play';}else{demoInterval=play();$('demoToggle').textContent='Pause';}};
 }
 function renderAnimatedDemo(c){
@@ -253,7 +270,7 @@ function renderAnimatedDemo(c){
  const img=$('demoGif');if(img)img.onerror=()=>startImageDemo(c);
 }
 async function openExerciseDemo(c){
- modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Full-motion videos are used only when a high-confidence open-source match is available. Every exercise also has an exact on-demand animated demo. Media is cached only after you open it.</p>');
+ modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Full-motion videos are used only when a high-confidence open-source match is available. '+(c.demoGif?'This base-library exercise also has an exact animated demo.':'Supplemental exercises use an anatomy fallback when no exact motion demo is available.')+' Media is cached only after you open it.</p>');
  const [info,videos]=await Promise.all([lookupExerciseInfo(c),lookupDemoVideos(c)]);
  if(!$('modal').open||!$('demoMedia'))return;
  $('anatomyDetail').innerHTML=musclePicture(c,true,info);
