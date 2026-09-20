@@ -2,6 +2,7 @@ import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyP
 import {askGemini,MODELS,DEFAULT_MODEL} from './gemini.js';
 import {templates,makePlan,validPlan,secondsLeft} from './core.js';
 import {normalizeExercise,normalizePlan,resizeSets,setSetValue,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory} from './training.js';
+import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './handoff.js';
 const $=id=>document.getElementById(id);
 const catalog=await (await fetch('catalog.json')).json(), ids=catalog.map(e=>e.id);
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
@@ -13,8 +14,8 @@ let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().get
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
 if(!Array.isArray(history))history=[];
-const APP_VERSION='0.6.1';
-let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]);
+const APP_VERSION='0.7.0';
+let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
 const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss','Mobility / athleticism'];
@@ -102,7 +103,7 @@ function renderProfilePage(){
  $('heightFeet').value=profile.heightIn==null?'':Math.floor(profile.heightIn/12);$('heightInches').value=profile.heightIn==null?'':Math.round(profile.heightIn%12);$('weightLb').value=profile.weightLb??'';
  $('coachMemory').value=coachMemory;
 }
-function showTab(tab){document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==tab);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='history')renderHistory();if(tab==='profilePage')renderProfilePage();}
+function showTab(tab){document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==tab);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='history')renderHistory();if(tab==='profilePage')renderProfilePage();if(tab==='coach')renderHandoff();}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('heightInches').value.trim(),weight=$('weightLb').value.trim();const height=ft===''&&inch===''?null:Number(ft||0)*12+Number(inch||0);const next=normalizeProfile({goal:$('profileGoal').value,experience:$('profileExperience').value,equipment:$('profileEquipment').value,heightIn:height,weightLb:weight===''?null:Number(weight)});if((height!==null&&next.heightIn===null)||(weight!==''&&next.weightLb===null))return toast('Check your height and weight values.');profile=next;saveProfile();renderProfilePage();drawProposal();toast('Training profile saved.');};
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
@@ -116,6 +117,64 @@ $('settings').onclick=()=>{
  $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('Gemini key removed.');}};
  $('viewErrorReports').onclick=showErrorReports;
 };
+function renderHandoff(){
+ if(!$('handoffPreview'))return;
+ $('handoffPreview').hidden=!handoffDraft;
+ $('interpretHandoff').disabled=busy;$('copyChatGPTContext').disabled=busy;$('openChatGPT').disabled=busy;
+ if(!handoffDraft)return;
+ const preview=handoffDraft.preview,batch=handoffDraft.batch;
+ $('handoffSummary').innerHTML='<p>'+escape(batch.summary||'ChatGPT changes interpreted.')+'</p>';
+ $('handoffWarnings').innerHTML=batch.warnings?.length?'<div class="notice"><b>Needs attention</b><ul>'+batch.warnings.map(w=>'<li>'+escape(w)+'</li>').join('')+'</ul></div>':'';
+ $('handoffCommands').innerHTML=preview.descriptions.length?'<h3>Local commands</h3><ul>'+preview.descriptions.map(d=>'<li>'+escape(d)+'</li>').join('')+'</ul>':'<p class="muted">No executable changes were found in the ChatGPT response.</p>';
+ $('applyHandoff').disabled=busy||!preview.descriptions.length;$('discardHandoff').disabled=busy;
+}
+function copyTrainerContext(){
+ const context=buildChatGPTContext({week,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20)},catalog);
+ try{if(window.TrainerShare?.copyText){window.TrainerShare.copyText(context);toast('Trainer context copied. Paste it into regular ChatGPT.');return;}}catch{}
+ navigator.clipboard?.writeText(context).then(()=>toast('Trainer context copied. Paste it into regular ChatGPT.')).catch(()=>{modal('<h2>Trainer context for ChatGPT</h2><p class="small muted">Copy the text below into ChatGPT.</p><textarea id="manualContext" rows="16" readonly></textarea>');$('manualContext').value=context;$('manualContext').focus();$('manualContext').select();});
+}
+$('copyChatGPTContext').onclick=copyTrainerContext;
+$('openChatGPT').onclick=()=>{try{if(window.TrainerShare?.openChatGPT){window.TrainerShare.openChatGPT();return;}}catch{}window.location.href='https://chatgpt.com/';};
+window.receiveTrainerShare=value=>{
+ const shared=typeof value==='string'?value.trim().slice(0,24000):'';if(!shared)return;
+ $('handoffText').value=shared;handoffDraft=null;showTab('coach');renderHandoff();$('handoffText').scrollIntoView({block:'center',behavior:'smooth'});toast('ChatGPT response received. Review it, then interpret with Gemini.');
+};
+if(typeof window.__trainerSharedText==='string'&&window.__trainerSharedText.trim()){const shared=window.__trainerSharedText;window.__trainerSharedText='';queueMicrotask(()=>window.receiveTrainerShare(shared));}
+$('interpretHandoff').onclick=async()=>{
+ if(busy)return;if(!apiKey)return toast('Add your Gemini API key in Settings first.');
+ const sourceText=$('handoffText').value.trim();if(!sourceText)return toast('Paste or share a ChatGPT response first.');
+ busy=true;handoffDraft=null;$('handoffStatus').textContent='Gemini is translating ChatGPT\'s response into local commands…';render();renderHandoff();
+ try{
+  const batch=await interpretChatGPTResponse({sourceText,week,profile,memory:coachMemory,selectedDay:selected,model:geminiModel},catalog,apiKey);
+  const preview=applyCommandBatch(batch,{week,profile,memory:coachMemory},catalog);
+  handoffDraft={sourceText,batch,preview};
+  const fallback=batch.fallbackFrom&&batch.modelUsed?' '+(MODELS.find(m=>m.id===batch.fallbackFrom)?.name||batch.fallbackFrom)+' was busy, so '+(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed)+' interpreted it.':'';
+  $('handoffStatus').textContent='Command translation complete.'+fallback+' Nothing has been changed yet.';
+  renderHandoff();toast(preview.descriptions.length?'Commands ready for review.':'No executable changes found.');
+ }catch(err){
+  recordErrorReport(err.diagnostic||{category:'handoff_client_error'},sourceText,err.message);
+  $('handoffStatus').textContent=err.message+' Error report saved in Settings → Error reports.';
+  toast('Could not interpret the ChatGPT response.');
+ }finally{busy=false;render();renderHandoff();}
+};
+$('applyHandoff').onclick=()=>{
+ if(busy||!handoffDraft)return;
+ try{
+  const result=applyCommandBatch(handoffDraft.batch,{week,profile,memory:coachMemory},catalog);
+  if(!result.descriptions.length)return toast('There are no commands to apply.');
+  undo={week:structuredClone(week),profile:structuredClone(profile),selected,timer:structuredClone(timer)};
+  week=result.week;profile=normalizeProfile(result.profile);coachMemory=result.memory;pending=null;timer={};
+  const firstDay=handoffDraft.batch.commands.find(c=>['set_day','replace_plan'].includes(c.type))?.day;
+  if(firstDay&&DAYS.includes(firstDay))selectDay(firstDay);else selectDay(selected);
+  save();saveProfile();saveMemory();saveChat();
+  const hadWorkout=handoffDraft.batch.commands.some(c=>['set_day','replace_plan'].includes(c.type)),hadProfile=handoffDraft.batch.commands.some(c=>c.type==='update_profile');
+  $('updateNotice').textContent='Applied ChatGPT handoff: '+result.descriptions.join(' · ');$('updateNotice').hidden=!hadWorkout;
+  handoffDraft=null;$('handoffText').value='';$('handoffStatus').textContent='Applied. Continue coaching in regular ChatGPT whenever you want another change.';
+  render();renderHandoff();tick();showTab(hadWorkout?'workout':hadProfile?'profilePage':'coach');toast('ChatGPT commands applied.');
+ }catch(err){recordErrorReport({category:'handoff_apply_error',message:err.message},handoffDraft?.sourceText||'',err.message);toast(err.message);}
+};
+$('discardHandoff').onclick=()=>{handoffDraft=null;renderHandoff();$('handoffStatus').textContent='Commands discarded. Your trainer data is unchanged.';toast('Handoff commands discarded.');};
+
 $('undo').onclick=()=>{
  if(!undo||busy)return;
  week=normalizeWeek(undo.week);profile=normalizeProfile(undo.profile||profile);timer=undo.timer;selectDay(undo.selected);undo=null;pending=null;save();saveProfile();saveChat();render();tick();
@@ -152,7 +211,7 @@ $('editWeek').onclick=()=>{
  };
 };
 function drawProposal(){
- const coachTab=document.querySelector('[data-tab="coach"]');if(coachTab)coachTab.textContent=pending?'✦ AI coach · Draft':'✦ AI coach';
+ const coachTab=document.querySelector('[data-tab="coach"]');if(coachTab)coachTab.textContent=pending?'✦ ChatGPT · Gemini draft':'✦ ChatGPT';
  $('proposal').hidden=!pending;if(!pending)return;
  const weekChangesList=pending.week?weekChanges(week,pending.week,catalog):[],profileChangesList=pending.profile?profileChanges(profile,pending.profile):[];
  const staleWeek=!!pending.week&&pending.base!==weekKey(week),staleProfile=!!pending.profile&&pending.profileBase!==profileKey(profile),stale=staleWeek||staleProfile;
@@ -200,4 +259,4 @@ $('chatForm').onsubmit=async e=>{
  }catch(err){recordErrorReport(err.diagnostic||{category:'client_error'},message,err.message);messages.push({role:'assistant',content:err.message+' Error report saved in Settings → Error reports.',error:true});}
  finally{busy=false;saveChat();$('clearChat').disabled=false;$('send').disabled=false;$('send').textContent='Send to Gemini ↗';drawMessages();render();}
 };
-save();render();drawMessages();tick();
+save();render();drawMessages();renderHandoff();tick();
