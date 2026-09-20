@@ -6,6 +6,17 @@ import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './
 const $=id=>document.getElementById(id);
 const catalog=await (await fetch('catalog.json')).json(), ids=catalog.map(e=>e.id);
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
+const THEMES=['dark','light','green'];
+let theme=read('theme','dark');if(!THEMES.includes(theme))theme='dark';
+function applyTheme(next,persist=true){
+ theme=THEMES.includes(next)?next:'dark';
+ document.documentElement.dataset.theme=theme;
+ const scheme=document.querySelector('meta[name="color-scheme"]');if(scheme)scheme.content=theme==='light'?'light':'dark';
+ if(persist)localStorage.setItem('theme',JSON.stringify(theme));
+ try{window.TrainerShare?.setTheme?.(theme);}catch{}
+ requestAnimationFrame(()=>window.syncInlineChat?.());
+}
+applyTheme(theme,false);
 const legacy=read('plan',null);
 let week=read('week',null);
 if(!validWeek(week,ids))week=makeWeek(validPlan(legacy,ids)?legacy:undefined);
@@ -16,7 +27,7 @@ let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.8.2';
+const APP_VERSION='0.9.0';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -117,11 +128,12 @@ $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
 $('settings').onclick=()=>{
- modal('<h2>Gemini settings</h2><p class="muted">AI Personal Trainer · v'+APP_VERSION+'</p><label for="geminiModel">AI model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><p class="small muted">3.8 Flash is the newest stable option here. The selected Gemini model is used mainly to translate ChatGPT responses into validated local commands; direct Gemini coaching remains optional.</p><label for="apiKey">Your Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste your Gemini API key"><div class="row"><button id="showKey" class="secondary">Show key</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key ↗</a></div><button id="saveSettings" class="primary wide">Save Gemini settings</button><button id="clearKey" class="secondary wide">Remove key</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">'+(window.TrainerKeys?'Your key is encrypted on this Android device and used only to contact Google Gemini.':'Browser preview: your key stays in memory until you reload or close this page.')+'</p><p class="small muted">Coach requests can include your profile, body data, recent workout history, long-term coach memory, and weekly plan.</p>');
- $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;
+ modal('<h2>Settings</h2><p class="muted">AI Personal Trainer · v'+APP_VERSION+' · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><p class="small muted">The selected theme also styles the embedded ChatGPT conversation so it feels like part of the trainer.</p><label for="geminiModel">Gemini interpreter model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><p class="small muted">Gemini translates ChatGPT coaching into validated trainer commands and uses a relevance-ranked subset of the full exercise library.</p><label for="apiKey">Your Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste your Gemini API key"><div class="row"><button id="showKey" class="secondary">Show key</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key ↗</a></div><button id="saveSettings" class="primary wide">Save settings</button><button id="clearKey" class="secondary wide">Remove key</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">'+(window.TrainerKeys?'Your key is encrypted on this Android device and used only to contact Google Gemini.':'Browser preview: your key stays in memory until you reload or close this page.')+'</p><p class="small muted">Coach requests can include your profile, body data, recent workout history, long-term coach memory, and weekly plan.</p>');
+ $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;$('appTheme').value=theme;
  $('showKey').onclick=()=>{const show=$('apiKey').type==='password';$('apiKey').type=show?'text':'password';$('showKey').textContent=show?'Hide key':'Show key';};
+ $('appTheme').onchange=()=>applyTheme($('appTheme').value);
  const setKey=value=>{try{if(window.TrainerKeys&&!window.TrainerKeys.saveKey(value))throw new Error();}catch{toast('Could not save your key on this device. Please try again.');return false;}apiKey=value;return true;};
- $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('geminiModel').value;if(value&&/\s/.test(value))return toast('Paste a Gemini API key without spaces.');if(value!==apiKey&&!setKey(value))return;geminiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('geminiModel',JSON.stringify(geminiModel));$('modal').close();render();toast('Gemini settings saved.');};
+ $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('geminiModel').value,nextTheme=$('appTheme').value;if(value&&/\s/.test(value))return toast('Paste a Gemini API key without spaces.');if(value!==apiKey&&!setKey(value))return;geminiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('geminiModel',JSON.stringify(geminiModel));applyTheme(nextTheme);$('modal').close();render();toast('Settings saved.');};
  $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('Gemini key removed.');}};
  $('viewErrorReports').onclick=showErrorReports;
 };
