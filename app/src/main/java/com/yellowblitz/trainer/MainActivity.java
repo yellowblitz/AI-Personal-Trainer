@@ -8,10 +8,8 @@ import android.content.ClipboardManager;
 import android.content.ClipData;
 import android.content.Context;
 import android.net.Uri;
-import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowInsets;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -167,6 +165,10 @@ public class MainActivity extends Activity {
             }
             @Override public void onPageFinished(WebView view, String url) {
                 CookieManager.getInstance().flush();
+                applyChatFocusMode(url);
+            }
+            @Override public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                super.doUpdateVisitedHistory(view, url, isReload);
                 applyChatFocusMode(url);
             }
         });
