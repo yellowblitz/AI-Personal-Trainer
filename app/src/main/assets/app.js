@@ -13,7 +13,7 @@ let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().get
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
 if(!Array.isArray(history))history=[];
-const APP_VERSION='0.6.0';
+const APP_VERSION='0.6.1';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]);
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -133,9 +133,9 @@ function renderWeek(){
 }
 $('weekDays').onclick=e=>{const b=e.target.closest('[data-select-day]');if(!b||busy)return;selectDay(b.dataset.selectDay);render();};
 $('editWeek').onclick=()=>{
- modal(`<h2>Your weekly schedule</h2><p class="muted">Choose training days, minutes available, and exercises per day. These are time budgets; the coach can refine the sessions to fit.</p><label for="dayCount">Training days per week</label><select id="dayCount">${Array.from({length:8},(_,i)=>`<option value="${i}" ${i===week.days.filter(d=>d.enabled).length?'selected':''}>${i} days</option>`).join('')}</select><div id="scheduleRows">${week.days.map(d=>`<div class="schedule-row"><label class="day-check"><input type="checkbox" data-enable="${d.id}" ${d.enabled?'checked':''}>${dayName(d.id)}</label><label>Minutes<input type="number" data-minutes="${d.id}" min="5" max="180" step="5" value="${d.minutes}"></label><label>Exercises<input type="number" data-count="${d.id}" min="1" max="12" value="${d.plan?.exercises.length||4}"></label></div>`).join('')}</div><button id="saveWeek" class="primary wide">Save weekly schedule</button>`);
+ modal(`<h2>Your weekly schedule</h2><p class="muted">Choose training days and an approximate training-time target. Warm-up is not counted. Exercise count is intentionally flexible—the coach can choose as many exercises as make sense for the split, volume and time.</p><label for="dayCount">Training days per week</label><select id="dayCount">${Array.from({length:8},(_,i)=>`<option value="${i}" ${i===week.days.filter(d=>d.enabled).length?'selected':''}>${i} days</option>`).join('')}</select><div id="scheduleRows">${week.days.map(d=>`<div class="schedule-row"><label class="day-check"><input type="checkbox" data-enable="${d.id}" ${d.enabled?'checked':''}>${dayName(d.id)}</label><label>Approx. training minutes<input type="number" data-minutes="${d.id}" min="5" max="180" step="5" value="${d.minutes}"></label></div>`).join('')}</div><p class="small muted">Minutes are a target, not a hard ceiling. You can tell the AI coach “about an hour,” “no strict ceiling,” or give a tighter limit in chat.</p><button id="saveWeek" class="primary wide">Save weekly schedule</button>`);
  const checks=()=>Array.from($('scheduleRows').querySelectorAll('[data-enable]'));
- const sync=()=>{checks().forEach(c=>{const row=c.closest('.schedule-row');row.querySelector('[data-minutes]').disabled=!c.checked;row.querySelector('[data-count]').disabled=!c.checked;});$('dayCount').value=checks().filter(c=>c.checked).length;};
+ const sync=()=>{checks().forEach(c=>{const row=c.closest('.schedule-row');row.querySelector('[data-minutes]').disabled=!c.checked;});$('dayCount').value=checks().filter(c=>c.checked).length;};
  $('scheduleRows').onchange=sync;
  $('dayCount').onchange=()=>{const want=Number($('dayCount').value),enabled=checks().filter(c=>c.checked).map(c=>c.dataset.enable);const order=['mon','wed','fri','tue','thu','sat','sun'];while(enabled.length>want)enabled.pop();for(const id of order)if(enabled.length<want&&!enabled.includes(id))enabled.push(id);checks().forEach(c=>c.checked=enabled.includes(c.dataset.enable));sync();};sync();
  $('saveWeek').onclick=()=>{
@@ -143,15 +143,12 @@ $('editWeek').onclick=()=>{
   for(const d of next.days){
    const row=$('scheduleRows').querySelector(`[data-enable="${d.id}"]`).closest('.schedule-row');d.enabled=row.querySelector('[data-enable]').checked;
    if(!d.enabled){d.plan=null;continue;}
-   d.minutes=Number(row.querySelector('[data-minutes]').value);const count=Number(row.querySelector('[data-count]').value);
-   if(!Number.isInteger(count)||count<1||count>12||!Number.isInteger(d.minutes)||d.minutes<5||d.minutes>180)return toast('Use 5–180 minutes and 1–12 exercises for each training day.');
+   d.minutes=Number(row.querySelector('[data-minutes]').value);
+   if(!Number.isInteger(d.minutes)||d.minutes<5||d.minutes>180)return toast('Use 5–180 approximate training minutes for each training day.');
    if(!d.plan)d.plan=makePlan(['Push','Pull','Legs'][ordinal%3]);ordinal++;
-   const exercises=d.plan.exercises;
-   for(const id of ids)if(exercises.length<count&&!exercises.some(e=>e.id===id))exercises.push(normalizeExercise({id,sets:3,reps:12,rest:90,weight:0,done:0}));
-   d.plan.exercises=exercises.slice(0,count);
   }
   if(!validWeek(next,ids))return toast('Check the schedule values.');
-  week=next;selectDay(selected);timer={};undo=null;save();render();tick();$('modal').close();toast('Weekly schedule saved. Ask your coach to refine it.');
+  week=next;selectDay(selected);timer={};undo=null;save();render();tick();$('modal').close();toast('Weekly schedule saved. Exercise count stays flexible.');
  };
 };
 function drawProposal(){
@@ -191,11 +188,12 @@ $('chatForm').onsubmit=async e=>{
  try{
   const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),model:geminiModel},catalog,apiKey);
   messages.push({role:'assistant',content:data.reply});
+  if(data.fallbackFrom&&data.modelUsed){const from=MODELS.find(m=>m.id===data.fallbackFrom)?.name||data.fallbackFrom,to=MODELS.find(m=>m.id===data.modelUsed)?.name||data.modelUsed;messages.push({role:'assistant',content:from+' was busy, so I automatically completed this request with '+to+'.'});}
   if(typeof data.memory==='string'&&data.memory.trim()){coachMemory=data.memory.trim().slice(0,4000);saveMemory();}
   if(data.warning){pending=null;if(data.diagnostic)recordErrorReport(data.diagnostic,message,data.warning);messages.push({role:'assistant',content:data.warning+(data.diagnostic?' Open Settings → Error reports for details.':''),error:true});}
   if(data.action==='proposal'){
    const changes=data.week?weekChanges(week,data.week,catalog):[],pChanges=data.profile?profileChanges(profile,data.profile):[];
-   if(changes.length||pChanges.length){pending={week:data.week||null,base:data.week?weekKey(week):null,profile:data.profile||null,profileBase:data.profile?profileKey(profile):null};if(data.durationAdjusted?.length)messages.push({role:'assistant',content:'I also fitted '+data.durationAdjusted.map(dayName).join(', ')+' to the requested time budget (target through about 5 minutes over).'});toast('Draft ready. Review it before applying.');}
+   if(changes.length||pChanges.length){pending={week:data.week||null,base:data.week?weekKey(week):null,profile:data.profile||null,profileBase:data.profile?profileKey(profile):null};if(data.durationAdjusted?.length)messages.push({role:'assistant',content:'I also expanded '+data.durationAdjusted.map(dayName).join(', ')+' toward the requested training-time target. Warm-up is excluded and there is no automatic +5 minute ceiling.'});toast('Draft ready. Review it before applying.');}
    else{pending=null;messages.push({role:'assistant',content:'No actual saved-data changes were returned. Your planner and profile are unchanged.'});}
   }
   $('chatInput').value='';
