@@ -80,5 +80,7 @@ test('embedded ChatGPT uses an isolated WebView, persists login cookies, and app
  assert.match(activity,/button\[aria-label\*='voice'/);
  assert.doesNotMatch(activity,/chatWeb\.addJavascriptInterface/);
  assert.match(activity,/trainer\.addJavascriptInterface\(new KeyVault/);
+ assert.match(activity,/clearMediaCache/);
+ assert.match(activity,/web\.clearCache\(true\)/);
  assert.match(activity,/Use copied response/);
 });
