@@ -15,10 +15,10 @@ const assert=require('node:assert/strict');
   await page.locator('#editWeek').click();await page.locator('#dayCount').selectOption('4');await page.locator('[data-minutes="mon"]').fill('30');await page.locator('[data-count="mon"]').fill('3');await page.locator('#saveWeek').click();
   assert.match(await page.locator('#weekSummary').textContent(),/4 training days/);assert.match(await page.locator('#summary').textContent(),/3 exercises/);assert.match(await page.locator('#sessionLabel').textContent(),/30 MIN/);
   await page.reload();await page.waitForSelector('[data-select-day="mon"]');assert.match(await page.locator('#weekSummary').textContent(),/4 training days/);
-  const setKey=async()=>{await page.locator('#settings').click();await page.locator('#apiKey').fill('test-gemini-key');await page.locator('#saveSettings').click();};await setKey();
+  const setKey=async()=>{await page.locator('#settings').click();await page.locator('#goal').selectOption('Strength');await page.locator('#experience').selectOption('Intermediate');await page.locator('#equipment').fill('Functional trainer and adjustable dumbbells');await page.locator('#apiKey').fill('test-gemini-key');await page.locator('#saveSettings').click();};await setKey();
   let responseMode='advice';let captured;
   await page.route('https://generativelanguage.googleapis.com/**',async route=>{
-   const body=route.request().postDataJSON();captured=JSON.parse(body.contents[0].parts[0].text);assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');
+   const body=route.request().postDataJSON();captured=JSON.parse(body.contents[0].parts[0].text);assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.equal(captured.userProfile.goal,'Strength');assert.match(captured.userProfile.equipment,/Functional trainer/);
    let data={reply:'You can progress gradually and allow recovery between hard sessions.',action:'advice',week:null};
    if(responseMode==='draft'){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].reps=10;week.days[2].minutes=25;data={reply:'Here is a proposed week. Please review it.',action:'proposal',week};}
    if(responseMode==='refine'){assert.equal(captured.draftWeek.days[0].plan.exercises[0].reps,10);const week=structuredClone(captured.draftWeek);week.days[0].plan.exercises[0].reps=8;data={reply:'Here is a refined draft with 8 reps.',action:'proposal',week};}
@@ -30,7 +30,7 @@ const assert=require('node:assert/strict');
   const reps=()=>page.locator('[data-index="0"][data-field="reps"]').inputValue();
   await chat('How should I progress?');assert.equal(await page.locator('#proposal').isVisible(),false);
   await page.locator('[data-tab="workout"]').click();assert.equal(await reps(),'12');
-  responseMode='draft';await chat('Change Monday reps to 10 and Wednesday time to 25 minutes');await page.waitForSelector('#proposal:not([hidden])');assert.match(await page.locator('#proposalDetails').textContent(),/12 → 10 reps/);
+  responseMode='draft';await chat('Change Monday reps to 10 and Wednesday time to 25 minutes');await page.waitForSelector('#proposal:not([hidden])');assert.match(await page.locator('#proposalDetails').textContent(),/12 → 10 reps/);assert.match(await page.locator('[data-tab="coach"]').textContent(),/Draft/);assert.match(await page.locator('#applyProposal').textContent(),/Apply & view workout/);
   await page.locator('[data-tab="workout"]').click();assert.equal(await reps(),'12');
   responseMode='refine';await chat('Make the draft 8 reps instead');assert.match(await page.locator('#proposalDetails').textContent(),/12 → 8 reps/);assert.ok(captured.recentConversation.some(m=>m.content==='How should I progress?'));
   await page.reload();await page.waitForSelector('[data-select-day]');await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#messages').textContent(),/refined draft/);assert.equal(await page.locator('#proposal').isVisible(),true);
