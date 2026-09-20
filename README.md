@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.5.0
+# AI Personal Trainer — Android v0.5.1
 
 Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
@@ -9,7 +9,7 @@ Gemini-only workout planner with your own API key. No hosted backend, OpenAI acc
 4. Open **AI coach** for advice or ask it to plan/refine your week. Advice does not change the planner.
 5. Review the **Proposed weekly changes** card. Keep chatting to refine it, or tap **Apply to weekly planner**. The front page opens a changed day and shows what was applied. **Undo AI edit** restores the previous week during the current app session.
 
-Model: `gemini-2.5-flash`. Requests go directly to Google's HTTPS Gemini API using the `x-goog-api-key` header. The app never sends the key in a URL. Each user supplies their own key; no shared developer key is bundled. Free-tier availability, quotas, and charges depend on the Google project. Google may use free-tier prompts and responses to improve its products.
+Model: `gemini-2.5-flash`. v0.5.1 uses Gemini JSON mode plus strict app-side validation instead of sending a large response schema, avoiding request rejection from schema complexity. Requests go directly to Google's HTTPS Gemini API using the `x-goog-api-key` header. The app never sends the key in a URL. Each user supplies their own key; no shared developer key is bundled. Free-tier availability, quotas, and charges depend on the Google project. Google may use free-tier prompts and responses to improve its products.
 
 On Android, the key is encrypted with an AES-GCM key in Android Keystore. The key is decrypted in memory for requests, never put in localStorage, logs, or workout history. Settings supports show/hide, replace, and remove. Android backups are disabled. Browser development preview keeps the key in memory only, so it must be reentered after reload. A compromised/rooted device can still expose a key in use.
 
@@ -28,7 +28,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.5.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.5.1-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production-signed release. Different CI runs can have different debug signing keys; Android may require uninstalling the previous build, which removes local history. A stable production signing key is still needed for reliable upgrades.
 
