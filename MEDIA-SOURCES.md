@@ -13,3 +13,12 @@ Additional bodyweight demonstration images are loaded at runtime from the same `
 
 ## v0.9.0 full catalog
 The app now includes every upstream exercise entry with at least one demonstration image: 873 entries in the imported dataset. Three upstream entries without images are omitted. Existing bundled images remain local; additional demonstrations load from the same public repository at runtime.
+
+
+## v0.11.0 on-demand video demos
+Optional full-motion demonstrations are requested at runtime from the public wger exercise API only after the user opens an exercise demo. No wger videos are bundled in the APK and the app does not bulk-download the video library. For matched exercises, the app reads the video's source-provided author/license metadata and streams the direct wger-hosted media URL; only requested resources can enter the Android WebView HTTP cache. Settings can clear that trainer cache.
+
+Source/API: https://wger.de/
+Project source: https://github.com/wger-project/wger
+
+wger's project history documents contributed exercise videos under Creative Commons licensing, while individual video entries expose license metadata. The app does not copy Fitbod media. When no matched wger video is available, it falls back to the free-exercise-db image demonstration described above. License/attribution should be reviewed per media entry before commercial distribution.
