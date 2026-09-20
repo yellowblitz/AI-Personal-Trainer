@@ -18,7 +18,7 @@ const assert=require('node:assert/strict');
   await page.locator('#finish').click();await page.locator('[data-tab="history"]').click();assert.match(await page.locator('#historyList').textContent(),/S1: 12 reps/);assert.match(await page.locator('#historyList').textContent(),/S2: 9 reps/);
 
   // Set a 60-minute Monday and body/profile context.
-  await page.locator('[data-tab="workout"]').click();await page.locator('#editWeek').click();await page.locator('[data-minutes="mon"]').fill('60');await page.locator('#saveWeek').click();assert.match(await page.locator('#sessionLabel').textContent(),/60 MIN/);
+  await page.locator('[data-tab="workout"]').click();await page.locator('#editWeek').click();assert.equal(await page.locator('[data-count]').count(),0);assert.match(await page.locator('#modalBody').textContent(),/Exercise count is intentionally flexible/);await page.locator('[data-minutes="mon"]').fill('60');await page.locator('#saveWeek').click();assert.match(await page.locator('#sessionLabel').textContent(),/60 MIN/);
   await page.locator('[data-tab="profilePage"]').click();await page.locator('#profileGoal').selectOption('Strength');await page.locator('#profileExperience').selectOption('Intermediate');await page.locator('#profileEquipment').fill('Bodyweight, functional trainer, adjustable dumbbells');await page.locator('#heightFeet').fill('5');await page.locator('#heightInches').fill('10');await page.locator('#weightLb').fill('180');await page.locator('#saveProfilePage').click();
   await page.locator('#settings').click();await page.locator('#geminiModel').selectOption('gemini-3.7-flash');await page.locator('#apiKey').fill('test-gemini-key');await page.locator('#saveSettings').click();
 
@@ -43,8 +43,8 @@ const assert=require('node:assert/strict');
   const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
 
   await chat('What did you learn from my last workout?');assert.ok(captured.recentTraining.length>0);assert.equal(captured.recentTraining[0].exercises[0].sets[1].reps,9);assert.equal(captured.userProfile.heightIn,70);
-  await chat('Make Monday a 60 minute bodyweight-only workout');await page.waitForSelector('#proposal:not([hidden])');assert.match(await page.locator('#proposalDetails').textContent(),/Estimated session: ~6[0-5] min/);assert.match(await page.locator('[data-tab="coach"]').textContent(),/Draft/);
-  await page.locator('#applyProposal').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.ok(await page.locator('#exercises .card').count()>=6);assert.match(await page.locator('#summary').textContent(),/~6[0-5] min estimated/);const tags=await page.locator('#exercises .tag').allTextContents();assert.ok(tags.every(t=>/body only/i.test(t)));
+  await chat('Make Monday a 60 minute bodyweight-only workout');await page.waitForSelector('#proposal:not([hidden])');const proposalText=await page.locator('#proposalDetails').textContent(),proposalMinutes=Number(proposalText.match(/Estimated session: ~(\d+) min/)?.[1]);assert.ok(proposalMinutes>=60);assert.match(await page.locator('[data-tab="coach"]').textContent(),/Draft/);
+  await page.locator('#applyProposal').click();assert.equal(await page.locator('#workout').isVisible(),true);const exerciseCount=await page.locator('#exercises .card').count();assert.ok(exerciseCount>=2&&exerciseCount<=12);const summaryText=await page.locator('#summary').textContent(),summaryMinutes=Number(summaryText.match(/~(\d+) min estimated/)?.[1]);assert.ok(summaryMinutes>=60);const tags=await page.locator('#exercises .tag').allTextContents();assert.ok(tags.every(t=>/body only/i.test(t)));
 
   await chat('Update my saved body weight to 175 lb');await page.waitForSelector('#proposal:not([hidden])');assert.match(await page.locator('#proposalDetails').textContent(),/180 → 175 lb/);await page.locator('#applyProposal').click();assert.equal(await page.locator('#profilePage').isVisible(),true);assert.equal(await page.locator('#weightLb').inputValue(),'175');
   await chat('Make an invalid plan for testing');assert.match(await page.locator('#messages').textContent(),/error report was saved/i);
@@ -57,6 +57,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.locator('[data-select-day="sun"]').click();assert.equal(await page.locator('#trainingDetails').isVisible(),false);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Per-set logging, model selection, error diagnostics, adaptive history, time-fit planning, body profile and coach memory tests passed.');
+  console.log('Per-set logging, flexible exercise counts, model selection, error diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
