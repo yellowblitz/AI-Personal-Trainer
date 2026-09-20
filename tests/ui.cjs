@@ -44,7 +44,8 @@ const assert=require('node:assert/strict');
    }
    captured=JSON.parse(body.contents[0].parts[0].text);
    const request=captured.request.toLowerCase();let data;
-   if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:captured.coachMemory||''};}
+   if(request.includes('next week')){const week=structuredClone(captured.currentWeek);week.days[0].plan.name='Next Week Progression';data={reply:'Next week is based on your logged set performance.',action:'proposal',week,profile:null,memory:'Use logged set performance for conservative weekly progression.'};}
+   else if(request.includes('invalid plan')){const week=structuredClone(captured.currentWeek);week.days[0].plan.exercises[0].id='invented-exercise';data={reply:'I drafted it.',action:'proposal',week,profile:null,memory:captured.coachMemory||''};}
    else if(request.includes('bodyweight')){
     const week=structuredClone(captured.currentWeek);week.days[0].minutes=60;week.days[0].plan={name:'Bodyweight 60',exercises:[
      {id:'Pushups',sets:3,reps:12,rest:75,weight:0,setReps:[12,10,8],setWeights:[0,0,0]},
@@ -59,13 +60,15 @@ const assert=require('node:assert/strict');
    await route.fulfill({json:{candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(data)}]}}]}});
   });
   // ChatGPT handoff: Android share/paste text -> Gemini command translation -> local review/apply.
-  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT, inside the trainer/);assert.equal(await page.locator('#openChatGPT').count(),0);assert.equal(await page.locator('#inlineChatSlot').isVisible(),true);
+  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT Coach/);assert.equal(await page.locator('#openChatGPT').count(),0);assert.equal(await page.locator('#inlineChatSlot').isVisible(),true);
   await page.evaluate(()=>window.receiveTrainerShare('ChatGPT recommends a revised Monday Push workout for about one hour, warm-up excluded.'));
-  assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);
+  assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);assert.equal(await page.locator('#handoffPanel').evaluate(el=>el.open),true);
   await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);assert.match(await page.locator('#handoffCommands').textContent(),/Dumbbell Bench Press 3 sets · reps 10\/9\/8/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
   await page.locator('#applyHandoff').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.equal(await page.locator('#planName').textContent(),'ChatGPT Push');assert.equal(await page.locator('#exercises .card').count(),2);
+  await page.locator('#refreshNextWeek').click();await page.waitForFunction(()=>document.querySelector('#nextWeekStatus').textContent.includes('Ready'));assert.match(await page.locator('#nextWeekDays').textContent(),/Next Week Progression/);assert.equal(await page.locator('#viewNextWeek').isVisible(),true);
+  await page.locator('#viewNextWeek').click();assert.equal(await page.locator('#closeModalTop').isVisible(),true);assert.match(await page.locator('#modalBody').textContent(),/Next Week Progression/);await page.locator('#closeModalTop').click();
 
-  const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#coach details').evaluate(el=>el.open=true);await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
+  const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#geminiCoach').evaluate(el=>el.open=true);await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
 
   await chat('What did you learn from my last workout?');assert.ok(captured.recentTraining.length>0);assert.equal(captured.recentTraining[0].exercises[0].sets[1].reps,9);assert.equal(captured.userProfile.heightIn,70);
   await chat('Make Monday a 60 minute bodyweight-only workout');await page.waitForSelector('#proposal:not([hidden])');const proposalText=await page.locator('#proposalDetails').textContent(),proposalMinutes=Number(proposalText.match(/Estimated session: ~(\d+) min/)?.[1]);assert.ok(proposalMinutes>=60);assert.match(await page.locator('[data-tab="coach"]').textContent(),/draft/i);
@@ -83,9 +86,9 @@ const assert=require('node:assert/strict');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   // Exercise search and the 12-exercise limit must keep the saved week loadable.
   await page.locator('[data-select-day="mon"]').click();
-  await page.locator('#add').click();await page.locator('#exerciseSearch').fill('zzzz-no-match');assert.equal(await page.locator('#exerciseEmpty').isVisible(),true);
-  await page.locator('#exerciseSearch').fill('');assert.ok(await page.locator('[data-add]:visible').count()>0);await page.locator('#closeModal').click();
-  while(await page.locator('#exercises .card').count()<12){await page.locator('#add').click();await page.locator('[data-add]').first().click();}
+  await page.locator('#add').click();assert.ok(await page.locator('[data-muscle-group]:visible').count()>=6);await page.locator('#exerciseSearch').fill('zzzz-no-match');assert.equal(await page.locator('#exerciseEmpty').isVisible(),true);
+  await page.locator('#exerciseSearch').fill('');assert.ok(await page.locator('[data-muscle-group]:visible').count()>0);await page.locator('[data-muscle-group]').first().click();assert.ok(await page.locator('[data-add]:visible').count()>0);await page.locator('#closeModalTop').click();
+  while(await page.locator('#exercises .card').count()<12){await page.locator('#add').click();await page.locator('[data-muscle-group]').first().click();await page.locator('[data-add]').first().click();}
   assert.equal(await page.locator('#add').isDisabled(),true);await page.reload();await page.waitForSelector('#exercises .card');assert.equal(await page.locator('#exercises .card').count(),12);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   // Simulate the Android bounds bridge: the chat is a slot on the existing tab.
@@ -102,6 +105,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.waitForFunction(()=>window.chatBounds.at(-1)==='hidden');
   await page.setViewportSize({width:412,height:915});
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Android system-bar insets, embedded ChatGPT handoff UI, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
+  console.log('Android insets, compact UI, grouped exercise picker, sticky modal close, embedded ChatGPT handoff, persistent Gemini next-week recommendations, history, profile and diagnostics tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
