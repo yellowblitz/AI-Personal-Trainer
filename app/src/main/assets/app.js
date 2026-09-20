@@ -156,6 +156,91 @@ function showNextWeekRecommendation(){
  modal('<h2>Next week</h2>'+(nextWeekRecommendation.note?'<p class="small muted">'+escape(nextWeekRecommendation.note)+'</p>':'')+html);
 }
 
+
+const normName=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const muscleZones={
+ 'abdominals':['front-core'],'biceps':['front-arm'],'triceps':['back-arm'],'forearms':['front-forearm','back-forearm'],
+ 'chest':['front-chest'],'shoulders':['front-shoulder','back-shoulder'],'lats':['back-lat'],'middle back':['back-mid'],
+ 'lower back':['back-low'],'traps':['back-trap'],'quadriceps':['front-thigh'],'hamstrings':['back-thigh'],
+ 'glutes':['back-glute'],'calves':['front-calf','back-calf'],'adductors':['front-inner-thigh'],'abductors':['front-outer-thigh']
+};
+function muscleMapSVG(c,large=false){
+ const primary=[...(c?.primaryMuscles||[]),c?.muscle].filter(Boolean).map(x=>String(x).toLowerCase());
+ const secondary=(c?.secondaryMuscles||[]).filter(Boolean).map(x=>String(x).toLowerCase());
+ const cls=id=>primary.some(m=>(muscleZones[m]||[]).includes(id))?'primary':secondary.some(m=>(muscleZones[m]||[]).includes(id))?'secondary':'';
+ const body=back=>'<svg viewBox="0 0 72 132" role="img" aria-label="'+(back?'Back':'Front')+' muscle map">'
+   +'<circle class="body-base" cx="36" cy="12" r="8"/><rect class="body-base" x="25" y="22" width="22" height="41" rx="10"/>'
+   +'<path class="body-base" d="M25 27 L14 55 L19 59 L30 38 M47 27 L58 55 L53 59 L42 38"/>'
+   +'<path class="body-base" d="M29 60 L24 103 L31 104 L36 70 L41 104 L48 103 L43 60"/>'
+   +'<ellipse class="muscle-zone '+cls(back?'back-shoulder':'front-shoulder')+'" cx="26" cy="29" rx="5" ry="7"/>'
+   +'<ellipse class="muscle-zone '+cls(back?'back-shoulder':'front-shoulder')+'" cx="46" cy="29" rx="5" ry="7"/>'
+   +(back
+    ?'<path class="muscle-zone '+cls('back-trap')+'" d="M31 23 L41 23 L44 35 L28 35 Z"/>'
+     +'<path class="muscle-zone '+cls('back-lat')+'" d="M27 34 L35 38 L32 55 L25 49 Z"/><path class="muscle-zone '+cls('back-lat')+'" d="M45 34 L37 38 L40 55 L47 49 Z"/>'
+     +'<rect class="muscle-zone '+cls('back-mid')+'" x="31" y="36" width="10" height="17" rx="4"/><rect class="muscle-zone '+cls('back-low')+'" x="30" y="52" width="12" height="9" rx="3"/>'
+     +'<ellipse class="muscle-zone '+cls('back-arm')+'" cx="54" cy="45" rx="4" ry="11"/><ellipse class="muscle-zone '+cls('back-arm')+'" cx="18" cy="45" rx="4" ry="11"/>'
+     +'<ellipse class="muscle-zone '+cls('back-forearm')+'" cx="58" cy="59" rx="3" ry="9"/><ellipse class="muscle-zone '+cls('back-forearm')+'" cx="14" cy="59" rx="3" ry="9"/>'
+     +'<ellipse class="muscle-zone '+cls('back-glute')+'" cx="31" cy="67" rx="7" ry="6"/><ellipse class="muscle-zone '+cls('back-glute')+'" cx="41" cy="67" rx="7" ry="6"/>'
+     +'<ellipse class="muscle-zone '+cls('back-thigh')+'" cx="29" cy="84" rx="5" ry="13"/><ellipse class="muscle-zone '+cls('back-thigh')+'" cx="43" cy="84" rx="5" ry="13"/>'
+     +'<ellipse class="muscle-zone '+cls('back-calf')+'" cx="27" cy="109" rx="4" ry="10"/><ellipse class="muscle-zone '+cls('back-calf')+'" cx="45" cy="109" rx="4" ry="10"/>'
+    :'<path class="muscle-zone '+cls('front-chest')+'" d="M27 31 Q36 25 45 31 L42 41 Q36 45 30 41 Z"/>'
+     +'<rect class="muscle-zone '+cls('front-core')+'" x="31" y="42" width="10" height="18" rx="4"/>'
+     +'<ellipse class="muscle-zone '+cls('front-arm')+'" cx="54" cy="44" rx="4" ry="10"/><ellipse class="muscle-zone '+cls('front-arm')+'" cx="18" cy="44" rx="4" ry="10"/>'
+     +'<ellipse class="muscle-zone '+cls('front-forearm')+'" cx="58" cy="59" rx="3" ry="9"/><ellipse class="muscle-zone '+cls('front-forearm')+'" cx="14" cy="59" rx="3" ry="9"/>'
+     +'<ellipse class="muscle-zone '+cls('front-thigh')+'" cx="29" cy="83" rx="5" ry="14"/><ellipse class="muscle-zone '+cls('front-thigh')+'" cx="43" cy="83" rx="5" ry="14"/>'
+     +'<ellipse class="muscle-zone '+cls('front-inner-thigh')+'" cx="34" cy="82" rx="3" ry="12"/><ellipse class="muscle-zone '+cls('front-outer-thigh')+'" cx="47" cy="80" rx="3" ry="11"/>'
+     +'<ellipse class="muscle-zone '+cls('front-calf')+'" cx="27" cy="109" rx="4" ry="10"/><ellipse class="muscle-zone '+cls('front-calf')+'" cx="45" cy="109" rx="4" ry="10"/>')
+   +'</svg>';
+ return '<div class="muscle-map '+(large?'large':'')+'"><div>'+body(false)+'<small>Front</small></div><div>'+body(true)+'<small>Back</small></div></div>';
+}
+let wgerExerciseIndexPromise=null;
+function safeWgerVideoUrl(value){
+ try{const u=new URL(value);return u.protocol==='https:'&&(u.hostname==='wger.de'||u.hostname.endsWith('.wger.de'))?u.href:null;}catch{return null;}
+}
+async function lookupDemoVideos(c){
+ const cached=demoMetaCache[c.id];
+ if(cached?.videos?.length){cached.usedAt=new Date().toISOString();saveDemoMetaCache();return cached.videos;}
+ try{
+  if(!wgerExerciseIndexPromise)wgerExerciseIndexPromise=fetch('https://wger.de/api/v2/exerciseinfo/?limit=1000',{credentials:'omit'}).then(r=>{if(!r.ok)throw new Error('wger unavailable');return r.json();});
+  const data=await wgerExerciseIndexPromise,items=Array.isArray(data?.results)?data.results:[];
+  const wanted=normName(c.name);
+  const match=items.find(item=>{
+   const names=[];
+   for(const t of item?.translations||[]){if(t?.name)names.push(t.name);for(const a of t?.aliases||[])if(a?.alias)names.push(a.alias);}
+   return names.some(n=>normName(n)===wanted);
+  });
+  const videos=(match?.videos||[]).map(v=>({url:safeWgerVideoUrl(v.video),author:String(v.license_author||'').slice(0,120),title:String(v.license_title||'').slice(0,160),isMain:!!v.is_main,duration:Number(v.duration)||0})).filter(v=>v.url).sort((a,b)=>Number(b.isMain)-Number(a.isMain)).slice(0,4);
+  if(videos.length){demoMetaCache[c.id]={videos,usedAt:new Date().toISOString(),source:'wger'};saveDemoMetaCache();}
+  return videos;
+ }catch{return [];}
+}
+function startImageDemo(c){
+ const media=$('demoMedia');if(!media)return;
+ media.innerHTML='<img id="demoImage" class="demo" src="'+c.images[0]+'" alt="Exercise demonstration"><button id="demoToggle" class="secondary">Pause</button>';
+ let frame=0;const play=()=>setInterval(()=>{const img=$('demoImage');if(img)img.src=c.images[(++frame)%c.images.length];},1200);demoInterval=play();
+ $('demoToggle').onclick=()=>{if(demoInterval){clearInterval(demoInterval);demoInterval=null;$('demoToggle').textContent='Play';}else{demoInterval=play();$('demoToggle').textContent='Pause';}};
+}
+async function openExerciseDemo(c){
+ modal('<h2>'+escape(c.name)+'</h2>'+muscleMapSVG(c,true)+'<div id="demoMedia" class="demo-media"><div class="notice">Finding an exercise video…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Videos are requested only after you open a demo. Available wger videos are CC-licensed per source entry; image fallback is free-exercise-db.</p>');
+ const videos=await lookupDemoVideos(c);
+ if(!$('modal').open||!$('demoMedia'))return;
+ if(!videos.length){startImageDemo(c);return;}
+ const renderVideo=index=>{
+  const v=videos[index];$('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video>'+(videos.length>1?'<div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">View '+(i+1)+'</button>').join('')+'</div>':'')+'<p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+'</p>';
+  $('demoVideo').play?.().catch(()=>{});
+ };
+ renderVideo(0);
+ $('demoMedia').onclick=e=>{const b=e.target.closest('[data-demo-view]');if(b)renderVideo(Number(b.dataset.demoView)||0);};
+}
+function promptExerciseFeedback(index){
+ const ex=normalizeExercise(plan.exercises[index]),c=catalog.find(x=>x.id===ex.id);if(!c)return;
+ modal('<h2>'+escape(c.name)+'</h2><p>How many more good reps could you have done?</p><div class="rir-grid">'+[0,1,2,3,4].map(v=>'<button data-rir="'+v+'" class="'+(ex.rir===v?'primary':'secondary')+'">'+(v===4?'4+':v)+'</button>').join('')+'</div><label>Note <input id="exerciseNote" maxlength="500" placeholder="Optional: form, setup, fatigue…" value="'+escape(ex.note||'')+'"></label><button id="skipRir" class="secondary wide">Skip</button>');
+ $('modalBody').onclick=e=>{
+  const b=e.target.closest('[data-rir]');if(b){plan.exercises[index]=setExerciseFeedback(ex,Number(b.dataset.rir),$('exerciseNote').value);save();render();$('modal').close();return;}
+  if(e.target.closest('#skipRir'))$('modal').close();
+ };
+}
+
 function renderExerciseCard(raw,i){
  const e=normalizeExercise(raw),c=catalog.find(x=>x.id===e.id);plan.exercises[i]=e;
  const previous=lastExercisePerformance(history,e.id);
