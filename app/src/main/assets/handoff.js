@@ -11,6 +11,47 @@ const finite=(v,min,max)=>Number.isFinite(v)&&v>=min&&v<=max?v:null;
 const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss','Mobility / athleticism'];
 const LEVELS=['Beginner','Intermediate','Advanced'];
 
+const DAY_WORDS={monday:'mon',tuesday:'tue',wednesday:'wed',thursday:'thu',friday:'fri',saturday:'sat',sunday:'sun'};
+const DAY_HEADER_RE=/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b\s*(?:[-–—]\s*)?([^:\n]{0,28})\s*:/gi;
+function exerciseHintFromSegment(value){
+ let s=String(value||'').trim().replace(/^[•*\-–—]+\s*/,'');
+ if(!s||/\b(optional|warm[- ]?up|cool[- ]?down)\b/i.test(s)&&/\b(bike|cardio|walk|treadmill|elliptical)\b/i.test(s))return '';
+ const hasPrescription=/\b\d+\s*[x×]\s*\d+\b/i.test(s)||/\b\d+\s*sets?\b/i.test(s)||/\bsets?\s*[:=]?\s*\d+\b/i.test(s);
+ if(!hasPrescription)return '';
+ let cut=s.length;
+ for(const re of [/\b\d+(?:\.\d+)?\s*(?:lb|lbs|kg)(?:\s*\/\s*(?:side|leg))?\b/i,/\b\d+\s*[x×]\s*\d+\b/i,/\b\d+\s*sets?\b/i]){
+  const m=re.exec(s);if(m&&m.index<cut)cut=m.index;
+ }
+ return s.slice(0,cut).replace(/[,:;\-–—]+\s*$/,'').trim().slice(0,120);
+}
+export function extractExplicitPlanHints(sourceText){
+ const source=text(sourceText,24000);if(!source)return [];
+ const matches=[...source.matchAll(DAY_HEADER_RE)],out=[];
+ for(let i=0;i<matches.length;i++){
+  const m=matches[i],day=DAY_WORDS[m[1].toLowerCase()],start=(m.index||0)+m[0].length,end=i+1<matches.length?(matches[i+1].index||source.length):source.length;
+  const body=source.slice(start,end),segments=body.split(/[;|\n]+/),exercises=segments.map(exerciseHintFromSegment).filter(Boolean);
+  if(exercises.length)out.push({day,label:dayName(day),planLabel:text(m[2],40),exercises});
+ }
+ return out;
+}
+function coverageProblems(sourceText,commands,catalog){
+ const requirements=extractExplicitPlanHints(sourceText).filter(x=>x.exercises.length>=2),problems=[];
+ for(const req of requirements){
+  const cmd=commands.find(x=>x.type==='replace_plan'&&x.day===req.day);
+  const expectedIds=req.exercises.map(name=>resolveExerciseRef(name,catalog));
+  const actualIds=cmd?.exercises?.map(x=>x.id)||[];
+  if(!cmd||actualIds.length!==req.exercises.length){
+   problems.push({day:req.day,expected:req.exercises.length,actual:actualIds.length,exerciseNames:req.exercises,expectedIds,actualIds});continue;
+  }
+  if(expectedIds.every(Boolean)&&expectedIds.some((id,i)=>id!==actualIds[i])){
+   problems.push({day:req.day,expected:req.exercises.length,actual:actualIds.length,exerciseNames:req.exercises,expectedIds,actualIds,reason:'exercise_order_or_identity_mismatch'});
+  }
+ }
+ return problems;
+}
+export function validateSourceCoverage(sourceText,commands,catalog){return coverageProblems(sourceText,commands,catalog);}
+
+
 export function buildChatGPTContext({week,profile,memory='',recentTraining=[]},catalog){
  const p=cleanProfile(profile||{}),w=cleanWeek(week);
  const currentIds=w.days.flatMap(d=>d.enabled&&d.plan?d.plan.exercises.map(e=>e.id):[]);
@@ -118,11 +159,15 @@ export function applyCommandBatch(batch,{week,profile,memory=''},catalog){
  return {summary:parsed.summary,warnings:parsed.warnings,commands:parsed.commands,week:nextWeek,profile:nextProfile,memory:nextMemory,descriptions};
 }
 
-export function buildInterpreterRequest({sourceText,week,profile,memory='',selectedDay},catalog){
+export function buildInterpreterRequest({sourceText,week,profile,memory='',selectedDay,coverageRepair=[]},catalog){
  if(!text(sourceText,24000))throw new Error('Paste or share a ChatGPT response first.');
- const cleanedWeek=cleanWeek(week),cleanedProfile=cleanProfile(profile||{});
+ const cleanedWeek=cleanWeek(week),cleanedProfile=cleanProfile(profile||{}),explicitDayExerciseHints=extractExplicitPlanHints(sourceText);
  const includeIds=cleanedWeek.days.flatMap(d=>d.enabled&&d.plan?d.plan.exercises.map(e=>e.id):[]);
- const catalogSummary=compactCatalog([sourceText,cleanedProfile.equipment].join('\n'),catalog,{limit:260,includeIds});
+ const candidateMap=new Map();
+ const addCandidates=items=>items.forEach(item=>{if(item?.id&&!candidateMap.has(item.id))candidateMap.set(item.id,item);});
+ for(const block of explicitDayExerciseHints)for(const name of block.exercises)addCandidates(compactCatalog(name+' '+cleanedProfile.equipment,catalog,{limit:14}));
+ addCandidates(compactCatalog([sourceText,cleanedProfile.equipment].join('\n'),catalog,{limit:220,includeIds}));
+ const catalogSummary=[...candidateMap.values()].slice(0,420);
  const system=[
   'You are a deterministic command translator for an Android workout planner. You are NOT the coach and must not redesign the workout.',
   'Interpret only concrete changes explicitly stated in the supplied ChatGPT response. Preserve everything not mentioned.',
@@ -134,33 +179,59 @@ export function buildInterpreterRequest({sourceText,week,profile,memory='',selec
   '4) {"type":"set_memory","text":"durable coaching context explicitly requested to remember"}.',
   'The candidate catalog below is relevance-ranked from the full local exercise library. Prefer its exact IDs. The local app also resolves exact exercise names and common aliases, but you must never guess between materially different variants.',
   'If ChatGPT mentions an unsupported or genuinely ambiguous exercise, add a warning and do not silently substitute it.',
+  'When ChatGPT provides a complete explicit day plan, that day is atomic: replace_plan MUST include every listed strength exercise in the same order. Never apply a partial day. If even one listed exercise cannot be resolved, warn and omit the replace_plan for that entire day.',
+  'The user payload includes explicitDayExerciseHints mechanically extracted from clearly prescribed day blocks. Use those names and counts as coverage constraints, not as coaching suggestions. DB means dumbbell; RDL means Romanian deadlift.',
+  'If a complete explicit day plan is present, emit replace_plan for that day even when some exercises are unchanged from the current week. This prevents a full plan from being mistaken for a small patch.',
   'For a complete workout/day redesign, use replace_plan. For a rest/training-day or target-time change, use set_day. The minute target excludes warm-up and is approximate unless ChatGPT explicitly says strict.',
   'If ChatGPT gives a PPL split as Day 1/Day 2/Day 3 without weekdays, map those in order onto the currently enabled training days. If there are not enough enabled days, warn instead of inventing extra days.',
   'Do not create progress records from advice text. Actual set completion is recorded by the app itself.',
-  'Do not repeat the entire week. Emit only commands for data that should change.',
+  'For prose that does not contain a complete explicit day plan, emit only commands for data that should change.',
   'Candidate catalog ('+catalogSummary.length+' of '+catalog.length+' local exercises): '+JSON.stringify(catalogSummary)
  ].join('\n');
- return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify({chatgptResponse:text(sourceText,24000),selectedDay,currentWeek:cleanedWeek,profile:cleanedProfile,memory:text(memory,4000)})}]}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:10000,thinkingConfig:{thinkingLevel:'high'}}};
+ return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify({chatgptResponse:text(sourceText,24000),selectedDay,currentWeek:cleanedWeek,profile:cleanedProfile,memory:text(memory,4000),explicitDayExerciseHints,coverageRepair:Array.isArray(coverageRepair)?coverageRepair.slice(0,8):[]})}]}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:12000,thinkingConfig:{thinkingLevel:'high'}}};
 }
 
 export async function interpretChatGPTResponse(input,catalog,apiKey,fetcher=fetch){
  if(typeof apiKey!=='string'||!apiKey.trim())throw new Error('Add your Gemini API key in Settings first.');
- const selected=MODELS.some(m=>m.id===input.model)?input.model:DEFAULT_MODEL,start=MODELS.findIndex(m=>m.id===selected),models=MODELS.slice(start).map(m=>m.id);
- const body=buildInterpreterRequest(input,catalog),attempts=[];
- for(let i=0;i<models.length;i++){
-  const model=models[i];let response;
-  try{response=await fetcher(geminiUrl(model),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey.trim()},body:JSON.stringify(body),signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'error'});}catch(e){const err=new Error(e.name==='TimeoutError'?'Gemini interpreter timed out.':'Could not connect to the Gemini interpreter.');err.diagnostic={category:e.name==='TimeoutError'?'handoff_timeout':'handoff_network',model,attempts};throw err;}
+ const selected=MODELS.some(m=>m.id===input.model)?input.model:DEFAULT_MODEL,start=MODELS.findIndex(m=>m.id===selected),models=MODELS.slice(start).map(m=>m.id),attempts=[];
+ const requestModel=async(model,body)=>{
+  let response;
+  try{response=await fetcher(geminiUrl(model),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey.trim()},body:JSON.stringify(body),signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'error'});}
+  catch(e){const err=new Error(e.name==='TimeoutError'?'Gemini interpreter timed out.':'Could not connect to the Gemini interpreter.');err.diagnostic={category:e.name==='TimeoutError'?'handoff_timeout':'handoff_network',model,attempts};throw err;}
   if(!response.ok){
    let provider={};try{provider=await response.json();}catch{}
    const detail={model,httpStatus:response.status,providerStatus:text(provider?.error?.status,80),providerMessage:text(provider?.error?.message,800)};attempts.push(detail);
-   if(response.status===503&&i<models.length-1)continue;
    const err=new Error(response.status===503?'Gemini interpreters are currently busy. Please try again shortly.':'Gemini could not interpret the ChatGPT response.');
-   err.diagnostic={category:'handoff_http_error',...detail,attempts};throw err;
+   err.diagnostic={category:'handoff_http_error',...detail,attempts};err.isBusy=response.status===503;throw err;
   }
   let data;try{data=await response.json();}catch{const err=new Error('Gemini returned an unreadable command response.');err.diagnostic={category:'handoff_invalid_http_json',model};throw err;}
   const candidate=data?.candidates?.[0];if(candidate?.finishReason!=='STOP'){const err=new Error('Gemini returned an incomplete command response.');err.diagnostic={category:'handoff_incomplete',model,finishReason:candidate?.finishReason||'missing'};throw err;}
-  let json;try{json=JSON.parse((candidate.content?.parts||[]).filter(p=>!p.thought&&typeof p.text==='string').map(p=>p.text).join(''));}catch{const err=new Error('Gemini returned invalid command JSON.');err.diagnostic={category:'handoff_invalid_json',model};throw err;}
-  const parsed=validateCommandBatch(json,catalog);return {...parsed,modelUsed:model,fallbackFrom:model!==selected?selected:null};
+  try{return JSON.parse((candidate.content?.parts||[]).filter(p=>!p.thought&&typeof p.text==='string').map(p=>p.text).join(''));}
+  catch{const err=new Error('Gemini returned invalid command JSON.');err.diagnostic={category:'handoff_invalid_json',model};throw err;}
+ };
+ for(let i=0;i<models.length;i++){
+  const model=models[i];let json,parsed;
+  try{json=await requestModel(model,buildInterpreterRequest(input,catalog));}
+  catch(err){if(err.isBusy&&i<models.length-1)continue;throw err;}
+  let firstValidationError=null;
+  try{parsed=validateCommandBatch(json,catalog);}catch(err){firstValidationError=err;}
+  let gaps=parsed?coverageProblems(input.sourceText,parsed.commands,catalog):[{reason:'validation',message:firstValidationError?.message||'invalid command batch'}];
+  if(gaps.length){
+   const repair=gaps.map(g=>({...g,instruction:'Re-translate the original ChatGPT response. Complete every explicit day atomically and include every listed exercise in order.'}));
+   try{
+    const repairedJson=await requestModel(model,buildInterpreterRequest({...input,coverageRepair:repair},catalog));
+    parsed=validateCommandBatch(repairedJson,catalog);gaps=coverageProblems(input.sourceText,parsed.commands,catalog);
+   }catch(err){
+    if(err.isBusy&&i<models.length-1)continue;
+    if(!err.diagnostic)err.diagnostic={category:'handoff_validation',model,firstError:firstValidationError?.message||null,coverageRepair:repair};
+    throw err;
+   }
+  }
+  if(gaps.length){
+   const err=new Error('Gemini left exercises out of the ChatGPT plan, so no incomplete workout was applied. Please retry the response.');
+   err.diagnostic={category:'handoff_incomplete_day',model,gaps};throw err;
+  }
+  return {...parsed,modelUsed:model,fallbackFrom:model!==selected?selected:null};
  }
  throw new Error('Gemini could not interpret the ChatGPT response.');
 }
