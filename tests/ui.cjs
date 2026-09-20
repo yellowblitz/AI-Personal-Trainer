@@ -56,7 +56,7 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT handoff/);
   await page.evaluate(()=>window.receiveTrainerShare('ChatGPT recommends a revised Monday Push workout for about one hour, warm-up excluded.'));
   assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);
-  await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/replace workout with ChatGPT Push/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
+  await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);assert.match(await page.locator('#handoffCommands').textContent(),/Dumbbell Bench Press 3 sets · reps 10\/9\/8/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
   await page.locator('#applyHandoff').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.equal(await page.locator('#planName').textContent(),'ChatGPT Push');assert.equal(await page.locator('#exercises .card').count(),2);
 
   const chat=async text=>{await page.locator('[data-tab="coach"]').click();await page.locator('#coach details').evaluate(el=>el.open=true);await page.locator('#chatInput').fill(text);await page.locator('#send').click();await page.waitForFunction(()=>!document.querySelector('#send').disabled);};
