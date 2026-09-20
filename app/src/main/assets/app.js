@@ -1,7 +1,7 @@
 import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
 import {askGemini,MODELS,DEFAULT_MODEL} from './gemini.js';
 import {templates,makePlan,validPlan,secondsLeft,normalizeTimer} from './core.js';
-import {normalizeExercise,normalizePlan,resizeSets,setSetValue,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance} from './training.js';
+import {normalizeExercise,normalizePlan,resizeSets,setSetValue,setExerciseFeedback,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance,comparePlanPerformance,exerciseProgress} from './training.js';
 import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './handoff.js';
 const $=id=>document.getElementById(id);
 const catalog=await (await fetch('catalog.json')).json(), ids=catalog.map(e=>e.id);
@@ -27,7 +27,7 @@ let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.10.0';
+const APP_VERSION='0.11.0';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -44,6 +44,22 @@ const saveMemory=()=>localStorage.setItem('coachMemory',JSON.stringify(coachMemo
 let nextWeekRecommendation=read('nextWeekRecommendation',null),recommendationBusy=false;
 if(nextWeekRecommendation&&(!nextWeekRecommendation.week||!validWeek(nextWeekRecommendation.week,ids))){nextWeekRecommendation=null;localStorage.removeItem('nextWeekRecommendation');}
 const saveNextWeekRecommendation=()=>{if(nextWeekRecommendation)localStorage.setItem('nextWeekRecommendation',JSON.stringify(nextWeekRecommendation));else localStorage.removeItem('nextWeekRecommendation');};
+let exercisePreferences=read('exercisePreferences',{}),demoMetaCache=read('demoMetaCache',{});
+if(!exercisePreferences||typeof exercisePreferences!=='object'||Array.isArray(exercisePreferences))exercisePreferences={};
+if(!demoMetaCache||typeof demoMetaCache!=='object'||Array.isArray(demoMetaCache))demoMetaCache={};
+const saveExercisePreferences=()=>localStorage.setItem('exercisePreferences',JSON.stringify(exercisePreferences));
+function recordExercisePreference(id,field){
+ if(!id||!['added','removed','completed'].includes(field))return;
+ const old=exercisePreferences[id]&&typeof exercisePreferences[id]==='object'?exercisePreferences[id]:{};
+ exercisePreferences[id]={added:Number(old.added)||0,removed:Number(old.removed)||0,completed:Number(old.completed)||0,lastUsed:old.lastUsed||null};
+ exercisePreferences[id][field]++;exercisePreferences[id].lastUsed=new Date().toISOString();saveExercisePreferences();
+}
+function compactPreferences(){
+ return Object.entries(exercisePreferences).map(([id,v])=>({id,added:Number(v.added)||0,removed:Number(v.removed)||0,completed:Number(v.completed)||0,lastUsed:v.lastUsed||null}))
+  .filter(v=>v.added||v.removed||v.completed).sort((a,b)=>(b.completed+b.added-b.removed)-(a.completed+a.added-a.removed)).slice(0,80);
+}
+const saveDemoMetaCache=()=>{const entries=Object.entries(demoMetaCache).sort((a,b)=>(Date.parse(b[1]?.usedAt)||0)-(Date.parse(a[1]?.usedAt)||0)).slice(0,50);demoMetaCache=Object.fromEntries(entries);localStorage.setItem('demoMetaCache',JSON.stringify(demoMetaCache));};
+
 if(!Array.isArray(messages))messages=[];
 messages=messages.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-200);
 if(pending){const hasWeek=pending.week&&validWeek(pending.week,ids)&&typeof pending.base==='string';const hasProfile=pending.profile&&validProfile(pending.profile)&&typeof pending.profileBase==='string';if(!hasWeek&&!hasProfile)pending=null;}
