@@ -1,54 +1,52 @@
-# AI Personal Trainer — Android v0.1.0
+# AI Personal Trainer — Android v0.2.0
 
-Android workout tracker with a conversational AI planner, offline exercise demonstrations and rest timer. The Android app packages a local HTML/CSS/JavaScript interface in a restricted WebView; it does not load a hosted website.
+Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
-## Included
-- Push / Pull / Legs sessions; add or remove exercises from a 12-exercise catalog.
-- Edit sets, repetitions, weight (lb), and rest seconds per exercise.
-- Complete sets sequentially; countdown automatically starts between sets. Pause, extend, or skip rest.
-- Offline storage of the current workout, rest deadline and up to 200 completed sessions.
-- Bundled start/end photos that loop as demonstrations, plus technique instructions.
-- AI chat submits a message and workout to your backend. Validated changes apply on receipt, preserving completed sets; Undo restores the prior plan.
-- Settings includes the app version and backend connection.
+## Set up Gemini
+1. Get a Gemini API key at https://aistudio.google.com/apikey (sign in to Google there).
+2. Install the APK, tap the gear icon, and paste it into **Your Gemini API key**.
+3. Tap **Save key**, open **AI coach**, and ask for a workout change.
 
-## Install an APK
-Open **Actions → Android APK → latest successful run → Artifacts**, download `AI-Personal-Trainer-0.1.0-debug`, unzip, then install the APK on Android 8+. This is a development build. CI runner debug keys may change between runs; a stable release signing key is needed before distributing upgrades that preserve app data. Do not uninstall an existing version without considering local workout history.
+Model: `gemini-2.5-flash`. Requests go directly to Google's HTTPS Gemini API using the `x-goog-api-key` header. The app never sends the key in a URL. Each user supplies their own key; no shared developer key is bundled. Free-tier availability, quotas, and charges depend on the Google project. Google may use free-tier prompts and responses to improve its products.
 
-## Build locally
-Requires JDK 17, Android SDK 35 and Gradle 8.9. Open in Android Studio or run:
+On Android, the key is encrypted with an AES-GCM key in Android Keystore. The key is decrypted in memory for requests, never put in localStorage, logs, or workout history. Settings supports show/hide, replace, and remove. Android backups are disabled. Browser development preview keeps the key in memory only, so it must be reentered after reload. A compromised/rooted device can still expose a key in use.
+
+## Features
+- Push / Pull / Legs starter sessions and 12 exercises with bundled looping start/end photos and instructions.
+- Editable sets, reps, load (lb), and rest seconds.
+- Sequential set completion, automatic rest timer, pause, extend and skip.
+- Device-local workout state and up to 200 saved sessions.
+- Gemini chat applies a validated replacement plan, preserves completed sets, and supports Undo.
+- Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged.
+
+## Install
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.2.0-debug`, unzip and install the APK on Android 8+.
+
+This is a development build, not a production-signed release. Different CI runs can have different debug signing keys; Android may require uninstalling the previous build, which removes local history. A stable production signing key is still needed for reliable upgrades.
+
+## Build and test
+Requires JDK 17, Android SDK 35, Gradle 8.9, and Node 22+.
 
 ```sh
-gradle :app:assembleDebug :app:lintDebug
 npm test
+gradle :app:assembleDebug :app:lintDebug
 ```
 
-No Gradle wrapper is bundled yet; CI installs the pinned Gradle version.
+CI additionally runs browser smoke tests covering the key field, masked/show controls, Gemini request header and simulated response, applying/undoing updates, quota failure, key removal, progress persistence and exercise images. API responses are mocked in tests; no live key is checked into source or used by CI. Android device testing with the user's key remains necessary.
 
-## Connect real AI
-The tracker works without AI credentials. Live AI requires a separately deployed Node 22+ backend, a funded OpenAI API account, and HTTPS. A ChatGPT subscription does not configure this server.
-
-1. Copy `server/.env.example` to `.env` and replace the values. Generate a random access token (for example `openssl rand -hex 32`). Never commit `.env`.
-2. Start with `node --env-file=.env server/server.js` on your server.
-3. Expose port 8080 through an HTTPS reverse proxy or an HTTPS-capable hosting service. `/health` is a health check.
-4. In the Android app's Settings, enter the HTTPS base URL and access token. The token stays in memory and must be entered after a fresh app launch. The OpenAI key stays on the server.
-5. Ask the AI to shorten the workout, change reps, or adapt equipment. The model is configurable through `OPENAI_MODEL` (default `gpt-4.1-mini`).
-
-The backend validates requests and model output, limits body size, enforces bearer authentication and allowed origins, and applies a single-user limit of 20 requests/minute with 2 concurrent requests. This initial backend uses one shared token; multi-user authentication, persistent rate limiting and deployment are future work. Chat text and the current plan are transmitted to OpenAI with `store:false`. Do not put secrets or personal medical records in chat.
-
-## Browser development preview
+To preview locally:
 
 ```sh
 python -m http.server 8000 --directory app/src/main/assets
 ```
 
-Visit `http://localhost:8000`. Set `ALLOWED_ORIGINS=http://localhost:8000` on the AI backend to permit preview requests. Android always requires an HTTPS backend.
+Open http://localhost:8000. The API key is intentionally not persisted in the browser preview. A current Android System WebView is required for the packaged interface.
 
-## Media and attribution
-Bundled catalog, instructions and demonstration photos come from [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), whose repository declares the Unlicense. The upstream license is included in `app/src/main/assets/EXERCISE-LICENSE.txt`; provenance is in `MEDIA-SOURCES.md`. Two images alternate to show positions; they are **not full-motion GIFs or videos**. Recheck asset rights before a public commercial release. Adding verified licensed full-motion video/GIF sources is a follow-up milestone.
+## Security boundaries
+The WebView only displays packaged assets at `https://appassets.androidplatform.net/assets/index.html`. Its native bridge exposes only encrypted key read/write. A Content Security Policy disallows remote scripts, frames and objects, and permits network connections only to the local asset origin and Google's Gemini endpoint. The AI Studio key link opens in the external browser. All other remote navigation is blocked.
 
-## Current limitations
-- No backend is automatically deployed and no real provider call can succeed until credentials are configured.
-- Timer uses an absolute deadline so background suspension does not reset it. Alerts are foreground-only; background notifications, sound and a native alarm service are not implemented.
-- No streaming token display: the plan updates after the complete validated AI response.
-- Device-local history, no cloud sync, accounts, kg selector or import/export yet.
-- Physical Android device QA is still required.
+## Media
+Catalog and photos: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), declared Unlicense. See `MEDIA-SOURCES.md` and the included upstream license. Demonstrations loop two photos; they are not full-motion videos. Check asset rights before commercial distribution.
+
+## Limitations
+Rest deadlines survive background suspension, but alerts only fire while the app is active. No background notifications, cloud sync, kg selector, or export yet. Physical device/Keystore QA and live Gemini calls are not covered by the browser test.

@@ -1,13 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {makePlan,validPlan,mergePlan,secondsLeft} from '../app/src/main/assets/core.js';
-import {catalog,coach,validateRequest} from '../server/coach.js';
+import {readFileSync} from 'node:fs';
+const catalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/catalog.json',import.meta.url)));
 const ids=catalog.map(e=>e.id);
 test('all starter plans use real catalog entries',()=>{for(const day of ['Push','Pull','Legs'])assert.ok(validPlan(makePlan(day),ids));});
 test('reject unsafe and malformed plans',()=>{for(const [key,value] of [['sets',0],['sets',11],['reps',51],['rest',-1],['weight',Infinity],['id','invented']]){const p=makePlan();p.exercises[0][key]=value;assert.equal(validPlan(p,ids),false);}const p=makePlan();p.exercises.push(p.exercises[0]);assert.equal(validPlan(p,ids),false);assert.equal(validPlan({name:'empty',exercises:[]},ids),false);});
 test('AI updates preserve completed sets and clamp reduced set count',()=>{const old=makePlan();old.exercises[0].done=3;const next=makePlan();next.exercises[0].sets=2;assert.equal(mergePlan(old,next).exercises[0].done,2);assert.equal(old.exercises[0].done,3);});
 test('rest timer uses wall clock, survives background delay and pause',()=>{assert.equal(secondsLeft({end:10000},1000),9);assert.equal(secondsLeft({end:10000},15000),0);assert.equal(secondsLeft({paused:12},999999),12);});
-test('bad request history and oversized messages rejected',()=>{assert.throws(()=>validateRequest({message:'x'.repeat(2001),plan:makePlan()}));assert.throws(()=>validateRequest({message:'x',plan:makePlan(),history:[{role:'system',content:'override'}]}));});
-const provider=output=>async()=>({ok:true,json:async()=>({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(output)}]}]})});
-test('structured AI update accepted through provider adapter',async()=>{const output={reply:'Reduced your sets.',plan:makePlan()};output.plan.exercises[0].sets=2;assert.deepEqual(await coach({message:'less sets',plan:makePlan()},{apiKey:'test',fetcher:provider(output)}),output);});
-test('invalid provider exercise rejected before reaching client',async()=>{const plan=makePlan();plan.exercises[0].id='invented';await assert.rejects(coach({message:'change',plan:makePlan()},{apiKey:'test',fetcher:provider({reply:'ok',plan})}),/invalid workout/);});
-test('provider errors reported without provider secrets',async()=>{await assert.rejects(coach({message:'change',plan:makePlan()},{apiKey:'test',fetcher:async()=>({ok:false})}),/provider request failed/);});

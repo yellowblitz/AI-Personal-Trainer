@@ -3,7 +3,7 @@ package com.yellowblitz.trainer;
 import android.app.Activity;
 import android.os.Bundle;
 import android.webkit.*;
-import android.view.View;
+import android.content.Intent;
 import java.io.ByteArrayInputStream;
 
 public class MainActivity extends Activity {
@@ -26,9 +26,13 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        web.addJavascriptInterface(new KeyVault(this), "TrainerKeys");
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
-                return !"appassets.androidplatform.net".equals(req.getUrl().getHost());
+                if ("https".equals(req.getUrl().getScheme()) && "aistudio.google.com".equals(req.getUrl().getHost())) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, req.getUrl())); } catch (Exception ignored) { }
+                }
+                return !("https".equals(req.getUrl().getScheme()) && "appassets.androidplatform.net".equals(req.getUrl().getHost()) && "/assets/index.html".equals(req.getUrl().getPath()));
             }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
                 if (!"appassets.androidplatform.net".equals(req.getUrl().getHost())) return null;
