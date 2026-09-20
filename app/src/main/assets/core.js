@@ -5,7 +5,7 @@ export const templates = {
 };
 export function makePlan(day='Push') { return {name:day, exercises:templates[day].map(id=>({id,sets:3,reps:12,rest:90,weight:0,done:0}))}; }
 export function validPlan(p, ids) {
- return !!p && typeof p.name==='string' && p.name.length>0 && p.name.length<=80 && Array.isArray(p.exercises) && p.exercises.length>0 && p.exercises.length<=12 && new Set(p.exercises.map(e=>e.id)).size===p.exercises.length && p.exercises.every(e=>ids.includes(e.id) && Number.isInteger(e.sets)&&e.sets>=1&&e.sets<=10 && Number.isInteger(e.reps)&&e.reps>=1&&e.reps<=50 && Number.isInteger(e.rest)&&e.rest>=15&&e.rest<=600 && Number.isFinite(e.weight)&&e.weight>=0&&e.weight<=1000);
+ return !!p && typeof p.name==='string' && p.name.length>0 && p.name.length<=80 && Array.isArray(p.exercises) && p.exercises.length>0 && p.exercises.length<=12 && new Set(p.exercises.map(e=>e?.id)).size===p.exercises.length && p.exercises.every(e=>e && typeof e==='object' && ids.includes(e.id) && Number.isInteger(e.sets)&&e.sets>=1&&e.sets<=10 && Number.isInteger(e.reps)&&e.reps>=1&&e.reps<=50 && Number.isInteger(e.rest)&&e.rest>=15&&e.rest<=600 && Number.isFinite(e.weight)&&e.weight>=0&&e.weight<=1000);
 }
 export function mergePlan(old, next) {
  return {...next,exercises:next.exercises.map(e=>({...e,done:Math.min(e.sets,old.exercises.find(x=>x.id===e.id)?.done||0)}))};
