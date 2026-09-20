@@ -1,6 +1,6 @@
-# AI Personal Trainer — Android v0.7.1
+# AI Personal Trainer — Android v0.8.0
 
-Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
+AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
 ## Set up Gemini
 1. Get a Gemini API key at https://aistudio.google.com/apikey (sign in to Google there).
@@ -28,7 +28,7 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.7.1-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.8.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
@@ -86,3 +86,13 @@ No OpenAI API key or OpenAI API billing is used by the v0.7.0 handoff workflow. 
 - Fixed bottom UI such as the rest timer is offset by the same bottom inset, and page bottom padding includes that space so content is not hidden.
 - The app header and toast notifications also respect the top status-bar inset.
 - Tablet/browser behavior remains unchanged when system insets are zero.
+
+
+## v0.8.0 — Embedded ChatGPT focus mode
+- ChatGPT opens inside AI Personal Trainer in a second isolated Android WebView instead of launching an external browser.
+- The first-time ChatGPT sign-in page is left intact. After sign-in, the app applies a lightweight focus mode that hides the sidebar, header, model/share/profile controls, attachment/voice/tool controls, and keeps the central conversation plus message composer.
+- ChatGPT cookies, DOM storage and normal WebView storage are retained; cookies are explicitly flushed when pages finish loading and when the app pauses/closes so the signed-in session can persist between launches until ChatGPT expires it or the app/site data is cleared.
+- The embedded ChatGPT WebView intentionally receives no Android JavaScript interfaces. The encrypted Gemini-key bridge remains available only to the packaged trainer WebView.
+- The only native controls shown above ChatGPT are **Trainer** and **Use copied response**. Copy a ChatGPT answer using ChatGPT's normal Copy action, then **Use copied response** returns to the trainer and places that text into the Gemini interpreter workflow.
+- The existing Android Share and manual-paste handoff paths remain available as fallbacks.
+- ChatGPT's website DOM can change, so the focus-mode selectors are best-effort and may need maintenance if OpenAI redesigns the site.
