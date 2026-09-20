@@ -201,7 +201,7 @@ async function lookupDemoVideos(c){
  const cached=demoMetaCache[c.id];
  if(cached?.videos?.length){cached.usedAt=new Date().toISOString();saveDemoMetaCache();return cached.videos;}
  try{
-  if(!wgerExerciseIndexPromise)wgerExerciseIndexPromise=fetch('https://wger.de/api/v2/exerciseinfo/?limit=1000',{credentials:'omit'}).then(r=>{if(!r.ok)throw new Error('wger unavailable');return r.json();});
+  if(!wgerExerciseIndexPromise)wgerExerciseIndexPromise=fetch('https://wger.de/api/v2/exerciseinfo/?limit=1000',{credentials:'omit',cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('wger unavailable');return r.json();});
   const data=await wgerExerciseIndexPromise,items=Array.isArray(data?.results)?data.results:[];
   const wanted=normName(c.name);
   const match=items.find(item=>{
@@ -358,7 +358,7 @@ $('pause').onclick=()=>{timer=timer.paused!=null?{...timer,end:Date.now()+timer.
 
 function chartSvg(points,keyA,keyB=null,labelA='Actual',labelB='Target'){
  const values=points.flatMap(p=>[Number(p[keyA])||0,keyB==null?null:Number(p[keyB])||0].filter(v=>v!==null));
- if(points.length<2||!values.some(v=>v>0))return '<div class="chart-empty">More sessions needed</div>';
+ if(points.length<2)return '<div class="chart-empty">More sessions needed</div>';
  const w=320,h=112,pad=14,min=Math.min(...values),max=Math.max(...values),span=Math.max(1,max-min);
  const xy=(value,i)=>[(pad+i*(w-pad*2)/Math.max(1,points.length-1)).toFixed(1),(h-pad-(Number(value)-min)*(h-pad*2)/span).toFixed(1)];
  const line=key=>points.map((p,i)=>xy(p[key],i).join(',')).join(' ');
