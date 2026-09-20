@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.5.1
+# AI Personal Trainer — Android v0.6.0
 
 Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
@@ -9,7 +9,7 @@ Gemini-only workout planner with your own API key. No hosted backend, OpenAI acc
 4. Open **AI coach** for advice or ask it to plan/refine your week. Advice does not change the planner.
 5. Review the **Proposed weekly changes** card. Keep chatting to refine it, or tap **Apply to weekly planner**. The front page opens a changed day and shows what was applied. **Undo AI edit** restores the previous week during the current app session.
 
-Model: `gemini-2.5-flash`. v0.5.1 uses Gemini JSON mode plus strict app-side validation instead of sending a large response schema, avoiding request rejection from schema complexity. Requests go directly to Google's HTTPS Gemini API using the `x-goog-api-key` header. The app never sends the key in a URL. Each user supplies their own key; no shared developer key is bundled. Free-tier availability, quotas, and charges depend on the Google project. Google may use free-tier prompts and responses to improve its products.
+Model selection: `gemini-3.8-flash` (default), `gemini-3.7-flash`, or `gemini-3.6-flash`. The three choices are current stable Flash generations. v0.6.0 uses high reasoning, Gemini JSON mode, proposal repair for missing per-set arrays, and strict app-side validation. Requests go directly to Google's HTTPS Gemini API using the `x-goog-api-key` header. The app never sends the key in a URL. Each user supplies their own key; no shared developer key is bundled. Free-tier availability, quotas, and charges depend on the Google project. Google may use free-tier prompts and responses to improve its products.
 
 On Android, the key is encrypted with an AES-GCM key in Android Keystore. The key is decrypted in memory for requests, never put in localStorage, logs, or workout history. Settings supports show/hide, replace, and remove. Android backups are disabled. Browser development preview keeps the key in memory only, so it must be reentered after reload. A compromised/rooted device can still expose a key in use.
 
@@ -25,12 +25,12 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - AI-generated changed sessions are duration-fitted to the requested time target through roughly five minutes over. Long bodyweight sessions can draw from an expanded bodyweight catalog rather than collapsing to two exercises.
 - Apply updates the same saved weekly/profile data used by the app, preserves completed set performance on matching exercises, and supports Undo. No-op responses never display a success/update notification. Drafts cannot overwrite newer manual changes.
 - A previous single-workout v0.2.0 state migrates to Monday; workout history and the saved Gemini key retain their existing storage keys.
-- Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged.
+- Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.5.1-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.6.0-debug`, unzip and install the APK on Android 8+.
 
-This is a development build, not a production-signed release. Different CI runs can have different debug signing keys; Android may require uninstalling the previous build, which removes local history. A stable production signing key is still needed for reliable upgrades.
+This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
 ## Build and test
 Requires JDK 17, Android SDK 35, Gradle 8.9, and Node 22+.
@@ -40,7 +40,7 @@ npm test
 gradle :app:assembleDebug :app:lintDebug
 ```
 
-CI additionally runs browser tests covering day/time/exercise selection, weekly persistence, advice without edits, draft refinement using conversation context, draft persistence, applying actual front-page changes, Undo, unchanged replies, stale-draft protection, quota errors, and key removal. API responses are mocked in tests; no live key is checked into source or used by CI. Android device testing with the user's key remains necessary.
+CI additionally runs browser tests covering per-set logging, model selection, error-report creation, day/time/exercise selection, weekly persistence, advice without edits, draft refinement, applying front-page changes, body-profile updates, coach memory, and key removal. API responses are mocked in tests; no live key is checked into source or used by CI. Android device testing with the user's key remains necessary.
 
 To preview locally:
 
