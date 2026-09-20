@@ -7,6 +7,8 @@ const text=(v,max)=>typeof v==='string'?v.trim().slice(0,max):'';
 const dayName=id=>({mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'})[id]||id;
 const int=(v,min,max)=>Number.isInteger(v)&&v>=min&&v<=max?v:null;
 const finite=(v,min,max)=>Number.isFinite(v)&&v>=min&&v<=max?v:null;
+const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss','Mobility / athleticism'];
+const LEVELS=['Beginner','Intermediate','Advanced'];
 
 export function buildChatGPTContext({week,profile,memory='',recentTraining=[]},catalog){
  const p=cleanProfile(profile||{}),w=cleanWeek(week);
@@ -72,6 +74,11 @@ export function validateCommandBatch(data,catalog){
   }else if(raw.type==='update_profile'){
    const fields={};for(const k of ['goal','experience','equipment','heightIn','weightLb'])if(Object.prototype.hasOwnProperty.call(raw.fields||{},k))fields[k]=raw.fields[k];
    if(!Object.keys(fields).length)throw new Error('An update_profile command has no supported fields.');
+   if(fields.goal!==undefined&&!GOALS.includes(fields.goal))throw new Error('An update_profile goal is unsupported.');
+   if(fields.experience!==undefined&&!LEVELS.includes(fields.experience))throw new Error('An update_profile experience level is unsupported.');
+   if(fields.equipment!==undefined&&(typeof fields.equipment!=='string'||fields.equipment.length>500))throw new Error('An update_profile equipment value is invalid.');
+   if(fields.heightIn!==undefined&&finite(Number(fields.heightIn),36,96)===null)throw new Error('An update_profile height is invalid.');
+   if(fields.weightLb!==undefined&&finite(Number(fields.weightLb),50,1000)===null)throw new Error('An update_profile weight is invalid.');
    commands.push({type:'update_profile',fields});
   }else if(raw.type==='set_memory'){
    const value=text(raw.text,4000);if(!value)throw new Error('A set_memory command is empty.');commands.push({type:'set_memory',text:value});
@@ -90,7 +97,7 @@ export function applyCommandBatch(batch,{week,profile,memory=''},catalog){
   }else if(cmd.type==='replace_plan'){
    const d=nextWeek.days[DAYS.indexOf(cmd.day)],incoming=normalizePlan({name:cmd.name,exercises:cmd.exercises});
    d.enabled=true;d.plan=d.plan?mergePlan(d.plan,incoming):incoming;
-   descriptions.push(dayName(cmd.day)+': replace workout with '+cmd.name+' ('+incoming.exercises.length+' exercises)');
+   const detail=incoming.exercises.map(e=>(catalog.find(c=>c.id===e.id)?.name||e.id)+' '+e.sets+' sets · reps '+e.setReps.join('/')+' · '+e.rest+'s rest').join(' | ');descriptions.push(dayName(cmd.day)+': '+cmd.name+' — '+detail);
   }else if(cmd.type==='update_profile'){
    const merged={...nextProfile,...cmd.fields},cleaned=cleanProfile(merged);if(!validProfile(cleaned))throw new Error('The interpreted profile update is invalid.');
    Object.assign(nextProfile,cleaned);descriptions.push('Update profile: '+Object.keys(cmd.fields).join(', '));
