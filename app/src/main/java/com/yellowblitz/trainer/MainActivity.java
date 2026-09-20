@@ -79,7 +79,7 @@ public class MainActivity extends Activity {
         if (!pageReady || web == null || pendingSharedText == null || pendingSharedText.isEmpty()) return;
         String payload = JSONObject.quote(pendingSharedText);
         pendingSharedText = null;
-        web.post(() -> web.evaluateJavascript("window.receiveTrainerShare && window.receiveTrainerShare(" + payload + ");", null));
+        web.post(() -> web.evaluateJavascript("window.__trainerSharedText=" + payload + "; if(window.receiveTrainerShare){window.receiveTrainerShare(window.__trainerSharedText); window.__trainerSharedText=\"\";}", null));
     }
 
     @Override protected void onNewIntent(Intent intent) {
