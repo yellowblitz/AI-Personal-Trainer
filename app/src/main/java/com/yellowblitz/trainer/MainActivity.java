@@ -358,7 +358,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void clearMediaCache() {
             // Clear only the trusted trainer WebView HTTP cache. Do not touch the
             // isolated ChatGPT WebView, cookies, or trainer DOM storage.
-            runOnUiThread(() -> { if (web != null) web.clearCache(false); });
+            runOnUiThread(() -> { if (web != null) web.clearCache(true); });
         }
         // Use copied response: clipboard is read only after an explicit trainer button tap.
         @JavascriptInterface public void useCopiedResponse() {
