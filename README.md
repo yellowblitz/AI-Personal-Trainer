@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.9.0
+# AI Personal Trainer — Android v0.10.0
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -17,8 +17,10 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - A recurring Monday–Sunday weekly planner with selected training/rest days and approximate training-time targets. Warm-up is excluded from the estimate. Exercise count is deliberately flexible rather than a hard planner setting; the AI can choose the number of exercises that fits the requested split, volume, equipment and time. Push/Pull/Legs are starter sessions, not an individualized prescription.
 - Every set has its own reps and load fields, so later sets can be reduced or changed without altering the other sets. Completed set-by-set performance is preserved in workout history and reused as coaching context.
 - A broad local exercise library sourced from free-exercise-db: 873 exercises with available demonstration images, including many cable, dumbbell, barbell, bodyweight, machine, band and kettlebell variants. Gemini sees a relevance-ranked subset for each request so the prompt stays focused.
+- The exercise picker opens by broad muscle group instead of rendering hundreds of exercises at once. Global search remains available, and every dialog has a sticky top-right × close button.
+- Gemini can maintain a separate, device-persisted **Next week** recommendation. It uses the latest completed set-by-set history, stays available until replaced or applied, and is marked for refresh when the saved plan/profile changes. Saving a session automatically refreshes it when a Gemini key is configured.
 - ChatGPT-to-trainer translation accepts exact exercise names and common aliases (for example “cable fly” or “rope tricep pushdown”) and resolves them locally only when the match is sufficiently unambiguous.
-- Three appearance themes: **Dark** (default), **Light**, and **Green / Classic**. The embedded ChatGPT surface, Android system bars and trainer UI follow the selected theme.
+- Three appearance themes: **Dark** (default), **Light**, and **Green / Classic**. The embedded ChatGPT surface, Android system bars and trainer UI follow the selected theme. v0.9.1+ also forces readable ChatGPT message contrast in the embedded WebView.
 - Sequential set completion, automatic rest timer, pause, extend and skip.
 - Device-local workout state and up to 200 saved sessions, including the exact reps/load completed for each set.
 - Conversational Gemini coach with persistent local chat plus a separate long-term coach-memory summary. Up to 20 recent logged sessions are sent as compact performance context so future recommendations can react to later-set rep drops or successful progression.
@@ -31,9 +33,16 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.9.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.10.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
+
+
+## v0.10.0 — compact UI and next-week progression
+- Workout, Coach, Progress and Profile pages use shorter labels, tighter spacing and collapsible secondary controls.
+- Exercise selection is organized into Chest, Back, Shoulders, Arms, Legs, Glutes & hips, Core and Other instead of one 873-item list.
+- Dialogs have a sticky top-right × button, so long dialogs can be closed without scrolling to the bottom.
+- Completing a session stores exact set performance and, when Gemini is configured, refreshes a persistent next-week recommendation. Manual or ChatGPT/Gemini changes mark that recommendation for refresh rather than silently overwriting it.
 
 ## Build and test
 Requires JDK 17, Android SDK 35, Gradle 8.9, and Node 22+.
