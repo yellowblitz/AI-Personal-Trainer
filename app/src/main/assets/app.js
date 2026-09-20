@@ -14,7 +14,7 @@ let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().get
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
 if(!Array.isArray(history))history=[];
-const APP_VERSION='0.7.1';
+const APP_VERSION='0.8.0';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -131,14 +131,14 @@ function renderHandoff(){
 function showManualContext(context){modal('<h2>Trainer context for ChatGPT</h2><p class="small muted">Copy the text below into ChatGPT.</p><textarea id="manualContext" rows="16" readonly></textarea>');$('manualContext').value=context;$('manualContext').focus();$('manualContext').select();}
 function copyTrainerContext(){
  const context=buildChatGPTContext({week,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20)},catalog);
- try{if(window.TrainerShare?.copyText){window.TrainerShare.copyText(context);toast('Trainer context copied. Paste it into regular ChatGPT.');return;}}catch{}
- if(navigator.clipboard?.writeText){navigator.clipboard.writeText(context).then(()=>toast('Trainer context copied. Paste it into regular ChatGPT.')).catch(()=>showManualContext(context));}else showManualContext(context);
+ try{if(window.TrainerShare?.copyText){window.TrainerShare.copyText(context);toast('Trainer context copied. Paste it into the in-app ChatGPT message box.');return;}}catch{}
+ if(navigator.clipboard?.writeText){navigator.clipboard.writeText(context).then(()=>toast('Trainer context copied. Paste it into ChatGPT.')).catch(()=>showManualContext(context));}else showManualContext(context);
 }
 $('copyChatGPTContext').onclick=copyTrainerContext;
-$('openChatGPT').onclick=()=>{try{if(window.TrainerShare?.openChatGPT){window.TrainerShare.openChatGPT();return;}}catch{}window.location.href='https://chatgpt.com/';};
+$('openChatGPT').onclick=()=>{try{if(window.TrainerShare?.openChatGPT){window.TrainerShare.openChatGPT();return;}}catch{}toast('Embedded ChatGPT is available in the Android app build.');};
 window.receiveTrainerShare=value=>{
  const shared=typeof value==='string'?value.trim().slice(0,24000):'';if(!shared)return;
- $('handoffText').value=shared;handoffDraft=null;showTab('coach');renderHandoff();$('handoffText').scrollIntoView({block:'center',behavior:'smooth'});toast('ChatGPT response received. Review it, then interpret with Gemini.');
+ $('handoffText').value=shared;handoffDraft=null;showTab('coach');renderHandoff();$('handoffText').scrollIntoView({block:'center',behavior:'smooth'});toast('Copied ChatGPT response received. Review it, then interpret with Gemini.');
 };
 if(typeof window.__trainerSharedText==='string'&&window.__trainerSharedText.trim()){const shared=window.__trainerSharedText;window.__trainerSharedText='';queueMicrotask(()=>window.receiveTrainerShare(shared));}
 $('interpretHandoff').onclick=async()=>{
@@ -170,7 +170,7 @@ $('applyHandoff').onclick=()=>{
   save();saveProfile();saveMemory();saveChat();
   const hadWorkout=handoffDraft.batch.commands.some(c=>['set_day','replace_plan'].includes(c.type)),hadProfile=handoffDraft.batch.commands.some(c=>c.type==='update_profile');
   $('updateNotice').textContent='Applied ChatGPT handoff: '+result.descriptions.join(' · ');$('updateNotice').hidden=!hadWorkout;
-  handoffDraft=null;$('handoffText').value='';$('handoffStatus').textContent='Applied. Continue coaching in regular ChatGPT whenever you want another change.';
+  handoffDraft=null;$('handoffText').value='';$('handoffStatus').textContent='Applied. Continue coaching in the embedded ChatGPT whenever you want another change.';
   render();renderHandoff();tick();showTab(hadWorkout?'workout':hadProfile?'profilePage':'coach');toast('ChatGPT commands applied.');
  }catch(err){recordErrorReport({category:'handoff_apply_error',message:err.message},handoffDraft?.sourceText||'',err.message);toast(err.message);}
 };
