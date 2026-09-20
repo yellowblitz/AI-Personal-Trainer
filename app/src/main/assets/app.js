@@ -109,7 +109,7 @@ $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
 $('settings').onclick=()=>{
- modal('<h2>Gemini settings</h2><p class="muted">AI Personal Trainer · v'+APP_VERSION+'</p><label for="geminiModel">AI model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><p class="small muted">3.8 Flash is the newest stable option here. All three use high reasoning for workout planning.</p><label for="apiKey">Your Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste your Gemini API key"><div class="row"><button id="showKey" class="secondary">Show key</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key ↗</a></div><button id="saveSettings" class="primary wide">Save Gemini settings</button><button id="clearKey" class="secondary wide">Remove key</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">'+(window.TrainerKeys?'Your key is encrypted on this Android device and used only to contact Google Gemini.':'Browser preview: your key stays in memory until you reload or close this page.')+'</p><p class="small muted">Coach requests can include your profile, body data, recent workout history, long-term coach memory, and weekly plan.</p>');
+ modal('<h2>Gemini settings</h2><p class="muted">AI Personal Trainer · v'+APP_VERSION+'</p><label for="geminiModel">AI model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><p class="small muted">3.8 Flash is the newest stable option here. The selected Gemini model is used mainly to translate ChatGPT responses into validated local commands; direct Gemini coaching remains optional.</p><label for="apiKey">Your Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste your Gemini API key"><div class="row"><button id="showKey" class="secondary">Show key</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key ↗</a></div><button id="saveSettings" class="primary wide">Save Gemini settings</button><button id="clearKey" class="secondary wide">Remove key</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">'+(window.TrainerKeys?'Your key is encrypted on this Android device and used only to contact Google Gemini.':'Browser preview: your key stays in memory until you reload or close this page.')+'</p><p class="small muted">Coach requests can include your profile, body data, recent workout history, long-term coach memory, and weekly plan.</p>');
  $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;
  $('showKey').onclick=()=>{const show=$('apiKey').type==='password';$('apiKey').type=show?'text':'password';$('showKey').textContent=show?'Hide key':'Show key';};
  const setKey=value=>{try{if(window.TrainerKeys&&!window.TrainerKeys.saveKey(value))throw new Error();}catch{toast('Could not save your key on this device. Please try again.');return false;}apiKey=value;return true;};
@@ -128,10 +128,11 @@ function renderHandoff(){
  $('handoffCommands').innerHTML=preview.descriptions.length?'<h3>Local commands</h3><ul>'+preview.descriptions.map(d=>'<li>'+escape(d)+'</li>').join('')+'</ul>':'<p class="muted">No executable changes were found in the ChatGPT response.</p>';
  $('applyHandoff').disabled=busy||!preview.descriptions.length;$('discardHandoff').disabled=busy;
 }
+function showManualContext(context){modal('<h2>Trainer context for ChatGPT</h2><p class="small muted">Copy the text below into ChatGPT.</p><textarea id="manualContext" rows="16" readonly></textarea>');$('manualContext').value=context;$('manualContext').focus();$('manualContext').select();}
 function copyTrainerContext(){
  const context=buildChatGPTContext({week,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20)},catalog);
  try{if(window.TrainerShare?.copyText){window.TrainerShare.copyText(context);toast('Trainer context copied. Paste it into regular ChatGPT.');return;}}catch{}
- navigator.clipboard?.writeText(context).then(()=>toast('Trainer context copied. Paste it into regular ChatGPT.')).catch(()=>{modal('<h2>Trainer context for ChatGPT</h2><p class="small muted">Copy the text below into ChatGPT.</p><textarea id="manualContext" rows="16" readonly></textarea>');$('manualContext').value=context;$('manualContext').focus();$('manualContext').select();});
+ if(navigator.clipboard?.writeText){navigator.clipboard.writeText(context).then(()=>toast('Trainer context copied. Paste it into regular ChatGPT.')).catch(()=>showManualContext(context));}else showManualContext(context);
 }
 $('copyChatGPTContext').onclick=copyTrainerContext;
 $('openChatGPT').onclick=()=>{try{if(window.TrainerShare?.openChatGPT){window.TrainerShare.openChatGPT();return;}}catch{}window.location.href='https://chatgpt.com/';};
@@ -162,7 +163,7 @@ $('applyHandoff').onclick=()=>{
  try{
   const result=applyCommandBatch(handoffDraft.batch,{week,profile,memory:coachMemory},catalog);
   if(!result.descriptions.length)return toast('There are no commands to apply.');
-  undo={week:structuredClone(week),profile:structuredClone(profile),selected,timer:structuredClone(timer)};
+  undo={week:structuredClone(week),profile:structuredClone(profile),memory:coachMemory,selected,timer:structuredClone(timer)};
   week=result.week;profile=normalizeProfile(result.profile);coachMemory=result.memory;pending=null;timer={};
   const firstDay=handoffDraft.batch.commands.find(c=>['set_day','replace_plan'].includes(c.type))?.day;
   if(firstDay&&DAYS.includes(firstDay))selectDay(firstDay);else selectDay(selected);
@@ -177,7 +178,7 @@ $('discardHandoff').onclick=()=>{handoffDraft=null;renderHandoff();$('handoffSta
 
 $('undo').onclick=()=>{
  if(!undo||busy)return;
- week=normalizeWeek(undo.week);profile=normalizeProfile(undo.profile||profile);timer=undo.timer;selectDay(undo.selected);undo=null;pending=null;save();saveProfile();saveChat();render();tick();
+ week=normalizeWeek(undo.week);profile=normalizeProfile(undo.profile||profile);if(typeof undo.memory==='string')coachMemory=undo.memory;timer=undo.timer;selectDay(undo.selected);undo=null;pending=null;save();saveProfile();saveMemory();saveChat();render();tick();
  $('updateNotice').textContent='Last AI change undone.';$('updateNotice').hidden=false;
  messages.push({role:'assistant',content:'You undid the last applied AI change. The previous planner/profile state is restored.'});saveChat();drawMessages();toast('Previous week restored.');
 };
