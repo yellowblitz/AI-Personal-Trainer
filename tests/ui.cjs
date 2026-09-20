@@ -58,7 +58,7 @@ const assert=require('node:assert/strict');
    await route.fulfill({json:{candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(data)}]}}]}});
   });
   // ChatGPT handoff: Android share/paste text -> Gemini command translation -> local review/apply.
-  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT handoff/);
+  await page.locator('[data-tab="coach"]').click();assert.match(await page.locator('#coach').textContent(),/ChatGPT, inside the trainer/);assert.equal(await page.locator('#openChatGPT').textContent(),'Open in-app ChatGPT');
   await page.evaluate(()=>window.receiveTrainerShare('ChatGPT recommends a revised Monday Push workout for about one hour, warm-up excluded.'));
   assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);
   await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);assert.match(await page.locator('#handoffCommands').textContent(),/Dumbbell Bench Press 3 sets · reps 10\/9\/8/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
@@ -81,6 +81,6 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="workout"]').click();await page.locator('[data-select-day="sun"]').click();assert.equal(await page.locator('#trainingDetails').isVisible(),false);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);await page.screenshot({path:'trainer-preview.png',fullPage:true});
-  console.log('Android system-bar insets, per-set logging, ChatGPT share handoff, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
+  console.log('Android system-bar insets, embedded ChatGPT handoff UI, local command apply, flexible exercise counts, model selection, diagnostics, adaptive history, flexible time planning, body profile and coach memory tests passed.');
  }finally{await browser?.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
