@@ -128,7 +128,7 @@ $('editWeek').onclick=()=>{
    if(!Number.isInteger(count)||count<1||count>12||!Number.isInteger(d.minutes)||d.minutes<5||d.minutes>180)return toast('Use 5–180 minutes and 1–12 exercises for each training day.');
    if(!d.plan)d.plan=makePlan(['Push','Pull','Legs'][ordinal%3]);ordinal++;
    const exercises=d.plan.exercises;
-   for(const id of ids)if(exercises.length<count&&!exercises.some(e=>e.id===id))exercises.push({id,sets:3,reps:12,rest:90,weight:0,done:0});
+   for(const id of ids)if(exercises.length<count&&!exercises.some(e=>e.id===id))exercises.push(normalizeExercise({id,sets:3,reps:12,rest:90,weight:0,done:0}));
    d.plan.exercises=exercises.slice(0,count);
   }
   if(!validWeek(next,ids))return toast('Check the schedule values.');
@@ -138,39 +138,46 @@ $('editWeek').onclick=()=>{
 function drawProposal(){
  const coachTab=document.querySelector('[data-tab="coach"]');if(coachTab)coachTab.textContent=pending?'✦ AI coach · Draft':'✦ AI coach';
  $('proposal').hidden=!pending;if(!pending)return;
- const changes=weekChanges(week,pending.week,catalog),stale=pending.base!==weekKey(week);
- $('proposalDetails').innerHTML=`<p>${stale?'Your schedule changed since this draft. Ask the coach to refine it before applying.':'Draft only — your saved workouts have not changed.'}</p>`+changes.map(d=>`<h3>${dayName(d.id)}</h3><ul>${d.changes.map(c=>`<li>${escape(c)}</li>`).join('')}</ul>`).join('');
- $('applyProposal').disabled=busy||stale||changes.length===0;$('refineProposal').disabled=busy;$('discardProposal').disabled=busy;
+ const weekChangesList=pending.week?weekChanges(week,pending.week,catalog):[],profileChangesList=pending.profile?profileChanges(profile,pending.profile):[];
+ const staleWeek=!!pending.week&&pending.base!==weekKey(week),staleProfile=!!pending.profile&&pending.profileBase!==profileKey(profile),stale=staleWeek||staleProfile;
+ let html='<p>'+(stale?'Your saved data changed since this draft. Ask the coach to refine it before applying.':'Draft only — nothing below is saved until you tap Apply.')+'</p>';
+ html+=weekChangesList.map(d=>'<h3>'+escape(dayName(d.id))+'</h3><ul>'+d.changes.map(c=>'<li>'+escape(c)+'</li>').join('')+'</ul><p class="small muted">Estimated session: ~'+estimatePlanMinutes(pending.week.days[DAYS.indexOf(d.id)].plan)+' min · target '+pending.week.days[DAYS.indexOf(d.id)].minutes+' min</p>').join('');
+ if(profileChangesList.length)html+='<h3>Profile & body data</h3><ul>'+profileChangesList.map(c=>'<li>'+escape(c)+'</li>').join('')+'</ul>';
+ $('proposalDetails').innerHTML=html;
+ $('applyProposal').disabled=busy||stale||(weekChangesList.length===0&&profileChangesList.length===0);$('refineProposal').disabled=busy;$('discardProposal').disabled=busy;
 }
 $('applyProposal').onclick=()=>{
  if(busy||!pending)return;
  try{
-  const changes=weekChanges(week,pending.week,catalog),next=applyProposal(week,pending,ids);
-  undo={week:structuredClone(week),selected,timer:structuredClone(timer)};
-  week=next;selectDay(changes.find(d=>next.days[DAYS.indexOf(d.id)].enabled)?.id||changes[0].id);timer={};pending=null;
-  save();saveChat();render();tick();showTab('workout');
-  const note='Applied changes to '+changes.map(d=>dayName(d.id)).join(', ')+'.';
-  $('updateNotice').textContent=note+' Showing '+dayName(selected)+'.';$('updateNotice').hidden=false;
-  messages.push({role:'assistant',content:'You applied the proposed schedule. '+note});saveChat();drawMessages();toast(note);window.scrollTo({top:0,behavior:'smooth'});
+  const changes=pending.week?weekChanges(week,pending.week,catalog):[],pChanges=pending.profile?profileChanges(profile,pending.profile):[];
+  undo={week:structuredClone(week),profile:structuredClone(profile),selected,timer:structuredClone(timer)};
+  if(pending.week&&changes.length)week=applyProposal(week,{week:pending.week,base:pending.base},ids);
+  if(pending.profile&&pChanges.length){if(pending.profileBase!==profileKey(profile))throw new Error('Your profile changed after this draft. Ask the coach to refine it again.');profile=normalizeProfile(pending.profile);saveProfile();}
+  if(changes.length){const target=changes.find(d=>week.days[DAYS.indexOf(d.id)].enabled)?.id||changes[0].id;selectDay(target);}
+  timer={};pending=null;save();saveChat();render();tick();showTab(changes.length?'workout':'profilePage');
+  const parts=[];if(changes.length)parts.push('workout: '+changes.map(d=>dayName(d.id)).join(', '));if(pChanges.length)parts.push('profile/body data');
+  const note='Applied '+parts.join(' and ')+'.';$('updateNotice').textContent=note;$('updateNotice').hidden=!changes.length;
+  messages.push({role:'assistant',content:'You applied the proposed changes: '+parts.join(' and ')+'.'});saveChat();drawMessages();toast(note);window.scrollTo({top:0,behavior:'smooth'});
  }catch(err){toast(err.message);}
 };
 $('refineProposal').onclick=()=>{$('chatInput').value='Please refine the draft: ';$('chatInput').focus();$('chatInput').scrollIntoView({block:'center',behavior:'smooth'});};
-$('discardProposal').onclick=()=>{if(busy)return;pending=null;messages.push({role:'assistant',content:'Draft discarded. Your saved weekly schedule is unchanged.'});saveChat();drawProposal();drawMessages();};
-$('clearChat').onclick=()=>{if(busy)return;modal('<h2>Start a new conversation?</h2><p>This clears chat history and the pending draft. Your weekly schedule and saved sessions stay.</p><button id="confirmClearChat" class="primary wide">Clear chat</button>');$('confirmClearChat').onclick=()=>{messages=[];pending=null;saveChat();drawMessages();drawProposal();$('modal').close();};};
+$('discardProposal').onclick=()=>{if(busy)return;pending=null;messages.push({role:'assistant',content:'Draft discarded. Your saved workout and profile are unchanged.'});saveChat();drawProposal();drawMessages();};
+$('clearChat').onclick=()=>{if(busy)return;modal('<h2>Start a new conversation?</h2><p>This clears the visible chat and pending draft. Your long-term coach memory, profile, logged sessions, and weekly plan stay.</p><button id="confirmClearChat" class="primary wide">Clear chat</button>');$('confirmClearChat').onclick=()=>{messages=[];pending=null;saveChat();drawMessages();drawProposal();$('modal').close();};};
 document.querySelectorAll('[data-prompt]').forEach(b=>b.onclick=()=>{$('chatInput').value=b.dataset.prompt;$('chatInput').focus();});
 $('chatForm').onsubmit=async e=>{
  e.preventDefault();if(busy)return;if(!apiKey){toast('Add your Gemini API key in Settings first.');return;}
  const message=$('chatInput').value.trim();if(!message)return;
- const previous=messages.filter(m=>!m.error).slice(-30);
+ const previous=messages.filter(m=>!m.error).slice(-50);
  messages.push({role:'user',content:message});saveChat();drawMessages();busy=true;render();$('clearChat').disabled=true;$('send').disabled=true;$('send').textContent='Coach is thinking…';
  try{
-  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile},catalog,apiKey);
+  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20)},catalog,apiKey);
   messages.push({role:'assistant',content:data.reply});
+  if(typeof data.memory==='string'&&data.memory.trim()){coachMemory=data.memory.trim().slice(0,4000);saveMemory();}
   if(data.warning){pending=null;messages.push({role:'assistant',content:data.warning,error:true});}
   if(data.action==='proposal'){
-   const changes=weekChanges(week,data.week,catalog);
-   if(changes.length){pending={week:data.week,base:weekKey(week)};toast('Draft ready. Your saved workout is unchanged until you tap Apply.');}
-   else{pending=null;messages.push({role:'assistant',content:'No actual schedule changes were returned. Your planner is unchanged. Tell me which day, exercise, reps, or timing you want different.'});}
+   const changes=data.week?weekChanges(week,data.week,catalog):[],pChanges=data.profile?profileChanges(profile,data.profile):[];
+   if(changes.length||pChanges.length){pending={week:data.week||null,base:data.week?weekKey(week):null,profile:data.profile||null,profileBase:data.profile?profileKey(profile):null};if(data.durationAdjusted?.length)messages.push({role:'assistant',content:'I also fitted '+data.durationAdjusted.map(dayName).join(', ')+' to the requested time budget (target through about 5 minutes over).'});toast('Draft ready. Review it before applying.');}
+   else{pending=null;messages.push({role:'assistant',content:'No actual saved-data changes were returned. Your planner and profile are unchanged.'});}
   }
   $('chatInput').value='';
  }catch(err){messages.push({role:'assistant',content:err.message,error:true});}
