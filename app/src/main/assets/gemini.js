@@ -52,10 +52,10 @@ export function parseResponse(result,catalog,currentWeek,currentProfile,currentM
  const memory=typeof data?.memory==='string'?data.memory.trim().slice(0,4000):text(currentMemory,4000);
  if(typeof data?.reply!=='string'||!data.reply.trim()||data.reply.length>24000||!['advice','proposal'].includes(data.action))throw new Error('Gemini returned an invalid response. Your saved data is unchanged.');
  if(data.action==='advice')return {reply:data.reply,action:'advice',week:null,profile:null,memory};
- let nextWeek=null,nextProfile=null,durationAdjusted=[];
- if(data.week!==null){
-  if(!validWeek(data.week,catalog.map(e=>e.id)))return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The proposed schedule failed validation and was not made executable.'};
-  nextWeek=cleanWeek(data.week);
+ let nextWeek=null,nextProfile=null,durationAdjusted=[];const proposedWeek=data.week??null,proposedProfile=data.profile??null;
+ if(proposedWeek!==null){
+  if(!validWeek(proposedWeek,catalog.map(e=>e.id)))return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The proposed schedule failed validation and was not made executable.'};
+  nextWeek=cleanWeek(proposedWeek);
   const current=cleanWeek(currentWeek);
   for(let i=0;i<nextWeek.days.length;i++){
    const d=nextWeek.days[i],before=current.days[i];
@@ -68,9 +68,9 @@ export function parseResponse(result,catalog,currentWeek,currentProfile,currentM
   }
   if(!validWeek(nextWeek,catalog.map(e=>e.id)))return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The time-fitted schedule failed validation and was not made executable.'};
  }
- if(data.profile!==null){
-  if(!validProfile(data.profile))return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The proposed profile update failed validation and was not made executable.'};
-  nextProfile=cleanProfile(data.profile);
+ if(proposedProfile!==null){
+  if(!validProfile(proposedProfile))return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'The proposed profile update failed validation and was not made executable.'};
+  nextProfile=cleanProfile(proposedProfile);
  }
  if(nextWeek===null&&nextProfile===null)return {reply:data.reply,action:'advice',week:null,profile:null,memory,warning:'Gemini marked this as a change but returned no valid saved-data changes.'};
  return {reply:data.reply,action:'proposal',week:nextWeek,profile:nextProfile,memory,durationAdjusted};
