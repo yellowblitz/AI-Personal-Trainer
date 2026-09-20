@@ -4,7 +4,7 @@ import {templates,makePlan,validPlan,secondsLeft,normalizeTimer} from './core.js
 import {normalizeExercise,normalizePlan,resizeSets,setSetValue,setExerciseFeedback,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance,comparePlanPerformance,exerciseProgress} from './training.js';
 import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './handoff.js';
 const $=id=>document.getElementById(id);
-const catalog=await (await fetch('catalog.json')).json(), ids=catalog.map(e=>e.id);
+const [baseCatalog,customCatalog]=await Promise.all([fetch('catalog.json').then(r=>r.json()),fetch('custom-exercises.json').then(r=>r.ok?r.json():[]).catch(()=>[])]),catalog=[...baseCatalog,...customCatalog],ids=catalog.map(e=>e.id);
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const THEMES=['dark','light','green'];
 let theme=read('theme','dark');if(!THEMES.includes(theme))theme='dark';
