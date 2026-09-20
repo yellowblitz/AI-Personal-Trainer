@@ -1,10 +1,10 @@
-# AI Personal Trainer — Android v0.4.0
+# AI Personal Trainer — Android v0.5.0
 
 Gemini-only workout planner with your own API key. No hosted backend, OpenAI account, or app login is needed.
 
 ## Set up Gemini
 1. Get a Gemini API key at https://aistudio.google.com/apikey (sign in to Google there).
-2. Install the APK, tap the gear icon, set your training goal/experience/equipment, and paste your key into **Your Gemini API key**.
+2. Install the APK, open **Profile** to set goal, experience, equipment, height and weight, then tap the gear icon and paste your key into **Your Gemini API key**.
 3. Tap **Save key**. On the Workout page, use **Edit week** to choose training days, time budgets and exercises per day.
 4. Open **AI coach** for advice or ask it to plan/refine your week. Advice does not change the planner.
 5. Review the **Proposed weekly changes** card. Keep chatting to refine it, or tap **Apply to weekly planner**. The front page opens a changed day and shows what was applied. **Undo AI edit** restores the previous week during the current app session.
@@ -15,18 +15,20 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 
 ## Features
 - A recurring Monday–Sunday weekly planner with selected training/rest days, minutes available, and exercise counts per day. Push/Pull/Legs are starter sessions, not an individualized prescription. The catalog currently contains 12 exercises with looping start/end photos and instructions.
-- Editable sets, reps, load (lb), and rest seconds.
+- Every set has its own reps and load fields, so later sets can be reduced or changed without altering the other sets. Completed set-by-set performance is preserved in workout history and reused as coaching context.
 - Sequential set completion, automatic rest timer, pause, extend and skip.
-- Device-local workout state and up to 200 saved sessions.
-- Conversational Gemini coach with detailed advice and persistent local chat history (latest 80 messages; up to 30 recent turns sent for context). A device-local training profile (goal, experience, equipment) is sent with coach requests so advice and drafts can be more relevant.
+- Device-local workout state and up to 200 saved sessions, including the exact reps/load completed for each set.
+- Conversational Gemini coach with persistent local chat plus a separate long-term coach-memory summary. Up to 20 recent logged sessions are sent as compact performance context so future recommendations can react to later-set rep drops or successful progression.
+- Device-local Profile page for goal, experience, equipment, height and weight. The AI can propose body/profile changes, but they remain reviewable drafts until you apply them.
 - Advice, proposed drafts and applied workouts are separate states. Drafts persist across app restarts and can be refined or discarded.
-- Per-day diffs show added/removed exercises, sets, reps, load, rest, session title, time budget and training/rest changes.
-- Apply updates the same saved weekly data used by the front page, preserves completed sets on matching days, and supports Undo. No-op responses never display a success/update notification. Drafts cannot overwrite manual changes without a new refinement.
+- Per-day diffs show added/removed exercises, per-set reps/load, rest, session title, time budget and training/rest changes. Changed sessions display an estimated duration before applying.
+- AI-generated changed sessions are duration-fitted to the requested time target through roughly five minutes over. Long bodyweight sessions can draw from an expanded bodyweight catalog rather than collapsing to two exercises.
+- Apply updates the same saved weekly/profile data used by the app, preserves completed set performance on matching exercises, and supports Undo. No-op responses never display a success/update notification. Drafts cannot overwrite newer manual changes.
 - A previous single-workout v0.2.0 state migrates to Monday; workout history and the saved Gemini key retain their existing storage keys.
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.4.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.5.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production-signed release. Different CI runs can have different debug signing keys; Android may require uninstalling the previous build, which removes local history. A stable production signing key is still needed for reliable upgrades.
 
@@ -55,4 +57,4 @@ The WebView only displays packaged assets at `https://appassets.androidplatform.
 Catalog and photos: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), declared Unlicense. See `MEDIA-SOURCES.md` and the included upstream license. Demonstrations loop two photos; they are not full-motion videos. Check asset rights before commercial distribution.
 
 ## Limitations
-Rest deadlines survive background suspension, but alerts only fire while the app is active. Time budgets are preferences, not guarantees of exact session duration. The schedule is a recurring weekly template, not a dated calendar. No background notifications, cloud sync, kg selector, or export yet. Physical device/Keystore QA and live Gemini calls are not covered by the browser test.
+Rest deadlines survive background suspension, but alerts only fire while the app is active. Session duration is still an estimate based on reps, rest and transition assumptions; real completion time depends on pace and interruptions. The schedule is a recurring weekly template, not a dated calendar. No background notifications, cloud sync, kg selector, or export yet. Physical device/Keystore QA and live Gemini calls are not covered by the browser test.
