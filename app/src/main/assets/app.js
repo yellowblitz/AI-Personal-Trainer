@@ -1,5 +1,5 @@
 import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
-import {askGemini} from './gemini.js';
+import {askGemini,MODELS,DEFAULT_MODEL} from './gemini.js';
 import {templates,makePlan,validPlan,secondsLeft} from './core.js';
 import {normalizeExercise,normalizePlan,resizeSets,setSetValue,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory} from './training.js';
 const $=id=>document.getElementById(id);
@@ -13,7 +13,10 @@ let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().get
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
 if(!Array.isArray(history))history=[];
-let apiKey='',messages=read('chat',[]),pending=read('proposal',null);
+const APP_VERSION='0.6.0';
+let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]);
+if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
+if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
 const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss','Mobility / athleticism'];
 const LEVELS=['Beginner','Intermediate','Advanced'];
 const cleanNumber=(value,min,max)=>Number.isFinite(Number(value))&&Number(value)>=min&&Number(value)<=max?Number(value):null;
@@ -38,6 +41,21 @@ function save(){
  localStorage.setItem('plan',JSON.stringify(plan));localStorage.setItem('timer',JSON.stringify(timer));
 }
 function saveChat(){messages=messages.slice(-200);localStorage.setItem('chat',JSON.stringify(messages));localStorage.setItem('proposal',JSON.stringify(pending));saveMemory();}
+const redact=value=>{let out=typeof value==='string'?value:JSON.stringify(value,null,2);if(apiKey)out=out.split(apiKey).join('[REDACTED API KEY]');return out.replace(/AIza[A-Za-z0-9_-]{20,}/g,'[REDACTED API KEY]');};
+function recordErrorReport(diagnostic,request='',visibleMessage=''){
+ const report={id:'E'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),appVersion:APP_VERSION,model:geminiModel,selectedDay:selected,category:diagnostic?.category||'unknown',visibleMessage:String(visibleMessage||'').slice(0,1000),request:String(request||'').slice(0,1200),diagnostic:diagnostic&&typeof diagnostic==='object'?diagnostic:{}};
+ errorReports.unshift(report);errorReports=errorReports.slice(0,20);localStorage.setItem('errorReports',JSON.stringify(errorReports));return report;
+}
+function errorReportText(){
+ if(!errorReports.length)return 'No AI error reports saved.';
+ return errorReports.map(r=>['AI Personal Trainer error '+r.id,'Time: '+r.time,'App: v'+r.appVersion,'Model: '+r.model,'Category: '+r.category,'Selected day: '+r.selectedDay,'Message: '+r.visibleMessage,'Request: '+r.request,'Diagnostic: '+redact(r.diagnostic)].join('\n')).join('\n\n--------------------\n\n');
+}
+function showErrorReports(){
+ modal('<h2>AI error reports</h2><p class="small muted">Reports never include your saved Gemini API key. They contain the failed request text, selected model, error category, and validation/API details so a problem can be diagnosed.</p><textarea id="errorReportText" rows="16" readonly></textarea><div class="row"><button id="copyErrorReport" class="primary">Copy reports</button><button id="clearErrorReports" class="secondary">Clear reports</button></div>');
+ $('errorReportText').value=errorReportText();
+ $('copyErrorReport').onclick=async()=>{const text=$('errorReportText').value;try{await navigator.clipboard.writeText(text);toast('Error report copied.');}catch{$('errorReportText').focus();$('errorReportText').select();toast('Report selected. Use Copy.');}};
+ $('clearErrorReports').onclick=()=>{errorReports=[];localStorage.removeItem('errorReports');$('errorReportText').value=errorReportText();toast('Error reports cleared.');};
+}
 
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4500);}
 function modal(html){clearInterval(demoInterval);$('modalBody').innerHTML=html;$('modal').showModal();}
@@ -56,7 +74,7 @@ function render(){
  $('summary').textContent=active?plan.exercises.length+' exercises · '+done+' / '+total+' sets completed · ~'+estimate+' min estimated':'No workout scheduled. Choose another day or edit your week.';$('progress').value=done;$('progress').max=total;$('undo').disabled=!undo||busy;
  $('exercises').innerHTML=plan.exercises.map(renderExerciseCard).join('');
  $('add').disabled=busy;$('newWorkout').disabled=busy;$('finish').disabled=busy;$('settings').disabled=busy;$('editWeek').disabled=busy;drawProposal();
- $('connection').textContent=apiKey?(pending?'Gemini ready · A draft is waiting. Your saved workout has not changed until you apply it.':'Gemini ready · Ask for advice, plan your week, or refine a draft. You choose when to apply changes.'):'Add your Gemini API key in Settings to start coaching. Workout tracking works offline.';
+ const modelName=MODELS.find(m=>m.id===geminiModel)?.name||geminiModel;$('connection').textContent=apiKey?(pending?modelName+' ready · A draft is waiting. Your saved workout has not changed until you apply it.':modelName+' ready · Ask for advice, plan your week, or refine a draft. You choose when to apply changes.'):'Add your Gemini API key in Settings to start coaching. Workout tracking works offline.';
 }
 $('exercises').onchange=e=>{
  const i=Number(e.target.dataset.index);if(!Number.isInteger(i))return;const value=Number(e.target.value),next=normalizePlan(structuredClone(plan));
@@ -90,12 +108,13 @@ $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
 $('settings').onclick=()=>{
- modal('<h2>Gemini settings</h2><p class="muted">AI Personal Trainer · v0.5.1</p><p class="small muted">Training profile and body data are now on the Profile tab.</p><label for="apiKey">Your Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste your Gemini API key"><div class="row"><button id="showKey" class="secondary">Show key</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key ↗</a></div><button id="saveSettings" class="primary wide">Save key</button><button id="clearKey" class="secondary wide">Remove key</button><p class="small muted">'+(window.TrainerKeys?'Your key is encrypted on this Android device and used only to contact Google Gemini.':'Browser preview: your key stays in memory until you reload or close this page.')+'</p><p class="small muted">Gemini 2.5 Flash. Coach requests can include your profile, body data, recent workout history, long-term coach memory, and weekly plan.</p>');
- $('apiKey').value=apiKey;
+ modal('<h2>Gemini settings</h2><p class="muted">AI Personal Trainer · v'+APP_VERSION+'</p><label for="geminiModel">AI model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><p class="small muted">3.8 Flash is the newest stable option here. All three use high reasoning for workout planning.</p><label for="apiKey">Your Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste your Gemini API key"><div class="row"><button id="showKey" class="secondary">Show key</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get a Gemini API key ↗</a></div><button id="saveSettings" class="primary wide">Save Gemini settings</button><button id="clearKey" class="secondary wide">Remove key</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">'+(window.TrainerKeys?'Your key is encrypted on this Android device and used only to contact Google Gemini.':'Browser preview: your key stays in memory until you reload or close this page.')+'</p><p class="small muted">Coach requests can include your profile, body data, recent workout history, long-term coach memory, and weekly plan.</p>');
+ $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;
  $('showKey').onclick=()=>{const show=$('apiKey').type==='password';$('apiKey').type=show?'text':'password';$('showKey').textContent=show?'Hide key':'Show key';};
  const setKey=value=>{try{if(window.TrainerKeys&&!window.TrainerKeys.saveKey(value))throw new Error();}catch{toast('Could not save your key on this device. Please try again.');return false;}apiKey=value;return true;};
- $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim();if(!value||/\s/.test(value))return toast('Paste a Gemini API key without spaces.');if(value!==apiKey&&!setKey(value))return;$('modal').close();render();toast('Gemini key saved.');};
+ $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('geminiModel').value;if(value&&/\s/.test(value))return toast('Paste a Gemini API key without spaces.');if(value!==apiKey&&!setKey(value))return;geminiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('geminiModel',JSON.stringify(geminiModel));$('modal').close();render();toast('Gemini settings saved.');};
  $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('Gemini key removed.');}};
+ $('viewErrorReports').onclick=showErrorReports;
 };
 $('undo').onclick=()=>{
  if(!undo||busy)return;
@@ -170,17 +189,17 @@ $('chatForm').onsubmit=async e=>{
  const previous=messages.filter(m=>!m.error).slice(-50);
  messages.push({role:'user',content:message});saveChat();drawMessages();busy=true;render();$('clearChat').disabled=true;$('send').disabled=true;$('send').textContent='Coach is thinking…';
  try{
-  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20)},catalog,apiKey);
+  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),model:geminiModel},catalog,apiKey);
   messages.push({role:'assistant',content:data.reply});
   if(typeof data.memory==='string'&&data.memory.trim()){coachMemory=data.memory.trim().slice(0,4000);saveMemory();}
-  if(data.warning){pending=null;messages.push({role:'assistant',content:data.warning,error:true});}
+  if(data.warning){pending=null;if(data.diagnostic)recordErrorReport(data.diagnostic,message,data.warning);messages.push({role:'assistant',content:data.warning+(data.diagnostic?' Open Settings → Error reports for details.':''),error:true});}
   if(data.action==='proposal'){
    const changes=data.week?weekChanges(week,data.week,catalog):[],pChanges=data.profile?profileChanges(profile,data.profile):[];
    if(changes.length||pChanges.length){pending={week:data.week||null,base:data.week?weekKey(week):null,profile:data.profile||null,profileBase:data.profile?profileKey(profile):null};if(data.durationAdjusted?.length)messages.push({role:'assistant',content:'I also fitted '+data.durationAdjusted.map(dayName).join(', ')+' to the requested time budget (target through about 5 minutes over).'});toast('Draft ready. Review it before applying.');}
    else{pending=null;messages.push({role:'assistant',content:'No actual saved-data changes were returned. Your planner and profile are unchanged.'});}
   }
   $('chatInput').value='';
- }catch(err){messages.push({role:'assistant',content:err.message,error:true});}
+ }catch(err){recordErrorReport(err.diagnostic||{category:'client_error'},message,err.message);messages.push({role:'assistant',content:err.message+' Error report saved in Settings → Error reports.',error:true});}
  finally{busy=false;saveChat();$('clearChat').disabled=false;$('send').disabled=false;$('send').textContent='Send to Gemini ↗';drawMessages();render();}
 };
 save();render();drawMessages();tick();
