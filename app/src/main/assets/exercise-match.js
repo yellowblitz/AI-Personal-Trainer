@@ -60,8 +60,18 @@ export function resolveExerciseRef(ref,catalog){
  return best.id;
 }
 
+function expandedQuery(value){
+ const base=normalizeExerciseText(value),extra=[];
+ if(/functional trainer|cable machine|pulley/.test(base))extra.push('cable pulley');
+ if(/adjustable dumbbell|dumbbells?/.test(base))extra.push('dumbbell');
+ if(/resistance band|bands?/.test(base))extra.push('bands');
+ if(/body ?weight|no equipment/.test(base))extra.push('body only');
+ if(/ez curl|curl bar/.test(base))extra.push('e z curl bar');
+ return [base,...extra].join(' ').trim();
+}
+
 export function rankExerciseCatalog(query,catalog,{limit=220,includeIds=[]}={}){
- const qnorm=normalizeExerciseText(query),q=new Set(tokens(query)),must=new Set(includeIds||[]);
+ const expanded=expandedQuery(query),qnorm=normalizeExerciseText(expanded),q=new Set(tokens(expanded)),must=new Set(includeIds||[]);
  const ranked=catalog.map(item=>{
   if(must.has(item.id))return {item,score:10000};
   const name=normalizeExerciseText(item.name),id=normalizeExerciseText(item.id);
