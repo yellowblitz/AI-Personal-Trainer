@@ -167,3 +167,89 @@ dialog{padding:12px 18px 18px}
 .handoff-history{align-items:center;margin-top:8px}
 .handoff-history button{flex:0 0 auto}
 .handoff-history span{flex:1;min-width:160px;line-height:1.35}
+
+
+/* v0.13.0 training intelligence */
+.exercise-muscle-detail{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.exercise-muscle-detail span{font-size:10px;line-height:1.35;color:var(--muted);background:var(--input);border:1px solid var(--line);border-radius:999px;padding:6px 9px}
+.exercise-muscle-detail b{color:var(--text)}
+.muscle-secondary-mini{opacity:.78;font-size:9px}
+.muscle-legend.detailed{align-items:flex-start;justify-content:flex-start}
+.muscle-legend.detailed span{background:var(--input);border:1px solid var(--line);border-radius:10px;padding:7px 9px;line-height:1.35}
+.exercise-setup-note{display:grid;gap:2px;margin:9px 0;padding:9px 11px;border-left:3px solid var(--green);background:var(--input);border-radius:8px}
+.exercise-setup-note b{font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.exercise-setup-note span{font-size:12px;color:var(--muted);line-height:1.4}
+.progression-signal{display:grid;gap:2px;margin:9px 0;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--input)}
+.progression-signal b{font-size:11px;color:var(--green)}
+.progression-signal span{font-size:11px;color:var(--muted);line-height:1.35}
+.progression-signal.reduce b,.progression-signal.replace b{color:#f59e0b}
+.feedback-label{margin-top:14px}
+.feedback-choice{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:7px 0 12px}
+.feedback-choice button{padding:9px 6px;min-height:42px;font-size:11px}
+.demo-health-actions{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}
+.demo-health-actions button{flex:1;min-width:130px}
+.calendar-card{overflow:hidden}
+.calendar-title{margin:0 0 14px}
+.calendar-title>div{text-align:center;flex:1}
+.calendar-title .icon{margin-left:0;font-size:22px;padding:8px 14px}
+.calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.calendar-weekdays{margin-bottom:6px}
+.calendar-weekdays span{text-align:center;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.calendar-cell{position:relative;min-width:0;aspect-ratio:1/1;padding:4px;border:1px solid transparent;border-radius:12px;background:transparent;font-weight:650}
+.calendar-cell.blank{display:block}
+.calendar-cell.today{border-color:var(--muted)}
+.calendar-cell.selected{outline:2px solid var(--green);outline-offset:1px}
+.calendar-cell.logged{background:var(--done-row)}
+.calendar-cell.planned:not(.logged){background:var(--input)}
+.calendar-cell>span{font-size:12px}
+.calendar-markers{position:absolute;left:3px;right:3px;bottom:3px;display:flex;align-items:center;justify-content:center;gap:2px;font-style:normal;line-height:1}
+.calendar-markers b{font-size:8px}
+.calendar-markers .logged{color:var(--green)}
+.calendar-markers .planned{color:var(--muted);font-size:12px}
+.calendar-legend{display:flex;gap:14px;margin-top:10px}
+.calendar-legend span{display:flex;align-items:center;gap:5px}
+.calendar-dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+.calendar-dot.logged{background:var(--green)}
+.calendar-dot.planned{border:1px solid var(--muted)}
+.calendar-day-details{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);line-height:1.4}
+.calendar-session{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px;padding:8px 10px;background:var(--input);border-radius:10px}
+.calendar-session span{color:var(--text);font-weight:650}
+.calendar-session small{text-align:right;margin:0;letter-spacing:0}
+.review-stats,.progress-highlights{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.review-stats>div,.progress-highlights>div{min-width:0;padding:10px 6px;text-align:center;background:var(--input);border:1px solid var(--line);border-radius:11px}
+.review-stats strong,.progress-highlights strong{display:block;font-size:17px;overflow-wrap:anywhere}
+.review-stats small,.progress-highlights small{font-size:8px;letter-spacing:0;line-height:1.25}
+.warning-text{color:#f59e0b}
+.weekly-muscle-map{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:12px;align-items:center;margin:10px 0 16px}
+.weekly-muscle-map img{width:100%;height:210px;object-fit:contain;background:#fff;border-radius:14px}
+.weekly-muscle-map>div>small{display:flex;flex-wrap:wrap;gap:8px;align-items:center;line-height:1.3}
+.heat{width:9px;height:9px;border-radius:50%;display:inline-block}
+.heat.strong{background:#dc2626}.heat.medium{background:#f97316}.heat.light{background:#facc15}
+.muscle-progress-list{display:grid;gap:7px}
+.muscle-progress-row{border:1px solid var(--line);background:var(--input);border-radius:12px;padding:10px 11px}
+.muscle-progress-row>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;list-style:none}
+.muscle-progress-row>summary::-webkit-details-marker{display:none}
+.muscle-progress-row>summary span{min-width:0}
+.muscle-progress-row>summary small{letter-spacing:0}
+.muscle-progress-row>summary strong{font-size:14px}
+.muscle-progress-row>summary strong.up{color:var(--green)}
+.muscle-progress-row>summary strong.down{color:#f59e0b}
+.muscle-progress-row>summary strong.baseline,.muscle-progress-row>summary strong.flat{color:var(--muted)}
+.muscle-progress-components{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px}
+.muscle-progress-components span{font-size:10px;color:var(--muted);padding:7px;background:var(--panel);border-radius:8px}
+.muscle-progress-components b{display:block;color:var(--text);font-size:12px;margin-top:2px}
+.progress-highlights{margin:12px 0}
+.progress-highlights>div:last-child{grid-column:span 2}
+.progress-highlights>div:last-child strong{font-size:12px}
+.replacement-pick small{line-height:1.25}
+@media(max-width:480px){
+ .feedback-choice{grid-template-columns:1fr}
+ .review-stats,.progress-highlights{grid-template-columns:repeat(2,1fr)}
+ .progress-highlights>div:last-child{grid-column:span 2}
+ .weekly-muscle-map{grid-template-columns:115px 1fr}
+ .weekly-muscle-map img{height:185px}
+ .calendar-grid,.calendar-weekdays{gap:3px}
+ .calendar-cell{border-radius:9px;padding:2px}
+ .calendar-session{align-items:flex-start;flex-direction:column}
+ .calendar-session small{text-align:left}
+}
