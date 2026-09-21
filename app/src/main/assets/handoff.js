@@ -79,7 +79,8 @@ export function tryLocalExplicitPlanTranslation(sourceText,catalog){
  }
  if(!commands.length)return null;
  if(unresolved.length)return {complete:false,unresolved,commands};
- const batch=validateCommandBatch({summary:'Translated explicit workout plan locally.',warnings:[],commands},catalog);
+ const restRangeUsed=/\brest\b[^\n;]{0,24}\d{1,2}:\d{2}\s*[–—-]\s*\d{1,2}:\d{2}/i.test(source);
+ const batch=validateCommandBatch({summary:'Translated explicit workout plan locally.',warnings:restRangeUsed?['Rest ranges use the first listed rest time because the planner stores one rest value per exercise.']:[],commands},catalog);
  const gaps=coverageProblems(source,batch.commands,catalog);
  return gaps.length?{complete:false,unresolved:gaps,commands:batch.commands}:{complete:true,batch};
 }
