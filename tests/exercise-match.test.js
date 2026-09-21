@@ -20,10 +20,10 @@ test('base exercises have exact anatomy/demo pairing and supplemental exercises 
  assert.ok(baseCatalog.every(x=>allowed.has(x.muscleSlug)));
  assert.ok(baseCatalog.every(x=>x.demoGif===`https://api.anatome.dev/exerciseGif?id=${encodeURIComponent(x.id)}`));
  assert.ok(baseCatalog.every(x=>x.exerciseInfoUrl.includes('api.anatome.dev/getExercise?name=')));
- assert.equal(customCatalog.length,4);
+ assert.equal(customCatalog.length,5);
  assert.ok(customCatalog.every(x=>allowed.has(x.muscleSlug)));
  assert.ok(customCatalog.every(x=>Array.isArray(x.secondaryMuscleSlugs)));
- assert.deepEqual(customCatalog.map(x=>x.id).sort(),['Bulgarian_Split_Squat','Cable_Leg_Curl','Cable_Romanian_Deadlift','Cable_Squat'].sort());
+ assert.deepEqual(customCatalog.map(x=>x.id).sort(),['Bulgarian_Split_Squat','Cable_Leg_Curl','Cable_Romanian_Deadlift','Cable_Squat','Single_Leg_Cable_Leg_Extension'].sort());
 });
 
 test('exact names and common coaching aliases resolve deterministically',()=>{
