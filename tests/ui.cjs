@@ -25,6 +25,19 @@ const assert=require('node:assert/strict');
   await page.route('https://wger.de/media/**',route=>route.abort());
   await page.locator('[data-demo="Dumbbell_Bench_Press"]').first().click();await page.waitForSelector('#demoVideo');assert.equal(await page.locator('.muscle-picture.large').isVisible(),true);assert.match(await page.locator('#anatomyDetail').textContent(),/Primary: Chest/);assert.match(await page.locator('#anatomyDetail').textContent(),/Secondary: Triceps, Deltoids/);assert.match(await page.evaluate(()=>localStorage.getItem('demoMetaCache')||''),/anatome_secondary_slugs/);await page.locator('#closeModalTop').click();
 
+  // Each exercise card can collapse from its dropdown button and keeps that state across rerenders/reload.
+  let collapseButton=page.locator('[data-collapse="0"]');
+  assert.equal(await collapseButton.getAttribute('aria-expanded'),'true');
+  await collapseButton.click();
+  assert.equal(await collapseButton.getAttribute('aria-expanded'),'false');
+  assert.equal(await page.locator('.exercise-card-body').first().isHidden(),true);
+  await page.reload();await page.locator('[data-select-day="mon"]').click();
+  collapseButton=page.locator('[data-collapse="0"]');
+  assert.equal(await collapseButton.getAttribute('aria-expanded'),'false');
+  await collapseButton.click();
+  assert.equal(await collapseButton.getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('.exercise-card-body').first().isVisible(),true);
+
   // Per-set logging: later sets can differ and survive reload.
   const setRep=n=>page.locator('[data-index="0"][data-set-index="'+n+'"][data-set-field="reps"]');
   assert.equal(await setRep(0).inputValue(),'12');await setRep(1).fill('9');await setRep(1).press('Tab');assert.equal(await setRep(0).inputValue(),'12');assert.equal(await setRep(1).inputValue(),'9');
