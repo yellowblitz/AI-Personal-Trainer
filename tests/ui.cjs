@@ -57,7 +57,7 @@ const assert=require('node:assert/strict');
 
   let captured=null,capturedHandoff=null;
   await page.route('https://generativelanguage.googleapis.com/**',async route=>{
-   const body=route.request().postDataJSON(),system=body.systemInstruction.parts[0].text;assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'high');
+   const body=route.request().postDataJSON(),system=body.systemInstruction.parts[0].text;assert.equal(route.request().headers()['x-goog-api-key'],'test-gemini-key');assert.match(route.request().url(),/gemini-3\.7-flash:generateContent/);if(system.includes('deterministic command translator'))assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'low');
    if(system.includes('deterministic command translator')){
     capturedHandoff=JSON.parse(body.contents[0].parts[0].text);
     const full=/Friday Legs/i.test(capturedHandoff.chatgptResponse);
@@ -112,6 +112,10 @@ const assert=require('node:assert/strict');
   assert.match(await page.locator('#handoffText').inputValue(),/revised Monday Push/);assert.equal(await page.locator('#handoffPanel').evaluate(el=>el.open),true);
   await page.locator('#interpretHandoff').click();await page.waitForSelector('#handoffPreview:not([hidden])');assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);assert.match(await page.locator('#handoffCommands').textContent(),/Dumbbell Bench Press 3 sets · reps 10\/9\/8/);assert.match(capturedHandoff.chatgptResponse,/revised Monday Push/);
   await page.locator('#applyHandoff').click();assert.equal(await page.locator('#workout').isVisible(),true);assert.equal(await page.locator('#planName').textContent(),'ChatGPT Push');assert.equal(await page.locator('#exercises .card').count(),2);
+  await page.locator('[data-tab="coach"]').click();assert.equal(await page.locator('#restoreLastHandoff').isVisible(),true);assert.match(await page.locator('#lastHandoffStatus').textContent(),/Last translation/);
+  await page.locator('#restoreLastHandoff').click();assert.equal(await page.locator('#handoffPreview').isVisible(),true);assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);
+  await page.locator('#discardHandoff').click();assert.equal(await page.locator('#restoreLastHandoff').isVisible(),true);
+  await page.locator('[data-tab="workout"]').click();
   await page.locator('#refreshNextWeek').click();await page.waitForFunction(()=>document.querySelector('#nextWeekStatus').textContent.includes('Ready'));assert.match(await page.locator('#nextWeekDays').textContent(),/Next Week Progression/);assert.equal(await page.locator('#viewNextWeek').isVisible(),true);
   await page.locator('#viewNextWeek').click();assert.equal(await page.locator('#closeModalTop').isVisible(),true);assert.match(await page.locator('#modalBody').textContent(),/Next Week Progression/);await page.locator('#closeModalTop').click();
 

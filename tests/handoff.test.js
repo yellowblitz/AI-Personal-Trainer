@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {makeWeek,weekKey} from '../app/src/main/assets/week.js';
 import {summarizeHistory} from '../app/src/main/assets/training.js';
-import {buildChatGPTContext,buildInterpreterRequest,validateCommandBatch,applyCommandBatch,interpretChatGPTResponse,extractExplicitPlanHints,validateSourceCoverage} from '../app/src/main/assets/handoff.js';
+import {buildChatGPTContext,buildInterpreterRequest,validateCommandBatch,applyCommandBatch,interpretChatGPTResponse,extractExplicitPlanHints,validateSourceCoverage,tryLocalExplicitPlanTranslation} from '../app/src/main/assets/handoff.js';
 
 const baseCatalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/catalog.json',import.meta.url)));
 const customCatalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/custom-exercises.json',import.meta.url)));
@@ -19,7 +19,7 @@ test('ChatGPT context contains current plan and logged set performance without a
  assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 target 12 reps BW -> actual 9 reps BW/);assert.match(text,/RIR 0/);assert.match(text,/Second set was hard/);assert.match(text,/RELEVANT EXERCISE LIBRARY SAMPLE/);assert.doesNotMatch(text,/Return only JSON/);
 });
 
-test('interpreter request makes Gemini a translator and carries explicit-day coverage hints',()=>{
+test('interpreter request is compact and uses low thinking for deterministic translation',()=>{
  const source='Monday Push: Cable Chest Press 60 lb/side 4x10; Incline DB Press 25 lb 3x10; Cable Fly 30 lb/side 3x12; DB Lateral Raise 10 lb 3x12; Triceps Pushdown 50 lb 3x12.';
  const body=buildInterpreterRequest({sourceText:source,week,profile,memory:'',selectedDay:'mon'},catalog);
  const system=body.systemInstruction.parts[0].text;
@@ -27,6 +27,46 @@ test('interpreter request makes Gemini a translator and carries explicit-day cov
  const payload=JSON.parse(body.contents[0].parts[0].text);assert.match(payload.chatgptResponse,/Cable Chest Press/);
  assert.equal(payload.explicitDayExerciseHints.length,1);assert.equal(payload.explicitDayExerciseHints[0].exercises.length,5);
  assert.match(system,/Cable_Chest_Press/);assert.match(system,/Incline_Dumbbell_Press/);
+ assert.equal(body.generationConfig.thinkingConfig.thinkingLevel,'low');assert.ok(body.generationConfig.maxOutputTokens<=7000);
+});
+
+test('markdown PPL plan is translated locally without a Gemini network call',async()=>{
+ const source=`Your current PPL plan is:
+
+**Monday — Push**
+
+* Dual Cable Chest Press — 60 lb/side — 4×10 — rest 2:00–2:30
+* Incline DB Press — 25 lb each — 3×10 — rest 1:45–2:00
+* Cable Fly — 30 lb/side — 3×12 — rest 1:15–1:30
+* DB Lateral Raise — 10 lb each — 3×12 — rest 1:00–1:15
+* Triceps Pushdown — 50 lb — 3×12 — rest 1:15
+
+**Wednesday — Pull**
+
+* Dual Cable Lat Pulldown — 70 lb/side — 4×10 — rest 2:00–2:30
+* Seated Cable Row — 70 lb/side — 3×10 — rest 2:00
+* Rear-Delt Cable Fly — 20 lb/side — 3×12 — rest 1:00–1:15
+* Face Pull — 40 lb — 3×12 — rest 1:15
+* DB Curl — 20 lb each — 3×10 — rest 1:15
+
+**Friday — Legs + Core**
+
+* Dual Cable Squat — 80 lb/side — 4×10 — rest 2:00–2:30
+* Dual Cable Romanian Deadlift — 70 lb/side — 3×10 — rest 2:00
+* Single-Leg Cable Leg Extension — 20 lb — 3×12/leg — rest 1:15
+* Cable Leg Curl — 40 lb — 3×12/leg — rest 1:15
+* DB Standing Calf Raise — 30 lb each — 3×15 — rest 1:00
+* Cable Crunch — 40 lb — 3×12 — rest 1:00
+
+Then 20 minutes of light stationary bike after each workout. The Bulgarian split squat has been removed from your current plan.`;
+ const local=tryLocalExplicitPlanTranslation(source,catalog);assert.equal(local?.complete,true);
+ assert.deepEqual(local.batch.commands.map(c=>c.exercises.length),[5,5,6]);
+ assert.deepEqual(local.batch.commands[2].exercises.map(e=>e.id),['Cable_Squat','Cable_Romanian_Deadlift','Single_Leg_Cable_Leg_Extension','Cable_Leg_Curl','Standing_Dumbbell_Calf_Raise','Cable_Crunch']);
+ assert.equal(local.batch.commands[0].exercises[0].rest,120);assert.equal(local.batch.commands[0].exercises[1].rest,105);
+ let calls=0;
+ const batch=await interpretChatGPTResponse({sourceText:source,week,profile,memory:'',selectedDay:'fri',model:'gemini-3.6-flash'},catalog,'',async()=>{calls++;throw new Error('network should not be used');});
+ assert.equal(calls,0);assert.equal(batch.translationPath,'local');assert.equal(batch.modelUsed,'local-parser');
+ assert.equal(batch.commands.some(c=>c.exercises?.some(e=>e.id==='Bulgarian_Split_Squat')),false);
 });
 
 test('validated handoff commands change only requested trainer data',()=>{
@@ -96,8 +136,8 @@ test('explicit day coverage detects a partial replacement before it can be appli
  assert.equal(gaps.length,1);assert.equal(gaps[0].expected,5);assert.equal(gaps[0].actual,2);
 });
 
-test('interpreter retries an incomplete explicit day and returns only the complete repaired plan',async()=>{
- const source='Friday Legs: Cable Squat 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15.';
+test('Gemini fallback can repair an explicit day the local parser cannot fully resolve',async()=>{
+ const source='Friday Legs: ZXQ Unmapped Leg Thing 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15.';
  let calls=0;
  const batch=await interpretChatGPTResponse({sourceText:source,week,profile,memory:'',selectedDay:'fri',model:'gemini-3.8-flash'},catalog,'key',async()=>{
   calls++;
@@ -113,7 +153,7 @@ test('interpreter retries an incomplete explicit day and returns only the comple
   ]}];
   return {ok:true,json:async()=>response({summary:'Leg day',warnings:[],commands})};
  });
- assert.equal(calls,2);assert.equal(batch.commands[0].exercises.length,5);
+ assert.equal(calls,2);assert.equal(batch.translationPath,'gemini');assert.equal(batch.commands[0].exercises.length,5);
  assert.deepEqual(batch.commands[0].exercises.map(x=>x.id),['Cable_Squat','Cable_Romanian_Deadlift','Bulgarian_Split_Squat','Cable_Leg_Curl','Standing_Dumbbell_Calf_Raise']);
 });
 
@@ -125,7 +165,17 @@ test('interpreter falls back on 503 and returns a validated command batch',async
   if(url.includes('gemini-3.8-flash'))return {ok:false,status:503,json:async()=>({error:{status:'UNAVAILABLE',message:'busy'}})};
   return {ok:true,json:async()=>response({summary:'Change Monday time.',warnings:[],commands:[{type:'set_day',day:'mon',enabled:true,minutes:60}]})};
  });
- assert.equal(seen.length,2);assert.equal(batch.commands[0].minutes,60);assert.equal(batch.fallbackFrom,'gemini-3.8-flash');assert.equal(batch.modelUsed,'gemini-3.7-flash');
+ assert.equal(seen.length,2);assert.equal(batch.commands[0].minutes,60);assert.equal(batch.fallbackFrom,'gemini-3.8-flash');assert.equal(batch.modelUsed,'gemini-3.7-flash');assert.equal(batch.attempts[0].outcome,'http_503');assert.equal(batch.attempts.at(-1).outcome,'success');
+});
+
+test('selected last model still falls back to other Gemini models',async()=>{
+ const seen=[];
+ const batch=await interpretChatGPTResponse({sourceText:'Make Monday about 55 minutes.',week,profile,memory:'',selectedDay:'mon',model:'gemini-3.6-flash'},catalog,'key',async url=>{
+  seen.push(url);
+  if(url.includes('gemini-3.6-flash'))return {ok:false,status:503,json:async()=>({error:{status:'UNAVAILABLE',message:'busy'}})};
+  return {ok:true,json:async()=>response({summary:'Change Monday time.',warnings:[],commands:[{type:'set_day',day:'mon',enabled:true,minutes:55}]})};
+ });
+ assert.match(seen[0],/gemini-3\.6-flash/);assert.match(seen[1],/gemini-3\.8-flash/);assert.equal(batch.commands[0].minutes,55);
 });
 
 test('Android build registers text sharing and forwards shared text into the handoff UI',()=>{

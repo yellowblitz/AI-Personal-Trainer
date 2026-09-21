@@ -69,7 +69,8 @@
   <details id="handoffPanel" class="card compact-details">
     <summary><b>Apply ChatGPT changes</b></summary>
     <textarea id="handoffText" maxlength="24000" rows="7" placeholder="Paste or import ChatGPT's recommendation…"></textarea>
-    <button id="interpretHandoff" class="primary wide">Interpret with Gemini</button>
+    <button id="interpretHandoff" class="primary wide">Translate response</button>
+    <div class="row handoff-history"><button id="restoreLastHandoff" class="secondary" hidden>Restore last translation</button><span id="lastHandoffStatus" class="small muted"></span></div>
     <p id="handoffStatus" class="small muted">Nothing changes until you review and apply it.</p>
   </details>
 

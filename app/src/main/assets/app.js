@@ -28,10 +28,12 @@ let collapsedExercises=new Set((Array.isArray(read('collapsedExercises',[]))?rea
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.12.2';
-let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
+const APP_VERSION='0.12.3';
+let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null,handoffTiming=read('handoffTiming',{}),lastHandoff=read('lastHandoff',null);
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
+if(!handoffTiming||typeof handoffTiming!=='object'||Array.isArray(handoffTiming))handoffTiming={};
+if(!lastHandoff||typeof lastHandoff!=='object'||!lastHandoff.batch||!Array.isArray(lastHandoff.batch.commands))lastHandoff=null;
 const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss','Mobility / athleticism'];
 const LEVELS=['Beginner','Intermediate','Advanced'];
 const cleanNumber=(value,min,max)=>Number.isFinite(Number(value))&&Number(value)>=min&&Number(value)<=max?Number(value):null;
@@ -85,6 +87,33 @@ function recordErrorReport(diagnostic,request='',visibleMessage=''){
  const report={id:'E'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),appVersion:APP_VERSION,model:geminiModel,selectedDay:selected,category:diagnostic?.category||'unknown',visibleMessage:String(visibleMessage||'').slice(0,1000),request:String(request||'').slice(0,1200),diagnostic:diagnostic&&typeof diagnostic==='object'?diagnostic:{}};
  const safeReport=JSON.parse(redact(report));
  errorReports.unshift(safeReport);errorReports=errorReports.slice(0,20);localStorage.setItem('errorReports',JSON.stringify(errorReports));return safeReport;
+}
+function saveLastHandoff(){
+ if(lastHandoff)localStorage.setItem('lastHandoff',JSON.stringify(lastHandoff));else localStorage.removeItem('lastHandoff');
+}
+function recordHandoffAttempts(attempts=[]){
+ if(!Array.isArray(attempts)||!attempts.length)return;
+ for(const a of attempts){
+  if(!a||typeof a.model!=='string'||!Number.isFinite(Number(a.durationMs)))continue;
+  const current=handoffTiming[a.model]&&typeof handoffTiming[a.model]==='object'?handoffTiming[a.model]:{};
+  const duration=Math.max(0,Math.min(120000,Number(a.durationMs))),success=a.outcome==='success',samples=Math.max(0,Number(current.samples)||0);
+  handoffTiming[a.model]={
+   avgMs:success?(samples?Math.round((Number(current.avgMs)||duration)*.7+duration*.3):Math.round(duration)):Number(current.avgMs)||null,
+   lastMs:Math.round(duration),
+   samples:success?samples+1:samples,
+   timeouts:(Number(current.timeouts)||0)+(a.outcome==='timeout'?1:0),
+   lastOutcome:String(a.outcome||'unknown').slice(0,40),
+   updatedAt:new Date().toISOString()
+  };
+ }
+ localStorage.setItem('handoffTiming',JSON.stringify(handoffTiming));
+}
+function lastHandoffLabel(){
+ if(!lastHandoff)return '';
+ const when=Number.isFinite(Date.parse(lastHandoff.translatedAt))?new Date(lastHandoff.translatedAt).toLocaleString():'saved';
+ const source=lastHandoff.batch?.translationPath==='local'?'on-device parser':(lastHandoff.batch?.modelUsed||'Gemini');
+ const state=lastHandoff.status==='applied'?'applied':lastHandoff.status==='apply_failed'?'apply failed':'ready';
+ return 'Last translation · '+when+' · '+source+' · '+state;
 }
 function errorReportText(){
  if(!errorReports.length)return 'No AI error reports saved.';
@@ -521,9 +550,12 @@ function renderHandoff(){
  if(!$('handoffPreview'))return;
  $('handoffPreview').hidden=!handoffDraft;
  $('interpretHandoff').disabled=busy;$('copyChatGPTContext').disabled=busy;$('useCopiedResponse').disabled=busy;
+ if($('restoreLastHandoff')){$('restoreLastHandoff').hidden=!lastHandoff;$('restoreLastHandoff').disabled=busy||!lastHandoff;}
+ if($('lastHandoffStatus'))$('lastHandoffStatus').textContent=lastHandoffLabel();
  if(!handoffDraft)return;
  const preview=handoffDraft.preview,batch=handoffDraft.batch;
- $('handoffSummary').innerHTML='<p>'+escape(batch.summary||'ChatGPT changes interpreted.')+'</p>';
+ const engine=batch.translationPath==='local'?'On-device fast parser':(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed||'Gemini');
+ $('handoffSummary').innerHTML='<p>'+escape(batch.summary||'ChatGPT changes interpreted.')+'</p><p class="small muted">Translator: '+escape(engine)+'</p>';
  $('handoffWarnings').innerHTML=batch.warnings?.length?'<div class="notice"><b>Needs attention</b><ul>'+batch.warnings.map(w=>'<li>'+escape(w)+'</li>').join('')+'</ul></div>':'';
  $('handoffCommands').innerHTML=preview.descriptions.length?'<h3>Local commands</h3><ul>'+preview.descriptions.map(d=>'<li>'+escape(d)+'</li>').join('')+'</ul>':'<p class="muted">No executable changes were found in the ChatGPT response.</p>';
  $('applyHandoff').disabled=busy||!preview.descriptions.length;$('discardHandoff').disabled=busy;
@@ -576,17 +608,22 @@ window.receiveTrainerShare=value=>{
 };
 if(typeof window.__trainerSharedText==='string'&&window.__trainerSharedText.trim()){const shared=window.__trainerSharedText;window.__trainerSharedText='';queueMicrotask(()=>window.receiveTrainerShare(shared));}
 $('interpretHandoff').onclick=async()=>{
- if(busy)return;if(!apiKey)return toast('Add your Gemini API key in Settings first.');
+ if(busy)return;
  const sourceText=$('handoffText').value.trim();if(!sourceText)return toast('Paste or share a ChatGPT response first.');
- busy=true;handoffDraft=null;$('handoffStatus').textContent='Gemini is translating ChatGPT\'s response into local commands…';render();renderHandoff();
+ busy=true;handoffDraft=null;$('handoffStatus').textContent='Translating response… exact workout blocks are parsed on-device first; Gemini is used only when needed.';render();renderHandoff();
  try{
-  const batch=await interpretChatGPTResponse({sourceText,week,profile,memory:coachMemory,selectedDay:selected,model:geminiModel},catalog,apiKey);
+  const batch=await interpretChatGPTResponse({sourceText,week,profile,memory:coachMemory,selectedDay:selected,model:geminiModel,timing:handoffTiming},catalog,apiKey);
+  recordHandoffAttempts(batch.attempts);
   const preview=applyCommandBatch(batch,{week,profile,memory:coachMemory},catalog);
   handoffDraft={sourceText,batch,preview};
-  const fallback=batch.fallbackFrom&&batch.modelUsed?' '+(MODELS.find(m=>m.id===batch.fallbackFrom)?.name||batch.fallbackFrom)+' was busy, so '+(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed)+' interpreted it.':'';
+  lastHandoff={sourceText,batch:structuredClone(batch),translatedAt:new Date().toISOString(),status:'ready'};saveLastHandoff();
+  const fallback=batch.translationPath==='local'
+   ?' Parsed on-device without waiting for Gemini.'
+   :batch.fallbackFrom&&batch.modelUsed?' '+(MODELS.find(m=>m.id===batch.fallbackFrom)?.name||batch.fallbackFrom)+' was unavailable or slow, so '+(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed)+' completed it.':'';
   $('handoffStatus').textContent='Command translation complete.'+fallback+' Nothing has been changed yet.';
   renderHandoff();toast(preview.descriptions.length?'Commands ready for review.':'No executable changes found.');
  }catch(err){
+  recordHandoffAttempts(err.diagnostic?.attempts);
   recordErrorReport(err.diagnostic||{category:'handoff_client_error'},sourceText,err.message);
   $('handoffStatus').textContent=err.message+' Error report saved in Settings → Error reports.';
   toast('Could not interpret the ChatGPT response.');
@@ -594,21 +631,46 @@ $('interpretHandoff').onclick=async()=>{
 };
 $('applyHandoff').onclick=()=>{
  if(busy||!handoffDraft)return;
+ let beforeState=null;
  try{
   const result=applyCommandBatch(handoffDraft.batch,{week,profile,memory:coachMemory},catalog);
   if(!result.descriptions.length)return toast('There are no commands to apply.');
-  undo={week:structuredClone(week),profile:structuredClone(profile),memory:coachMemory,selected,timer:structuredClone(timer)};
-  week=result.week;profile=normalizeProfile(result.profile);coachMemory=result.memory;pending=null;timer={};
-  const firstDay=handoffDraft.batch.commands.find(c=>['set_day','replace_plan'].includes(c.type))?.day;
-  if(firstDay&&DAYS.includes(firstDay))selectDay(firstDay);else selectDay(selected);
+  const workoutDelta=weekChanges(week,result.week,catalog),profileDelta=profileChanges(profile,result.profile),memoryChanged=result.memory!==coachMemory;
+  const workoutDays=workoutDelta.map(x=>x.id);
+  beforeState={week:structuredClone(week),profile:structuredClone(profile),memory:coachMemory,selected,timer:structuredClone(timer)};
+  undo=structuredClone(beforeState);
+  week=normalizeWeek(result.week);profile=normalizeProfile(result.profile);coachMemory=result.memory;pending=null;timer={};
+  const targetDay=workoutDays.includes(beforeState.selected)?beforeState.selected:(workoutDays[0]||beforeState.selected);
+  selectDay(targetDay);
   save();saveProfile();saveMemory();saveChat();
-  const hadWorkout=handoffDraft.batch.commands.some(c=>['set_day','replace_plan'].includes(c.type)),hadProfile=handoffDraft.batch.commands.some(c=>c.type==='update_profile');
-  $('updateNotice').textContent='Applied ChatGPT handoff: '+result.descriptions.join(' · ');$('updateNotice').hidden=!hadWorkout;
-  handoffDraft=null;$('handoffText').value='';$('handoffStatus').textContent='Applied. Continue coaching in the embedded ChatGPT whenever you want another change.';
-  if(hadWorkout||hadProfile)markNextWeekStale();render();renderHandoff();tick();showTab(hadWorkout?'workout':hadProfile?'profilePage':'coach');toast('ChatGPT changes applied.');
- }catch(err){recordErrorReport({category:'handoff_apply_error',message:err.message},handoffDraft?.sourceText||'',err.message);toast(err.message);}
+  const persistedWeek=read('week',null),persistedProfile=read('profile',null),persistedMemory=read('coachMemory','');
+  if(!validWeek(persistedWeek,ids)||weekKey(persistedWeek)!==weekKey(week)||profileKey(persistedProfile)!==profileKey(profile)||String(persistedMemory||'')!==coachMemory)throw new Error('The translated changes could not be verified after saving. The previous trainer state was restored.');
+  const hadWorkout=workoutDelta.length>0,hadProfile=profileDelta.length>0;
+  if(lastHandoff){lastHandoff={...lastHandoff,status:'applied',appliedAt:new Date().toISOString(),appliedWeekKey:weekKey(week)};saveLastHandoff();}
+  const appliedParts=[];if(hadWorkout)appliedParts.push('workout: '+workoutDays.map(dayName).join(', '));if(hadProfile)appliedParts.push('profile/body data');if(memoryChanged)appliedParts.push('coach memory');
+  const note=appliedParts.length?'Applied '+appliedParts.join(' and ')+'.':'These translated commands were already reflected in your trainer data.';
+  $('updateNotice').textContent=note;$('updateNotice').hidden=!hadWorkout;
+  handoffDraft=null;$('handoffText').value='';$('handoffStatus').textContent=note+' The most recent translation is still saved and can be restored.';
+  if(hadWorkout||hadProfile)markNextWeekStale();render();renderHandoff();tick();showTab(hadWorkout?'workout':hadProfile?'profilePage':'coach');toast(note);window.scrollTo({top:0,behavior:'smooth'});
+ }catch(err){
+  if(beforeState){
+   week=normalizeWeek(beforeState.week);profile=normalizeProfile(beforeState.profile);coachMemory=beforeState.memory;timer=beforeState.timer;selectDay(beforeState.selected);save();saveProfile();saveMemory();saveChat();
+  }
+  if(lastHandoff){lastHandoff={...lastHandoff,status:'apply_failed',applyError:String(err.message||'Apply failed').slice(0,500)};saveLastHandoff();}
+  recordErrorReport({category:'handoff_apply_error',message:err.message},handoffDraft?.sourceText||lastHandoff?.sourceText||'',err.message);render();renderHandoff();toast(err.message);
+ }
 };
-$('discardHandoff').onclick=()=>{handoffDraft=null;renderHandoff();$('handoffStatus').textContent='Commands discarded. Your trainer data is unchanged.';toast('Handoff commands discarded.');};
+$('discardHandoff').onclick=()=>{handoffDraft=null;renderHandoff();$('handoffStatus').textContent='Commands discarded. Your trainer data is unchanged. The last successful translation remains saved.';toast('Handoff commands discarded.');};
+$('restoreLastHandoff').onclick=()=>{
+ if(busy||!lastHandoff?.batch)return;
+ try{
+  const preview=applyCommandBatch(lastHandoff.batch,{week,profile,memory:coachMemory},catalog);
+  handoffDraft={sourceText:lastHandoff.sourceText||'',batch:structuredClone(lastHandoff.batch),preview};
+  $('handoffText').value=lastHandoff.sourceText||'';$('handoffPanel').open=true;
+  $('handoffStatus').textContent='Restored the most recent successful translation for review. Nothing has been changed yet.';
+  renderHandoff();$('handoffPreview').scrollIntoView({block:'center',behavior:'smooth'});toast('Last translation restored.');
+ }catch(err){recordErrorReport({category:'handoff_restore_error',message:err.message},lastHandoff.sourceText||'',err.message);toast('Could not restore the last translation.');}
+};
 
 $('undo').onclick=()=>{
  if(!undo||busy)return;

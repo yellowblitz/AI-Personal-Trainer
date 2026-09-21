@@ -12,7 +12,7 @@ const GOALS=['General fitness','Build muscle','Strength','Endurance','Fat loss',
 const LEVELS=['Beginner','Intermediate','Advanced'];
 
 const DAY_WORDS={monday:'mon',tuesday:'tue',wednesday:'wed',thursday:'thu',friday:'fri',saturday:'sat',sunday:'sun'};
-const DAY_HEADER_RE=/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b\s*(?:[-–—]\s*)?([^:\n]{0,28})\s*:/gi;
+const DAY_HEADER_RE=/\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b\s*(?:[-–—]\s*)?([^:\n*]{0,40}?)(?:\*{0,2}\s*:|\*{0,2}\s*(?=\n|$))/gim;
 function exerciseHintFromSegment(value){
  let s=String(value||'').trim().replace(/^[•*\-–—]+\s*/,'');
  if(!s||/\b(optional|warm[- ]?up|cool[- ]?down)\b/i.test(s)&&/\b(bike|cardio|walk|treadmill|elliptical)\b/i.test(s))return '';
@@ -30,10 +30,61 @@ export function extractExplicitPlanHints(sourceText){
  for(let i=0;i<matches.length;i++){
   const m=matches[i],day=DAY_WORDS[m[1].toLowerCase()],start=(m.index||0)+m[0].length,end=i+1<matches.length?(matches[i+1].index||source.length):source.length;
   const body=source.slice(start,end),segments=body.split(/[;|\n]+/),exercises=segments.map(exerciseHintFromSegment).filter(Boolean);
-  if(exercises.length)out.push({day,label:dayName(day),planLabel:text(m[2],40),exercises});
+  if(exercises.length)out.push({day,label:dayName(day),planLabel:text(m[2],40).replace(/^[\s\-–—:]+|[\s\-–—:*]+$/g,''),exercises});
  }
  return out;
 }
+
+function timeToSeconds(minutes,seconds='0'){
+ const m=Number(minutes),sec=Number(seconds||0);return Number.isFinite(m)&&Number.isFinite(sec)?Math.round(m*60+sec):null;
+}
+function restFromSegment(value){
+ const s=String(value||'');
+ const clock=/\brest\b[^\d]{0,10}(\d{1,2}):(\d{2})/i.exec(s);if(clock)return int(timeToSeconds(clock[1],clock[2]),15,600);
+ const seconds=/\brest\b[^\d]{0,10}(\d{2,3})\s*(?:s|sec|secs|second|seconds)\b/i.exec(s);if(seconds)return int(Number(seconds[1]),15,600);
+ const minutes=/\brest\b[^\d]{0,10}(\d+(?:\.\d+)?)\s*(?:min|mins|minute|minutes)\b/i.exec(s);if(minutes)return int(Math.round(Number(minutes[1])*60),15,600);
+ return 90;
+}
+function localExerciseFromSegment(segment,catalog){
+ const name=exerciseHintFromSegment(segment);if(!name)return null;
+ const id=resolveExerciseRef(name,catalog);if(!id)return {error:'unresolved',name};
+ const prescription=/\b(\d+)\s*[x×]\s*(\d+)(?:\s*\/\s*(?:leg|side))?/i.exec(segment)
+  ||/\b(\d+)\s*sets?\s*(?:of\s*)?(\d+)\s*reps?\b/i.exec(segment);
+ if(!prescription)return {error:'prescription',name};
+ const sets=int(Number(prescription[1]),1,10),reps=int(Number(prescription[2]),1,50);if(sets===null||reps===null)return {error:'prescription',name};
+ const load=/\b(\d+(?:\.\d+)?)\s*(lb|lbs|kg)(?:\s*\/\s*(?:side|leg))?\b/i.exec(segment);
+ let weight=load?Number(load[1]):0;if(load&&/^kg$/i.test(load[2]))weight=Math.round(weight*2.2046226218*2)/2;
+ if(finite(weight,0,1000)===null)return {error:'load',name};
+ const rest=restFromSegment(segment);if(rest===null)return {error:'rest',name};
+ return normalizeExercise({id,sets,reps,weight,setReps:Array(sets).fill(reps),setWeights:Array(sets).fill(weight),rest,done:0});
+}
+export function tryLocalExplicitPlanTranslation(sourceText,catalog){
+ const source=text(sourceText,24000);if(!source)return null;
+ const matches=[...source.matchAll(DAY_HEADER_RE)];if(!matches.length)return null;
+ const commands=[],unresolved=[];
+ for(let i=0;i<matches.length;i++){
+  const m=matches[i],day=DAY_WORDS[m[1].toLowerCase()],start=(m.index||0)+m[0].length,end=i+1<matches.length?(matches[i+1].index||source.length):source.length;
+  const body=source.slice(start,end),segments=body.split(/[;|\n]+/).map(v=>v.trim()).filter(Boolean);
+  const prescribed=segments.filter(v=>exerciseHintFromSegment(v));
+  if(prescribed.length<2)continue;
+  const exercises=[];
+  for(const segment of prescribed){
+   const parsed=localExerciseFromSegment(segment,catalog);
+   if(!parsed||parsed.error){unresolved.push({day,name:parsed?.name||exerciseHintFromSegment(segment),reason:parsed?.error||'unknown'});continue;}
+   exercises.push(parsed);
+  }
+  if(exercises.length!==prescribed.length)continue;
+  const label=text(m[2],40).replace(/^[\s\-–—:]+|[\s\-–—:*]+$/g,'')||dayName(day);
+  commands.push({type:'replace_plan',day,name:label,exercises});
+ }
+ if(!commands.length)return null;
+ if(unresolved.length)return {complete:false,unresolved,commands};
+ const restRangeUsed=/\brest\b[^\n;]{0,24}\d{1,2}:\d{2}\s*[–—-]\s*\d{1,2}:\d{2}/i.test(source);
+ const batch=validateCommandBatch({summary:'Translated explicit workout plan locally.',warnings:restRangeUsed?['Rest ranges use the first listed rest time because the planner stores one rest value per exercise.']:[],commands},catalog);
+ const gaps=coverageProblems(source,batch.commands,catalog);
+ return gaps.length?{complete:false,unresolved:gaps,commands:batch.commands}:{complete:true,batch};
+}
+
 function coverageProblems(sourceText,commands,catalog){
  const requirements=extractExplicitPlanHints(sourceText).filter(x=>x.exercises.length>=2),problems=[];
  for(const req of requirements){
@@ -165,9 +216,9 @@ export function buildInterpreterRequest({sourceText,week,profile,memory='',selec
  const includeIds=cleanedWeek.days.flatMap(d=>d.enabled&&d.plan?d.plan.exercises.map(e=>e.id):[]);
  const candidateMap=new Map();
  const addCandidates=items=>items.forEach(item=>{if(item?.id&&!candidateMap.has(item.id))candidateMap.set(item.id,item);});
- for(const block of explicitDayExerciseHints)for(const name of block.exercises)addCandidates(compactCatalog(name+' '+cleanedProfile.equipment,catalog,{limit:14}));
- addCandidates(compactCatalog([sourceText,cleanedProfile.equipment].join('\n'),catalog,{limit:220,includeIds}));
- const catalogSummary=[...candidateMap.values()].slice(0,420);
+ for(const block of explicitDayExerciseHints)for(const name of block.exercises)addCandidates(compactCatalog(name+' '+cleanedProfile.equipment,catalog,{limit:8}));
+ addCandidates(compactCatalog([sourceText,cleanedProfile.equipment].join('\n'),catalog,{limit:90,includeIds}));
+ const catalogSummary=[...candidateMap.values()].slice(0,180);
  const system=[
   'You are a deterministic command translator for an Android workout planner. You are NOT the coach and must not redesign the workout.',
   'Interpret only concrete changes explicitly stated in the supplied ChatGPT response. Preserve everything not mentioned.',
@@ -188,31 +239,57 @@ export function buildInterpreterRequest({sourceText,week,profile,memory='',selec
   'For prose that does not contain a complete explicit day plan, emit only commands for data that should change.',
   'Candidate catalog ('+catalogSummary.length+' of '+catalog.length+' local exercises): '+JSON.stringify(catalogSummary)
  ].join('\n');
- return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify({chatgptResponse:text(sourceText,24000),selectedDay,currentWeek:cleanedWeek,profile:cleanedProfile,memory:text(memory,4000),explicitDayExerciseHints,coverageRepair:Array.isArray(coverageRepair)?coverageRepair.slice(0,8):[]})}]}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:12000,thinkingConfig:{thinkingLevel:'high'}}};
+ return {systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:JSON.stringify({chatgptResponse:text(sourceText,24000),selectedDay,currentWeek:cleanedWeek,profile:cleanedProfile,memory:text(memory,1200),explicitDayExerciseHints,coverageRepair:Array.isArray(coverageRepair)?coverageRepair.slice(0,8):[]})}]}],generationConfig:{responseMimeType:'application/json',maxOutputTokens:7000,thinkingConfig:{thinkingLevel:'low'}}};
 }
 
 export async function interpretChatGPTResponse(input,catalog,apiKey,fetcher=fetch){
- if(typeof apiKey!=='string'||!apiKey.trim())throw new Error('Add your Gemini API key in Settings first.');
- const selected=MODELS.some(m=>m.id===input.model)?input.model:DEFAULT_MODEL,start=MODELS.findIndex(m=>m.id===selected),models=MODELS.slice(start).map(m=>m.id),attempts=[];
+ const local=tryLocalExplicitPlanTranslation(input.sourceText,catalog);
+ if(local?.complete)return {...local.batch,modelUsed:'local-parser',fallbackFrom:null,translationPath:'local',attempts:[]};
+ if(typeof apiKey!=='string'||!apiKey.trim())throw new Error('This response needs Gemini fallback. Add your Gemini API key in Settings first.');
+ const selected=MODELS.some(m=>m.id===input.model)?input.model:DEFAULT_MODEL;
+ const models=[selected,...MODELS.map(m=>m.id).filter(id=>id!==selected)],attempts=[];
+ const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ const timeoutFor=model=>{
+  const avg=Number(input?.timing?.[model]?.avgMs);
+  return Number.isFinite(avg)&&avg>0?clamp(Math.round(avg*2.5+8000),25000,60000):35000;
+ };
  const requestModel=async(model,body)=>{
-  let response;
-  try{response=await fetcher(geminiUrl(model),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey.trim()},body:JSON.stringify(body),signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'error'});}
-  catch(e){const err=new Error(e.name==='TimeoutError'?'Gemini interpreter timed out.':'Could not connect to the Gemini interpreter.');err.diagnostic={category:e.name==='TimeoutError'?'handoff_timeout':'handoff_network',model,attempts};throw err;}
+  const timeoutMs=timeoutFor(model),started=Date.now();let response;
+  try{response=await fetcher(geminiUrl(model),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':apiKey.trim()},body:JSON.stringify(body),signal:AbortSignal.timeout(timeoutMs),credentials:'omit',redirect:'error'});}
+  catch(e){
+   const timedOut=e.name==='TimeoutError'||e.name==='AbortError',durationMs=Date.now()-started;
+   attempts.push({model,outcome:timedOut?'timeout':'network',durationMs,timeoutMs});
+   const err=new Error(timedOut?'Gemini interpreter timed out on '+model+'. Trying another model when available.':'Could not connect to the Gemini interpreter.');
+   err.diagnostic={category:timedOut?'handoff_timeout':'handoff_network',model,durationMs,timeoutMs,attempts:[...attempts]};err.retryable=true;throw err;
+  }
   if(!response.ok){
    let provider={};try{provider=await response.json();}catch{}
-   const detail={model,httpStatus:response.status,providerStatus:text(provider?.error?.status,80),providerMessage:text(provider?.error?.message,800)};attempts.push(detail);
-   const err=new Error(response.status===503?'Gemini interpreters are currently busy. Please try again shortly.':'Gemini could not interpret the ChatGPT response.');
-   err.diagnostic={category:'handoff_http_error',...detail,attempts};err.isBusy=response.status===503;throw err;
+   const durationMs=Date.now()-started,detail={model,httpStatus:response.status,providerStatus:text(provider?.error?.status,80),providerMessage:text(provider?.error?.message,800),durationMs,timeoutMs,outcome:'http_'+response.status};attempts.push(detail);
+   const err=new Error([429,500,502,503,504].includes(response.status)?'Gemini interpreter is temporarily unavailable. Trying another model when available.':'Gemini could not interpret the ChatGPT response.');
+   err.diagnostic={category:'handoff_http_error',...detail,attempts:[...attempts]};err.retryable=[429,500,502,503,504].includes(response.status);throw err;
   }
-  let data;try{data=await response.json();}catch{const err=new Error('Gemini returned an unreadable command response.');err.diagnostic={category:'handoff_invalid_http_json',model};throw err;}
-  const candidate=data?.candidates?.[0];if(candidate?.finishReason!=='STOP'){const err=new Error('Gemini returned an incomplete command response.');err.diagnostic={category:'handoff_incomplete',model,finishReason:candidate?.finishReason||'missing'};throw err;}
-  try{return JSON.parse((candidate.content?.parts||[]).filter(p=>!p.thought&&typeof p.text==='string').map(p=>p.text).join(''));}
-  catch{const err=new Error('Gemini returned invalid command JSON.');err.diagnostic={category:'handoff_invalid_json',model};throw err;}
+  let data;try{data=await response.json();}catch{
+   const durationMs=Date.now()-started;attempts.push({model,outcome:'invalid_http_json',durationMs,timeoutMs});
+   const err=new Error('Gemini returned an unreadable command response.');err.diagnostic={category:'handoff_invalid_http_json',model,durationMs,timeoutMs,attempts:[...attempts]};err.retryable=true;throw err;
+  }
+  const candidate=data?.candidates?.[0];
+  if(candidate?.finishReason!=='STOP'){
+   const durationMs=Date.now()-started;attempts.push({model,outcome:'incomplete',durationMs,timeoutMs,finishReason:candidate?.finishReason||'missing'});
+   const err=new Error('Gemini returned an incomplete command response.');err.diagnostic={category:'handoff_incomplete',model,finishReason:candidate?.finishReason||'missing',durationMs,timeoutMs,attempts:[...attempts]};err.retryable=true;throw err;
+  }
+  try{
+   const json=JSON.parse((candidate.content?.parts||[]).filter(p=>!p.thought&&typeof p.text==='string').map(p=>p.text).join(''));
+   attempts.push({model,outcome:'success',durationMs:Date.now()-started,timeoutMs});return json;
+  }catch{
+   const durationMs=Date.now()-started;attempts.push({model,outcome:'invalid_json',durationMs,timeoutMs});
+   const err=new Error('Gemini returned invalid command JSON.');err.diagnostic={category:'handoff_invalid_json',model,durationMs,timeoutMs,attempts:[...attempts]};err.retryable=true;throw err;
+  }
  };
+ let lastError=null;
  for(let i=0;i<models.length;i++){
   const model=models[i];let json,parsed;
   try{json=await requestModel(model,buildInterpreterRequest(input,catalog));}
-  catch(err){if(err.isBusy&&i<models.length-1)continue;throw err;}
+  catch(err){lastError=err;if(err.retryable&&i<models.length-1)continue;throw err;}
   let firstValidationError=null;
   try{parsed=validateCommandBatch(json,catalog);}catch(err){firstValidationError=err;}
   let gaps=parsed?coverageProblems(input.sourceText,parsed.commands,catalog):[{reason:'validation',message:firstValidationError?.message||'invalid command batch'}];
@@ -222,16 +299,18 @@ export async function interpretChatGPTResponse(input,catalog,apiKey,fetcher=fetc
     const repairedJson=await requestModel(model,buildInterpreterRequest({...input,coverageRepair:repair},catalog));
     parsed=validateCommandBatch(repairedJson,catalog);gaps=coverageProblems(input.sourceText,parsed.commands,catalog);
    }catch(err){
-    if(err.isBusy&&i<models.length-1)continue;
-    if(!err.diagnostic)err.diagnostic={category:'handoff_validation',model,firstError:firstValidationError?.message||null,coverageRepair:repair};
+    lastError=err;
+    if(err.retryable&&i<models.length-1)continue;
+    if(!err.diagnostic)err.diagnostic={category:'handoff_validation',model,firstError:firstValidationError?.message||null,coverageRepair:repair,attempts:[...attempts]};
     throw err;
    }
   }
   if(gaps.length){
    const err=new Error('Gemini left exercises out of the ChatGPT plan, so no incomplete workout was applied. Please retry the response.');
-   err.diagnostic={category:'handoff_incomplete_day',model,gaps};throw err;
+   err.diagnostic={category:'handoff_incomplete_day',model,gaps,attempts:[...attempts]};lastError=err;if(i<models.length-1)continue;throw err;
   }
-  return {...parsed,modelUsed:model,fallbackFrom:model!==selected?selected:null};
+  return {...parsed,modelUsed:model,fallbackFrom:model!==selected?selected:null,translationPath:'gemini',attempts:[...attempts]};
  }
+ if(lastError)throw lastError;
  throw new Error('Gemini could not interpret the ChatGPT response.');
 }
