@@ -124,9 +124,11 @@ export function lastExercisePerformance(history,id){
   const raw=session.plan?.exercises?.find(e=>e?.id===id);
   const ex=normalizeExercise(raw);
   if(!ex?.done)continue;
-  return {date:session.date,rir:ex.rir,note:ex.note,effort:ex.effort,form:ex.form,discomfort:ex.discomfort,sets:Array.from({length:ex.done},(_,i)=>({
-   reps:ex.setReps[i],weight:ex.setWeights[i],plannedReps:ex.plannedReps[i],plannedWeight:ex.plannedWeights[i]
-  }))};
+  return {date:session.date,rir:ex.rir,note:ex.note,
+   ...(ex.effort?{effort:ex.effort}:{}),...(ex.form?{form:ex.form}:{}),...(ex.discomfort?{discomfort:ex.discomfort}:{}),
+   sets:Array.from({length:ex.done},(_,i)=>({
+    reps:ex.setReps[i],weight:ex.setWeights[i],plannedReps:ex.plannedReps[i],plannedWeight:ex.plannedWeights[i]
+   }))};
  }
  return null;
 }
@@ -234,7 +236,7 @@ export function muscleProgress(history,catalog,{days=56,now=Date.now()}={}){
  const muscle=new Map();
  for(const [id,points] of perExercise){
   const c=byId.get(id);if(!c)continue;
-  const muscles=exerciseMuscles(c),take=Math.min(2,points.length);
+  const muscles=exerciseMuscles(c),take=Math.min(2,Math.max(1,Math.floor(points.length/2)));
   const first=points.slice(0,take),last=points.slice(-take);
   const perfBase=mean(first.map(x=>x.performance)),perfRecent=mean(last.map(x=>x.performance));
   const volBase=mean(first.map(x=>x.volume)),volRecent=mean(last.map(x=>x.volume));
