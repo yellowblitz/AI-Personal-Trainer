@@ -1,0 +1,4875 @@
+{
+  "source": {
+    "repository": "rthepen/workout-database",
+    "commit": "ee61c50da94b60fd94b4a8fd5aefcc0fcaae28f7",
+    "license": "MIT",
+    "generatedAt": "2026-09-20",
+    "note": "This file stores YouTube identifiers and timing metadata only. YouTube-hosted video content is streamed on demand and remains subject to the video owner's rights and YouTube terms."
+  },
+  "demos": {
+    "3_4_Sit-Up": [
+      {
+        "youtubeId": "qcL8me8Cah0",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Eternal Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "90_90_Hamstring": [
+      {
+        "youtubeId": "GNEfNkFuoWU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Taylored Physical Therapy",
+        "source": "workout-database"
+      }
+    ],
+    "Ab_Crunch_Machine": [
+      {
+        "youtubeId": "b6ONE9Rfgl8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Felicia Chabot",
+        "source": "workout-database"
+      }
+    ],
+    "Advanced_Kettlebell_Windmill": [
+      {
+        "youtubeId": "EHGTgeKwOyY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Kelly Stone",
+        "source": "workout-database"
+      }
+    ],
+    "All_Fours_Quad_Stretch": [
+      {
+        "youtubeId": "drEG0ug19xI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Face-Off Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Alternate_Hammer_Curl": [
+      {
+        "youtubeId": "BDpA9e9sZk0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Girls Gone Strong | Women's Health & Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Alternate_Heel_Touchers": [
+      {
+        "youtubeId": "jGuk1WCWgPk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "FitandPower ",
+        "source": "workout-database"
+      }
+    ],
+    "Anti-Gravity_Press": [
+      {
+        "youtubeId": "TpggXasd6JA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Katana Bednarz Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Arnold_Dumbbell_Press": [
+      {
+        "youtubeId": "AjB-UXErljM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Around_The_Worlds": [
+      {
+        "youtubeId": "NYneGdyW2u4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "In Depth Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Atlas_Stones": [
+      {
+        "youtubeId": "6C_4KmuioSI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Mark Jeanes",
+        "source": "workout-database"
+      }
+    ],
+    "Axle_Deadlift": [
+      {
+        "youtubeId": "fcbgRr-jVbA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Dad Strength Gym",
+        "source": "workout-database"
+      }
+    ],
+    "Backward_Medicine_Ball_Throw": [
+      {
+        "youtubeId": "E_T9hctMk-o",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ALWAYS REPPING sports performance training",
+        "source": "workout-database"
+      }
+    ],
+    "Ball_Leg_Curl": [
+      {
+        "youtubeId": "xB1lGVzRwWk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Powered By Movement Physical Therapy & Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Band_Assisted_Pull-Up": [
+      {
+        "youtubeId": "COJxBrntnJY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Progression Training",
+        "source": "workout-database"
+      }
+    ],
+    "Band_Good_Morning_Pull_Through": [
+      {
+        "youtubeId": "tb7JtugjLQ8",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "SEXioFIT",
+        "source": "workout-database"
+      }
+    ],
+    "Band_Hip_Adductions": [
+      {
+        "youtubeId": "sDtJVN2D27k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Propel Fitness Center",
+        "source": "workout-database"
+      }
+    ],
+    "Band_Skull_Crusher": [
+      {
+        "youtubeId": "8mqP8rUAv1s",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Modern Athlete Strength Systems",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Glute_Bridge": [
+      {
+        "youtubeId": "DrZdxtfEgik",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Edge Strength and Conditioning",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Guillotine_Bench_Press": [
+      {
+        "youtubeId": "wz-s2QzUyKM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Allen and Nicole Cress Training",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Hack_Squat": [
+      {
+        "youtubeId": "0_FUQNQzma0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "GTT Performance Centre - Gym, Health and Fitness Centre in Hobart, TAS",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Hip_Thrust": [
+      {
+        "youtubeId": "7SCoCTps6t0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "The Movement Collective",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Incline_Shoulder_Raise": [
+      {
+        "youtubeId": "3Y_RFoYl-dk",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "My PT Hub",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Rear_Delt_Row": [
+      {
+        "youtubeId": "G7vzEf0Thcw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Nate Gowan",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Seated_Calf_Raise": [
+      {
+        "youtubeId": "J9vXMRGHzaI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Cole Marmor",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Shrug": [
+      {
+        "youtubeId": "n4ldvAoSZiY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coach Mstafa",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Shrug_Behind_The_Back": [
+      {
+        "youtubeId": "jvIs7UQjEhQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "DAILY GYM WORKOUT BY CHAHAL",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Side_Bend": [
+      {
+        "youtubeId": "PFd64WJMGws",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Brett “Hitman” Hart",
+        "source": "workout-database"
+      }
+    ],
+    "Barbell_Side_Split_Squat": [
+      {
+        "youtubeId": "hDM-Ka0TSMw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Elon Sport Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Battling_Ropes": [
+      {
+        "youtubeId": "V76MaoTX4WM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Solberg Performance Training",
+        "source": "workout-database"
+      }
+    ],
+    "Bench_Sprint": [
+      {
+        "youtubeId": "D4iulYo-udo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Christian Cruz Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Bent-Arm_Barbell_Pullover": [
+      {
+        "youtubeId": "IfaNfOMZs50",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "NWFIT",
+        "source": "workout-database"
+      }
+    ],
+    "Bent-Knee_Hip_Raise": [
+      {
+        "youtubeId": "zAZE1NoSbTk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Renea Jones-Hudson",
+        "source": "workout-database"
+      }
+    ],
+    "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench": [
+      {
+        "youtubeId": "LsT-bR_zxLo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Board_Press": [
+      {
+        "youtubeId": "OaLCwWeHN3Y",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "The Barbellian",
+        "source": "workout-database"
+      }
+    ],
+    "Body_Tricep_Press": [
+      {
+        "youtubeId": "Ub2LQxjZuvQ",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "RAD FITNESS",
+        "source": "workout-database"
+      }
+    ],
+    "Bodyweight_Flyes": [
+      {
+        "youtubeId": "2jr1z5OZsLY",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "GymPaws",
+        "source": "workout-database"
+      }
+    ],
+    "Bradford_Rocky_Presses": [
+      {
+        "youtubeId": "Q63JokdfgOk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Endgame Coaching",
+        "source": "workout-database"
+      }
+    ],
+    "Butt-Ups": [
+      {
+        "youtubeId": "f1tUpWgS9qw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Savanna Silva",
+        "source": "workout-database"
+      }
+    ],
+    "Butterfly": [
+      {
+        "youtubeId": "a9vQ_hwIksU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Chest_Press": [
+      {
+        "youtubeId": "-wubBe3IYnQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coach Mike Urso",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Crossover": [
+      {
+        "youtubeId": "CS6_F3IZGno",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Exercise and Performance Nutrition Laboratory",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Crunch": [
+      {
+        "youtubeId": "K2m0jj6RfYg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Deadlifts": [
+      {
+        "youtubeId": "Z7tedqVbNls",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "No Bullshit Fit By Leigh Hero",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Hammer_Curls_-_Rope_Attachment": [
+      {
+        "youtubeId": "OzP5_-wDkAk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bonnie Dawson",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Hip_Adduction": [
+      {
+        "youtubeId": "jlxQWV3hVjQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Haley Meier",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Incline_Pushdown": [
+      {
+        "youtubeId": "-q9hHSN2X_E",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Philippe Cloutier",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Incline_Triceps_Extension": [
+      {
+        "youtubeId": "5iCl3eY0ifk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Imran  Kazi",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Internal_Rotation": [
+      {
+        "youtubeId": "kBhQ4B7rl0w",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Cooney Strength Conditioning",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Iron_Cross": [
+      {
+        "youtubeId": "YaplOx92X88",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Anthony Rigsby",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Judo_Flip": [
+      {
+        "youtubeId": "TJe-JWqnQFU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Dewi Mulyani",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Lying_Triceps_Extension": [
+      {
+        "youtubeId": "623kTk0MTlI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Chris Hynds",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_One_Arm_Tricep_Extension": [
+      {
+        "youtubeId": "VgjAgAKaSPM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Muscle Recruitment",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Preacher_Curl": [
+      {
+        "youtubeId": "P33oQtDURjs",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Jase Stuart - Better Body Academy",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Rear_Delt_Fly": [
+      {
+        "youtubeId": "uxCEbEM9z9Q",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "KC FITNESS",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Reverse_Crunch": [
+      {
+        "youtubeId": "90q8c12UphE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Zach Grim",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Rope_Overhead_Triceps_Extension": [
+      {
+        "youtubeId": "9Ark9S11uXw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Rope_Rear-Delt_Rows": [
+      {
+        "youtubeId": "eij_NyxrOgs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Imran  Kazi",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Russian_Twists": [
+      {
+        "youtubeId": "Gm0KbW6Od30",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Jason Nelson",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Seated_Crunch": [
+      {
+        "youtubeId": "4_O3ofvNFuk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "HF Strength Coaching",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Seated_Lateral_Raise": [
+      {
+        "youtubeId": "ynGAKaSK8Dk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "PTrainer",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Shoulder_Press": [
+      {
+        "youtubeId": "ICshgsTyhqc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rachel Gregory",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Shrugs": [
+      {
+        "youtubeId": "JxaV9n9l2Y8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bradley Bowden",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Wrist_Curl": [
+      {
+        "youtubeId": "RdMwz1GQPKI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Royal Fitness Hub",
+        "source": "workout-database"
+      }
+    ],
+    "Calf-Machine_Shoulder_Shrug": [
+      {
+        "youtubeId": "wnNLiFgENcg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Herschel Curley Training and Adventures ",
+        "source": "workout-database"
+      }
+    ],
+    "Calf_Press": [
+      {
+        "youtubeId": "bmGzTZw35uQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Joshua Merson",
+        "source": "workout-database"
+      }
+    ],
+    "Calf_Press_On_The_Leg_Press_Machine": [
+      {
+        "youtubeId": "DvEnixpoSg0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Build Programming",
+        "source": "workout-database"
+      }
+    ],
+    "Car_Deadlift": [
+      {
+        "youtubeId": "DRTWRJtp2pw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Cooney Strength Conditioning",
+        "source": "workout-database"
+      }
+    ],
+    "Car_Drivers": [
+      {
+        "youtubeId": "MROKUSShaI0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Madeleine Martens",
+        "source": "workout-database"
+      }
+    ],
+    "Carioca_Quick_Step": [
+      {
+        "youtubeId": "5UtlTl-7bio",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Fit Family Physical Therapy",
+        "source": "workout-database"
+      }
+    ],
+    "Catch_and_Overhead_Throw": [
+      {
+        "youtubeId": "NktkzTpq1Lo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bobby Smith",
+        "source": "workout-database"
+      }
+    ],
+    "Chain_Handle_Extension": [
+      {
+        "youtubeId": "iE63Hn2SF7k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "𝖂𝕰 𝕬𝕽𝕰 𝖁𝕰𝕹𝕺𝕸",
+        "source": "workout-database"
+      }
+    ],
+    "Chain_Press": [
+      {
+        "youtubeId": "9DMvQO5C-hc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Blue Collar Strong",
+        "source": "workout-database"
+      }
+    ],
+    "Chair_Squat": [
+      {
+        "youtubeId": "xRETeOET_Hg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Marzrodie",
+        "source": "workout-database"
+      }
+    ],
+    "Chest_Push_from_3_point_stance": [
+      {
+        "youtubeId": "DMSR3GE0xT4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "All Day Fit",
+        "source": "workout-database"
+      }
+    ],
+    "Circus_Bell": [
+      {
+        "youtubeId": "TT58DCihYJA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "NY Strong",
+        "source": "workout-database"
+      }
+    ],
+    "Clean": [
+      {
+        "youtubeId": "wMYS8K7bH0g",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Adriell mayes",
+        "source": "workout-database"
+      }
+    ],
+    "Clean_Deadlift": [
+      {
+        "youtubeId": "xNwpvDuZJ3k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Clean_Pull": [
+      {
+        "youtubeId": "yz4KXzZHAE8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "CrossFit Monarch X Functional strength training",
+        "source": "workout-database"
+      }
+    ],
+    "Clean_Shrug": [
+      {
+        "youtubeId": "zNf5WF2Us6o",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Miami University Human Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Clean_and_Jerk": [
+      {
+        "youtubeId": "J2YH8S6-Pss",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Chris Wilson",
+        "source": "workout-database"
+      }
+    ],
+    "Clean_from_Blocks": [
+      {
+        "youtubeId": "4-yDCRH5_yU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "4D Health and Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Clock_Push-Up": [
+      {
+        "youtubeId": "wMXIYWbQy6U",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "That's Good Money",
+        "source": "workout-database"
+      }
+    ],
+    "Close-Grip_Dumbbell_Press": [
+      {
+        "youtubeId": "BaiiD8qI_W0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "jennyjeanfitness",
+        "source": "workout-database"
+      }
+    ],
+    "Close-Grip_EZ-Bar_Press": [
+      {
+        "youtubeId": "ljBtCPdGTHM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Mike McCauley",
+        "source": "workout-database"
+      }
+    ],
+    "Close-Grip_Front_Lat_Pulldown": [
+      {
+        "youtubeId": "jXRxMJhOCc0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Stan Bakh",
+        "source": "workout-database"
+      }
+    ],
+    "Cocoons": [
+      {
+        "youtubeId": "YQEXKq9XDFo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Surge Fit",
+        "source": "workout-database"
+      }
+    ],
+    "Conans_Wheel": [
+      {
+        "youtubeId": "AlMgQnbhBAM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Mitch's Gym",
+        "source": "workout-database"
+      }
+    ],
+    "Concentration_Curls": [
+      {
+        "youtubeId": "EjUnEEfTSEY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Cross-Body_Crunch": [
+      {
+        "youtubeId": "sToLpoTUHHE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Brit Wilson",
+        "source": "workout-database"
+      }
+    ],
+    "Cross_Body_Hammer_Curl": [
+      {
+        "youtubeId": "7EzglNaThZY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Boss Lifting",
+        "source": "workout-database"
+      }
+    ],
+    "Crossover_Reverse_Lunge": [
+      {
+        "youtubeId": "12mTqc2_3iY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Strength for Fencing",
+        "source": "workout-database"
+      }
+    ],
+    "Crucifix": [
+      {
+        "youtubeId": "waolkh7XiHA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "In Depth Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Crunches": [
+      {
+        "youtubeId": "ZKw4t23ERuw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Cuban_Press": [
+      {
+        "youtubeId": "rv41bj3JTkQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Iron Society Gym",
+        "source": "workout-database"
+      }
+    ],
+    "Dead_Bug": [
+      {
+        "youtubeId": "-8xqJ2xXs2A",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Claire DeFitt",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Barbell_Bench_Press": [
+      {
+        "youtubeId": "zUWQG9iWqC4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "GAZI FITNESS",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Close-Grip_Bench_To_Skull_Crusher": [
+      {
+        "youtubeId": "ho2V2a1KIxA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Peak Fit Personal Training",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Crunch": [
+      {
+        "youtubeId": "D_6tXVmq_nM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Agasifitness",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Dumbbell_Bench_Press": [
+      {
+        "youtubeId": "1OdTFeN90W4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "KT Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Dumbbell_Flyes": [
+      {
+        "youtubeId": "lI3nfjJNVEE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Athletes Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Dumbbell_Triceps_Extension": [
+      {
+        "youtubeId": "BBwg3Y83StY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "TonicX Performance Physique",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Oblique_Crunch": [
+      {
+        "youtubeId": "Aqwss2_zkzY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Boss Lifting",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Push-Up": [
+      {
+        "youtubeId": "gvKBwTRooyQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Luc | Calisthenics",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Reverse_Crunch": [
+      {
+        "youtubeId": "ONTIr0hfGs4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Boss Lifting",
+        "source": "workout-database"
+      }
+    ],
+    "Decline_Smith_Press": [
+      {
+        "youtubeId": "36Pxw_szDUw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Progressive Performance \"P2\"",
+        "source": "workout-database"
+      }
+    ],
+    "Deficit_Deadlift": [
+      {
+        "youtubeId": "jLXWc2Kbaug",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "crossfitph",
+        "source": "workout-database"
+      }
+    ],
+    "Depth_Jump_Leap": [
+      {
+        "youtubeId": "bV6nDjPECf4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Physical Balance",
+        "source": "workout-database"
+      }
+    ],
+    "Dip_Machine": [
+      {
+        "youtubeId": "2NOglxsG1wE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Diwas",
+        "source": "workout-database"
+      }
+    ],
+    "Donkey_Calf_Raises": [
+      {
+        "youtubeId": "adfgfE7JnwU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Phil Salwan",
+        "source": "workout-database"
+      }
+    ],
+    "Double_Kettlebell_Jerk": [
+      {
+        "youtubeId": "wC7is84oFlM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Canvas Muscle",
+        "source": "workout-database"
+      }
+    ],
+    "Double_Leg_Butt_Kick": [
+      {
+        "youtubeId": "OFkfIVmYdIY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Collin R. Engstrom",
+        "source": "workout-database"
+      }
+    ],
+    "Drag_Curl": [
+      {
+        "youtubeId": "3AEbI9H3jtg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Marzrodie",
+        "source": "workout-database"
+      }
+    ],
+    "Drop_Push": [
+      {
+        "youtubeId": "e9-9ren43ro",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Brandon O'Neall",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Bench_Press": [
+      {
+        "youtubeId": "mTaiQemkEpU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Clean": [
+      {
+        "youtubeId": "jsdYBScInT4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "DO MORE CrossFit",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Floor_Press": [
+      {
+        "youtubeId": "O1x7AoUf5Vs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Clans Master",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Flyes": [
+      {
+        "youtubeId": "rk8YayRoTRQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Incline_Row": [
+      {
+        "youtubeId": "2ByilQ4NaAs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Lying_Pronation": [
+      {
+        "youtubeId": "MB7r7M0Cl3s",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "workout2health",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Lying_Rear_Lateral_Raise": [
+      {
+        "youtubeId": "32VOgQ1miUE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "TORO",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Lying_Supination": [
+      {
+        "youtubeId": "hheZKDGkS10",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "workout2health",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_One-Arm_Upright_Row": [
+      {
+        "youtubeId": "LvsKGU8rlHA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Abstract Training",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Prone_Incline_Curl": [
+      {
+        "youtubeId": "RB4BzpHdXK4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Drew Duggan Online Personal Training",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Scaption": [
+      {
+        "youtubeId": "TPXDhl9kTuI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Echo Sports Physical Therapy",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Seated_Box_Jump": [
+      {
+        "youtubeId": "HO821G2Kfkg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Sanchez Performance Systems",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Seated_One-Leg_Calf_Raise": [
+      {
+        "youtubeId": "EP6LVvotYWE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Australian Athletic Centre",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Shrug": [
+      {
+        "youtubeId": "rFsSeClGnNA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Dumbbell_Side_Bend": [
+      {
+        "youtubeId": "kqr_IjiUuyY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "RB Fitness ",
+        "source": "workout-database"
+      }
+    ],
+    "EZ-Bar_Curl": [
+      {
+        "youtubeId": "6WJsJud9NI4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "KC FITNESS",
+        "source": "workout-database"
+      }
+    ],
+    "Elbow_to_Knee": [
+      {
+        "youtubeId": "B-WrnGIf4h4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coach_dolaa",
+        "source": "workout-database"
+      }
+    ],
+    "Elevated_Back_Lunge": [
+      {
+        "youtubeId": "pWitoM8lQnI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "",
+        "source": "workout-database"
+      }
+    ],
+    "Elevated_Cable_Rows": [
+      {
+        "youtubeId": "I3Ia2y_Bh90",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "DilekFit",
+        "source": "workout-database"
+      }
+    ],
+    "Exercise_Ball_Crunch": [
+      {
+        "youtubeId": "yfSi9pYYY0w",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "AUE Performance (Augustine Exercises Demos)",
+        "source": "workout-database"
+      }
+    ],
+    "Exercise_Ball_Pull-In": [
+      {
+        "youtubeId": "M4rGgLKu31g",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rehab Hero",
+        "source": "workout-database"
+      }
+    ],
+    "Extended_Range_One-Arm_Kettlebell_Floor_Press": [
+      {
+        "youtubeId": "HDBoo5BbZE0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coach Matty Green",
+        "source": "workout-database"
+      }
+    ],
+    "External_Rotation": [
+      {
+        "youtubeId": "xXuBlRT-7YY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Fitness Pain Free",
+        "source": "workout-database"
+      }
+    ],
+    "External_Rotation_with_Band": [
+      {
+        "youtubeId": "7DqYesMRkzU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Proformance Sports Rehab & Nutrition",
+        "source": "workout-database"
+      }
+    ],
+    "External_Rotation_with_Cable": [
+      {
+        "youtubeId": "n17FcALDB60",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Cooney Strength Conditioning",
+        "source": "workout-database"
+      }
+    ],
+    "Face_Pull": [
+      {
+        "youtubeId": "IeOqdw9WI90",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Farmers_Walk": [
+      {
+        "youtubeId": "4Ly1EMfJk6Y",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rehab Hero",
+        "source": "workout-database"
+      }
+    ],
+    "Finger_Curls": [
+      {
+        "youtubeId": "F1S6FZoV7n4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Physio Room Co",
+        "source": "workout-database"
+      }
+    ],
+    "Flat_Bench_Cable_Flyes": [
+      {
+        "youtubeId": "7W6U3PuIQu8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "fitness vlog ",
+        "source": "workout-database"
+      }
+    ],
+    "Flat_Bench_Leg_Pull-In": [
+      {
+        "youtubeId": "zXUjOMp1bnU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Glam Fit Bikinis",
+        "source": "workout-database"
+      }
+    ],
+    "Flat_Bench_Lying_Leg_Raise": [
+      {
+        "youtubeId": "KCt2qWYPrMc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Repetitions Fitness RPT",
+        "source": "workout-database"
+      }
+    ],
+    "Floor_Press": [
+      {
+        "youtubeId": "TjkYWvggteo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Dartmouth Strength & Conditioning",
+        "source": "workout-database"
+      }
+    ],
+    "Flutter_Kicks": [
+      {
+        "youtubeId": "qxzJ8k215UI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 8,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Sohel Fitness Zone",
+        "source": "workout-database"
+      }
+    ],
+    "Forward_Drag_with_Press": [
+      {
+        "youtubeId": "3U3tlOfx9UQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "trinkfitness",
+        "source": "workout-database"
+      }
+    ],
+    "Frankenstein_Squat": [
+      {
+        "youtubeId": "mtofpViNNtU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Physical Balance",
+        "source": "workout-database"
+      }
+    ],
+    "Front_Cable_Raise": [
+      {
+        "youtubeId": "IIz_2WGzZ7U",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Peak Fit Personal Training",
+        "source": "workout-database"
+      }
+    ],
+    "Front_Cone_Hops_or_hurdle_hops": [
+      {
+        "youtubeId": "N_KWDQSHkTo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ADAPT",
+        "source": "workout-database"
+      }
+    ],
+    "Front_Dumbbell_Raise": [
+      {
+        "youtubeId": "mRuBMFItx1s",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "VictoryaFitness",
+        "source": "workout-database"
+      }
+    ],
+    "Front_Plate_Raise": [
+      {
+        "youtubeId": "7kroDlSZ3Lc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "MataMethod",
+        "source": "workout-database"
+      }
+    ],
+    "Front_Raise_And_Pullover": [
+      {
+        "youtubeId": "X_eGLtiWZSs",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "My PT Hub",
+        "source": "workout-database"
+      }
+    ],
+    "Full_Range-Of-Motion_Lat_Pulldown": [
+      {
+        "youtubeId": "cczFstlkvzQ",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Kurdish Bodybuilding",
+        "source": "workout-database"
+      }
+    ],
+    "Gironda_Sternum_Chins": [
+      {
+        "youtubeId": "ehFGyIPWYBA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Benji",
+        "source": "workout-database"
+      }
+    ],
+    "Glute_Ham_Raise": [
+      {
+        "youtubeId": "KB7Wm6Wa5Xw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "FSP Admin",
+        "source": "workout-database"
+      }
+    ],
+    "Glute_Kickback": [
+      {
+        "youtubeId": "gxX76oqdU1k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Lindsay Huelse",
+        "source": "workout-database"
+      }
+    ],
+    "Good_Morning": [
+      {
+        "youtubeId": "q4gCaj8g5tg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Good Human",
+        "source": "workout-database"
+      }
+    ],
+    "Good_Morning_off_Pins": [
+      {
+        "youtubeId": "ReN-p7PX1rU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bridge Physical Therapy and Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Groiners": [
+      {
+        "youtubeId": "LjSI4rYqLBE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ADAPT",
+        "source": "workout-database"
+      }
+    ],
+    "Hack_Squat": [
+      {
+        "youtubeId": "bGbHOeHXnB8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Trent Harrison",
+        "source": "workout-database"
+      }
+    ],
+    "Hammer_Curls": [
+      {
+        "youtubeId": "IEuVnX7nZN8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "KC FITNESS",
+        "source": "workout-database"
+      }
+    ],
+    "Hamstring_Stretch": [
+      {
+        "youtubeId": "Wnhc8hsTtpI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rehab Hero",
+        "source": "workout-database"
+      }
+    ],
+    "Hang_Clean": [
+      {
+        "youtubeId": "-BEd8cfYH3Y",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coach Nelsinho",
+        "source": "workout-database"
+      }
+    ],
+    "Hang_Clean_-_Below_the_Knees": [
+      {
+        "youtubeId": "EP_hIw90d08",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Western Carolina Athletic Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Hang_Snatch": [
+      {
+        "youtubeId": "HdhYwF7cuQE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "JU_Strength",
+        "source": "workout-database"
+      }
+    ],
+    "Hang_Snatch_-_Below_Knees": [
+      {
+        "youtubeId": "BtxrQuaQCKs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Whole Body Wellness Center - Susanne Kessler",
+        "source": "workout-database"
+      }
+    ],
+    "Heaving_Snatch_Balance": [
+      {
+        "youtubeId": "PSB_4I5HKrI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Burgener Strength",
+        "source": "workout-database"
+      }
+    ],
+    "Hip_Extension_with_Bands": [
+      {
+        "youtubeId": "EDIv2b3sFS4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Limitless Physical Therapy",
+        "source": "workout-database"
+      }
+    ],
+    "Hip_Flexion_with_Band": [
+      {
+        "youtubeId": "3k5aW2MRWDs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Wasatch Fit Body",
+        "source": "workout-database"
+      }
+    ],
+    "Hip_Lift_with_Band": [
+      {
+        "youtubeId": "6oYSPzZlwL0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gerardi Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Hurdle_Hops": [
+      {
+        "youtubeId": "N_KWDQSHkTo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ADAPT",
+        "source": "workout-database"
+      }
+    ],
+    "Hyperextensions_Back_Extensions": [
+      {
+        "youtubeId": "9XN23dIEqLE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "José Meireles",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Barbell_Triceps_Extension": [
+      {
+        "youtubeId": "LO4-8QFn7_k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Nils Carlo",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Bench_Pull": [
+      {
+        "youtubeId": "HcyxWDuWyHE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "iWorkout",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Cable_Chest_Press": [
+      {
+        "youtubeId": "N_dJChcrxgQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Denzil Lifts",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Cable_Flye": [
+      {
+        "youtubeId": "QDkFWmZqVgk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gerardi Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Dumbbell_Curl": [
+      {
+        "youtubeId": "uCUaRFlA9vE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Dumbbell_Flyes": [
+      {
+        "youtubeId": "_8mLd6uZhYU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Lyfta",
+        "source": "workout-database"
+      }
+    ],
+    "Incline_Dumbbell_Press": [
+      {
+        "youtubeId": "8fXfwG4ftaQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Internal_Rotation_with_Band": [
+      {
+        "youtubeId": "5n10NSwfp2U",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Proformance Sports Rehab & Nutrition",
+        "source": "workout-database"
+      }
+    ],
+    "Inverted_Row": [
+      {
+        "youtubeId": "vZy_Eu_Z0WA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Propel Fitness Center",
+        "source": "workout-database"
+      }
+    ],
+    "Iron_Cross": [
+      {
+        "youtubeId": "3jyzzVyqqwE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Ray Shepler",
+        "source": "workout-database"
+      }
+    ],
+    "JM_Press": [
+      {
+        "youtubeId": "1v_WtGNauOQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "4D Strength (Personal Work Channel)",
+        "source": "workout-database"
+      }
+    ],
+    "Janda_Sit-Up": [
+      {
+        "youtubeId": "94c5gn5knxQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "KomonAthlete ",
+        "source": "workout-database"
+      }
+    ],
+    "Jefferson_Squats": [
+      {
+        "youtubeId": "5w0FJ9oN9kY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Personal Trainer",
+        "source": "workout-database"
+      }
+    ],
+    "Jerk_Balance": [
+      {
+        "youtubeId": "Lk_wvkMvVmY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "East Coast Gold Weightlifting",
+        "source": "workout-database"
+      }
+    ],
+    "Jerk_Dip_Squat": [
+      {
+        "youtubeId": "YyxBQX0jKn0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Hunger in the Wild Gym",
+        "source": "workout-database"
+      }
+    ],
+    "Keg_Load": [
+      {
+        "youtubeId": "rGI4dbvt2sM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "The Strength Institute",
+        "source": "workout-database"
+      }
+    ],
+    "Kettlebell_Figure_8": [
+      {
+        "youtubeId": "vkHZ5JvFFwM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Sarah Herse",
+        "source": "workout-database"
+      }
+    ],
+    "Kettlebell_Pirate_Ships": [
+      {
+        "youtubeId": "gCdIRyLokv8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Nancy Di Nino",
+        "source": "workout-database"
+      }
+    ],
+    "Kettlebell_Thruster": [
+      {
+        "youtubeId": "07rZz0Jv8Xo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 9,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "NeuStrength | Personal Trainer Wilmington NC",
+        "source": "workout-database"
+      }
+    ],
+    "Kettlebell_Windmill": [
+      {
+        "youtubeId": "EHGTgeKwOyY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 9,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Kelly Stone",
+        "source": "workout-database"
+      }
+    ],
+    "Kipping_Muscle_Up": [
+      {
+        "youtubeId": "a1jjH6aakGk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Monroe Miller",
+        "source": "workout-database"
+      }
+    ],
+    "Kneeling_Jump_Squat": [
+      {
+        "youtubeId": "giJDkFpcOu4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Austin Jochum",
+        "source": "workout-database"
+      }
+    ],
+    "Kneeling_Squat": [
+      {
+        "youtubeId": "kXTwJgSYQXo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Fit Mensa",
+        "source": "workout-database"
+      }
+    ],
+    "Lateral_Box_Jump": [
+      {
+        "youtubeId": "5TRdAO6eTG8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 12,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Ochsner Performance Training",
+        "source": "workout-database"
+      }
+    ],
+    "Lateral_Cone_Hops": [
+      {
+        "youtubeId": "hYiP9OT8VoI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Empower Youth Fitness ",
+        "source": "workout-database"
+      }
+    ],
+    "Leg_Extensions": [
+      {
+        "youtubeId": "uM86QE59Tgc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Leg_Press": [
+      {
+        "youtubeId": "EotSw18oR9w",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Chest_Press": [
+      {
+        "youtubeId": "Qu7-ceCvq7w",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Deadlift": [
+      {
+        "youtubeId": "Yj_TKFp331E",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Virtual Trainer - Jhonbafit",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Decline_Chest_Press": [
+      {
+        "youtubeId": "MchdwQ855Ls",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Ben Jones Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_High_Row": [
+      {
+        "youtubeId": "NnKqgrviXVE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "IRON MINDSETS",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Incline_Chest_Press": [
+      {
+        "youtubeId": "rVh0tKDnYvs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Propel Fitness Center",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Iso_Row": [
+      {
+        "youtubeId": "Kh2WA2Y1M0k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "James Gardner Personal Training",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Shoulder_Press": [
+      {
+        "youtubeId": "6v4nrRVySj0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Leverage_Shrug": [
+      {
+        "youtubeId": "Li-ZuAIb7TY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "BrandonMichael Fit",
+        "source": "workout-database"
+      }
+    ],
+    "Log_Lift": [
+      {
+        "youtubeId": "SGKAkVwcL38",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Quentin Martin",
+        "source": "workout-database"
+      }
+    ],
+    "Low_Cable_Crossover": [
+      {
+        "youtubeId": "BwqlWtr3v10",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Kraken Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Cable_Curl": [
+      {
+        "youtubeId": "Io1JLGZ2cOg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "PerformHQ",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Cambered_Barbell_Row": [
+      {
+        "youtubeId": "1Y8nQubChYg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "jonasmuellertraining",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Dumbbell_Tricep_Extension": [
+      {
+        "youtubeId": "arjVHiPdNOE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "DilekFit",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Face_Down_Plate_Neck_Resistance": [
+      {
+        "youtubeId": "wfBLioFilKA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ASHOK GYM (SINCE-1994) క్రీడా సంస్కృతి.",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Face_Up_Plate_Neck_Resistance": [
+      {
+        "youtubeId": "kQsWENE0vdY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "fitness student",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Leg_Curls": [
+      {
+        "youtubeId": "yjWAuFOjhuY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ArielYu_Fit",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Machine_Squat": [
+      {
+        "youtubeId": "BnacvXdaxq8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_One-Arm_Lateral_Raise": [
+      {
+        "youtubeId": "nG3AG38qNnA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Grant Lofthouse",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Rear_Delt_Raise": [
+      {
+        "youtubeId": "32VOgQ1miUE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "TORO",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_Supine_Dumbbell_Curl": [
+      {
+        "youtubeId": "vGDfilDbvtU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Explore Health Vlog",
+        "source": "workout-database"
+      }
+    ],
+    "Lying_T-Bar_Row": [
+      {
+        "youtubeId": "0pGiyBXvA2c",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Charles Webster Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Machine_Bench_Press": [
+      {
+        "youtubeId": "Qu7-ceCvq7w",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Machine_Bicep_Curl": [
+      {
+        "youtubeId": "h-Nm769kmrc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Darren Cavazos",
+        "source": "workout-database"
+      }
+    ],
+    "Machine_Preacher_Curls": [
+      {
+        "youtubeId": "S4dDLfp3e8w",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Machine_Shoulder_Military_Press": [
+      {
+        "youtubeId": "6v4nrRVySj0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Machine_Triceps_Extension": [
+      {
+        "youtubeId": "1AFJTda1btg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Medicine_Ball_Scoop_Throw": [
+      {
+        "youtubeId": "wdtxg58jSvE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "The Virtual Strength Coach",
+        "source": "workout-database"
+      }
+    ],
+    "Mountain_Climbers": [
+      {
+        "youtubeId": "7W4JEfEKuC4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 8,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "LisaFiitt Workouts",
+        "source": "workout-database"
+      }
+    ],
+    "Muscle_Snatch": [
+      {
+        "youtubeId": "dDwhVI-NieI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "East Dallas CrossFit",
+        "source": "workout-database"
+      }
+    ],
+    "Muscle_Up": [
+      {
+        "youtubeId": "YBEy2579mH4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Demi Bagby",
+        "source": "workout-database"
+      }
+    ],
+    "Oblique_Crunches": [
+      {
+        "youtubeId": "bVnzu72lrKo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bree Porter",
+        "source": "workout-database"
+      }
+    ],
+    "One-Arm_Dumbbell_Row": [
+      {
+        "youtubeId": "yHqqGd0tXcw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "One-Arm_High-Pulley_Cable_Side_Bends": [
+      {
+        "youtubeId": "DBVv2Fu05Lg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Jurri S",
+        "source": "workout-database"
+      }
+    ],
+    "One-Arm_Overhead_Kettlebell_Squats": [
+      {
+        "youtubeId": "W6XfLKY_Cmk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Physical Balance",
+        "source": "workout-database"
+      }
+    ],
+    "One-Arm_Side_Deadlift": [
+      {
+        "youtubeId": "MPHbZI_BzgE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Luther Nzinga",
+        "source": "workout-database"
+      }
+    ],
+    "One-Legged_Cable_Kickback": [
+      {
+        "youtubeId": "n-cgsNePyFo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gerardi Performance",
+        "source": "workout-database"
+      }
+    ],
+    "One_Arm_Chin-Up": [
+      {
+        "youtubeId": "SaAw64s2_dQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "FitnessFAQs",
+        "source": "workout-database"
+      }
+    ],
+    "One_Arm_Dumbbell_Bench_Press": [
+      {
+        "youtubeId": "Cs2uNF-jW5s",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Duke Sports Performance",
+        "source": "workout-database"
+      }
+    ],
+    "One_Arm_Dumbbell_Preacher_Curl": [
+      {
+        "youtubeId": "oHHNXMLvs1c",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Ben Mudge - Fitness Without Limits",
+        "source": "workout-database"
+      }
+    ],
+    "One_Arm_Floor_Press": [
+      {
+        "youtubeId": "fer7nzOhkA4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Central Physio & Health",
+        "source": "workout-database"
+      }
+    ],
+    "One_Arm_Lat_Pulldown": [
+      {
+        "youtubeId": "M9xUoJYtXtc",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Ben Yanes",
+        "source": "workout-database"
+      }
+    ],
+    "One_Handed_Hang": [
+      {
+        "youtubeId": "Zdtr3al7VHY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "MrBrotein",
+        "source": "workout-database"
+      }
+    ],
+    "Otis-Up": [
+      {
+        "youtubeId": "BDnxSMV7yz0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "S.C.U.L.P.T. ",
+        "source": "workout-database"
+      }
+    ],
+    "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench": [
+      {
+        "youtubeId": "shqAI51IP74",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "ATLASTHETICS",
+        "source": "workout-database"
+      }
+    ],
+    "Palms-Down_Wrist_Curl_Over_A_Bench": [
+      {
+        "youtubeId": "d5YiFNoiCa0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench": [
+      {
+        "youtubeId": "NcDp9dkWr7g",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "A2Z ",
+        "source": "workout-database"
+      }
+    ],
+    "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench": [
+      {
+        "youtubeId": "Ok3h-k-Rvpo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "FIERCE Personal Trainer",
+        "source": "workout-database"
+      }
+    ],
+    "Pin_Presses": [
+      {
+        "youtubeId": "lgk8hcf7e9M",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "EC FITNESS TRAINING",
+        "source": "workout-database"
+      }
+    ],
+    "Plank": [
+      {
+        "youtubeId": "xe2MXatLTUw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Plate_Pinch": [
+      {
+        "youtubeId": "_cdWkwQGffU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Jesse McJannett",
+        "source": "workout-database"
+      }
+    ],
+    "Plyo_Kettlebell_Pushups": [
+      {
+        "youtubeId": "ASqvjI5FCDI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Alexis Lunarbody",
+        "source": "workout-database"
+      }
+    ],
+    "Power_Clean": [
+      {
+        "youtubeId": "trs8nPzMCWg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "sprinterzy.com",
+        "source": "workout-database"
+      }
+    ],
+    "Power_Jerk": [
+      {
+        "youtubeId": "jfxPHs2ghQI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "CrossFit Monarch X Functional strength training",
+        "source": "workout-database"
+      }
+    ],
+    "Power_Partials": [
+      {
+        "youtubeId": "ryohimlW8mU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bradley Bowden",
+        "source": "workout-database"
+      }
+    ],
+    "Power_Snatch": [
+      {
+        "youtubeId": "kFmr_phraMg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Venus Gabby ",
+        "source": "workout-database"
+      }
+    ],
+    "Preacher_Hammer_Dumbbell_Curl": [
+      {
+        "youtubeId": "sssbpt4XsG8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Marzrodie",
+        "source": "workout-database"
+      }
+    ],
+    "Press_Sit-Up": [
+      {
+        "youtubeId": "s2zq1IkV5gE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gagesfitlife",
+        "source": "workout-database"
+      }
+    ],
+    "Pull_Through": [
+      {
+        "youtubeId": "cRszAB1yK0c",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rehema Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Push-Ups_With_Feet_On_An_Exercise_Ball": [
+      {
+        "youtubeId": "QM2seN_Nous",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rehab Hero",
+        "source": "workout-database"
+      }
+    ],
+    "Push_Press": [
+      {
+        "youtubeId": "IBgVwW1RLFE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Physical Balance",
+        "source": "workout-database"
+      }
+    ],
+    "Push_Press_-_Behind_the_Neck": [
+      {
+        "youtubeId": "woAJZa_QV5A",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Cal Poly Pomona Broncos",
+        "source": "workout-database"
+      }
+    ],
+    "Rack_Pulls": [
+      {
+        "youtubeId": "ydUEFSCsChY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Athletic Training Protocols",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Barbell_Curl": [
+      {
+        "youtubeId": "vm6E-iNWQUw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Hazzytrainer",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Barbell_Preacher_Curls": [
+      {
+        "youtubeId": "7ixqAPO6JvU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Cable_Curl": [
+      {
+        "youtubeId": "IJZhj9szYcw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Stan Bakh",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Grip_Bent-Over_Rows": [
+      {
+        "youtubeId": "i3m4R_o7_1c",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "fitness vlog ",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Grip_Triceps_Pushdown": [
+      {
+        "youtubeId": "_EuYEt1lNYw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Emilee Bundy",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Hyperextension": [
+      {
+        "youtubeId": "NAPMNd9RRxM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Tempered Physical Therapy ",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Machine_Flyes": [
+      {
+        "youtubeId": "Gs4e8eVMj-Q",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "KC FITNESS",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Plate_Curls": [
+      {
+        "youtubeId": "J-SisJjdD_A",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "MB Performance Institute",
+        "source": "workout-database"
+      }
+    ],
+    "Reverse_Triceps_Bench_Press": [
+      {
+        "youtubeId": "zQX3H5j2qww",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Dane Whitaker",
+        "source": "workout-database"
+      }
+    ],
+    "Rickshaw_Deadlift": [
+      {
+        "youtubeId": "12R7-yI88mo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Rommel Sumague",
+        "source": "workout-database"
+      }
+    ],
+    "Ring_Dips": [
+      {
+        "youtubeId": "F_EqukNnPYs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "The Savage Army",
+        "source": "workout-database"
+      }
+    ],
+    "Rocket_Jump": [
+      {
+        "youtubeId": "soQzE7lxyt0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "FitRick Training",
+        "source": "workout-database"
+      }
+    ],
+    "Rocky_Pull-Ups_Pulldowns": [
+      {
+        "youtubeId": "eDP_OOhMTZ4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Romanian_Deadlift": [
+      {
+        "youtubeId": "Wou9zVQrAfs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Rope_Climb": [
+      {
+        "youtubeId": "0runYFbQwzI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Job",
+        "source": "workout-database"
+      }
+    ],
+    "Sandbag_Load": [
+      {
+        "youtubeId": "NMgyETkw6xs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "MillsyJ",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Band_Hamstring_Curl": [
+      {
+        "youtubeId": "K1mWBPEhEMo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Prepare For Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Barbell_Military_Press": [
+      {
+        "youtubeId": "rIfykm1Ni0g",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Taylor Smith",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Barbell_Twist": [
+      {
+        "youtubeId": "a20c10NVplo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Adam Rogers",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Bent-Over_Rear_Delt_Raise": [
+      {
+        "youtubeId": "ttFX-IeSjAY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Stan Bakh",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Cable_Rows": [
+      {
+        "youtubeId": "qD1WZ5pSuvk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Calf_Raise": [
+      {
+        "youtubeId": "gpXQwBBzRz0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Yaralla Fitness Centre - Clinton",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Dumbbell_Curl": [
+      {
+        "youtubeId": "9PGYzCQTr3c",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "FIT Sisters - Lucy & Rosie",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Dumbbell_Press": [
+      {
+        "youtubeId": "k6tzKisR3NY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Good_Mornings": [
+      {
+        "youtubeId": "GN6iaVAZN-0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "BEFORM Performance Physical Therapy",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Leg_Curl": [
+      {
+        "youtubeId": "_lgE0gPvbik",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Side_Lateral_Raise": [
+      {
+        "youtubeId": "qqntiuPmLDM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Allegiance Training",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Triceps_Press": [
+      {
+        "youtubeId": "b_r_LW4HEcM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl": [
+      {
+        "youtubeId": "_QhXMgl0xOI",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "FitSW Fitness Software",
+        "source": "workout-database"
+      }
+    ],
+    "See-Saw_Press_Alternating_Side_Press": [
+      {
+        "youtubeId": "mU22P6R4vKo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Be Refined Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Shotgun_Row": [
+      {
+        "youtubeId": "x01ZboWpUDY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Fitness Rap",
+        "source": "workout-database"
+      }
+    ],
+    "Side_Laterals_to_Front_Raise": [
+      {
+        "youtubeId": "Kl3LEzQ5Zqs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Single-Arm_Cable_Crossover": [
+      {
+        "youtubeId": "E_mT1JWOp90",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gerardi Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Single-Leg_Lateral_Hop": [
+      {
+        "youtubeId": "osJ4kuYLnGU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Motiv8 Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Single_Dumbbell_Raise": [
+      {
+        "youtubeId": "vtJfIcyrWO8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gerardi Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Sled_Drag_-_Harness": [
+      {
+        "youtubeId": "uWdmama9V5g",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Athletico",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Bench_Press": [
+      {
+        "youtubeId": "gQ3afio08V8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Bent_Over_Row": [
+      {
+        "youtubeId": "kKONaLGAQW8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Calf_Raise": [
+      {
+        "youtubeId": "m_POjo25di0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Forty Steps",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Close-Grip_Bench_Press": [
+      {
+        "youtubeId": "McMG9V_L4Hg",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "BluePrint Aesthetics",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Hip_Raise": [
+      {
+        "youtubeId": "n2GP6ZrRayw",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "My PT Hub",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Incline_Bench_Press": [
+      {
+        "youtubeId": "VXaBbUYMfIs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Leg_Press": [
+      {
+        "youtubeId": "qjXYnYhYiY4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "April Hamilton",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Overhead_Shoulder_Press": [
+      {
+        "youtubeId": "E7ngsffMPR0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Squat": [
+      {
+        "youtubeId": "iKCJCydYYrE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Stiff-Legged_Deadlift": [
+      {
+        "youtubeId": "kFqgaems1bs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "All In Sports Performance and Personal Training",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Machine_Upright_Row": [
+      {
+        "youtubeId": "f9QHIbg7nEE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bree Porter",
+        "source": "workout-database"
+      }
+    ],
+    "Smith_Single-Leg_Split_Squat": [
+      {
+        "youtubeId": "iEyYqAL1TuU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Bree Porter",
+        "source": "workout-database"
+      }
+    ],
+    "Snatch": [
+      {
+        "youtubeId": "G0IAcNNE7yc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "CrossFit 190",
+        "source": "workout-database"
+      }
+    ],
+    "Snatch_Balance": [
+      {
+        "youtubeId": "e9HW_rT1PWs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "CrossFit Monarch X Functional strength training",
+        "source": "workout-database"
+      }
+    ],
+    "Snatch_Deadlift": [
+      {
+        "youtubeId": "rIT3S7TZ2SM",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "MAYA BENOVITCH | MOVEMENT COACH & YOGA TEACHER",
+        "source": "workout-database"
+      }
+    ],
+    "Snatch_Pull": [
+      {
+        "youtubeId": "h34hbgrP-HY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "East Dallas CrossFit",
+        "source": "workout-database"
+      }
+    ],
+    "Spell_Caster": [
+      {
+        "youtubeId": "g8YbjthUcJY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "SummerMastFitness",
+        "source": "workout-database"
+      }
+    ],
+    "Split_Clean": [
+      {
+        "youtubeId": "gDHq2od2XV8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Barbell Method",
+        "source": "workout-database"
+      }
+    ],
+    "Split_Jerk": [
+      {
+        "youtubeId": "kf-lQamAAxs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "CrossFit Monarch X Functional strength training",
+        "source": "workout-database"
+      }
+    ],
+    "Split_Snatch": [
+      {
+        "youtubeId": "mAcXEagG8fo",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Voodoo Weightlifting",
+        "source": "workout-database"
+      }
+    ],
+    "Split_Squat_with_Dumbbells": [
+      {
+        "youtubeId": "or1frhkjBDc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Split_Squats": [
+      {
+        "youtubeId": "YuLqw3kHPaw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 9,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Face-Off Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Squat_Jerk": [
+      {
+        "youtubeId": "aDIOCi2fuI0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Physical Balance",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Barbell_Calf_Raise": [
+      {
+        "youtubeId": "5dpJj3ulwK0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Christian Butler",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Barbell_Press_Behind_Neck": [
+      {
+        "youtubeId": "2EZLxxKRHYY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Brent Lee Hill",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Biceps_Cable_Curl": [
+      {
+        "youtubeId": "CrbTqNOlFgE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Cable_Lift": [
+      {
+        "youtubeId": "lqwvmr5Vhxw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Beyond Strength",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Cable_Wood_Chop": [
+      {
+        "youtubeId": "BrXm1kg4SKI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Jenn Alivea (Jenn Alivea Fitness)",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Calf_Raises": [
+      {
+        "youtubeId": "xwszHjl2D40",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Thomas",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Dumbbell_Calf_Raise": [
+      {
+        "youtubeId": "hPA98_r-6e4",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Horton Barbell",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Dumbbell_Reverse_Curl": [
+      {
+        "youtubeId": "1Nvg_vHUJPY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Alex Dee",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Dumbbell_Upright_Row": [
+      {
+        "youtubeId": "29-4QWdqd-g",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Front_Barbell_Raise_Over_Head": [
+      {
+        "youtubeId": "zoN5EH50Dro",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Leg_Curl": [
+      {
+        "youtubeId": "IwcLkHuH7iw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Virtual Trainer - Jhonbafit",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Low-Pulley_Deltoid_Raise": [
+      {
+        "youtubeId": "tlzhZsN84w4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "TORO",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Low-Pulley_One-Arm_Triceps_Extension": [
+      {
+        "youtubeId": "FMnZ5oagqUQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "More Than Muscle UK",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_One-Arm_Cable_Curl": [
+      {
+        "youtubeId": "NbEiRvad308",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Ben Mudge - Fitness Without Limits",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_One-Arm_Dumbbell_Triceps_Extension": [
+      {
+        "youtubeId": "Lzsz_y8Woas",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Tiffany LeRoy - Envision Personalized Training ",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Overhead_Barbell_Triceps_Extension": [
+      {
+        "youtubeId": "336KWGCtRc0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Hunger in the Wild Gym",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl": [
+      {
+        "youtubeId": "65US0eOBYGI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Tizard",
+        "source": "workout-database"
+      }
+    ],
+    "Standing_Rope_Crunch": [
+      {
+        "youtubeId": "ldI-OHWgGcw",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Jake Brown",
+        "source": "workout-database"
+      }
+    ],
+    "Stiff-Legged_Barbell_Deadlift": [
+      {
+        "youtubeId": "4ZEZd1zVJzE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Hazzytrainer",
+        "source": "workout-database"
+      }
+    ],
+    "Stiff-Legged_Dumbbell_Deadlift": [
+      {
+        "youtubeId": "Wou9zVQrAfs",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Straight-Arm_Dumbbell_Pullover": [
+      {
+        "youtubeId": "Datv2L6t3-4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Straight-Arm_Pulldown": [
+      {
+        "youtubeId": "hAMcfubonDc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Sumo_Deadlift": [
+      {
+        "youtubeId": "k_jHUVBU-T0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 7,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Gym And Fitness",
+        "source": "workout-database"
+      },
+      {
+        "youtubeId": "fQcM0pZSVgQ",
+        "type": "standard",
+        "priority": 2,
+        "startSeconds": 0,
+        "durationSeconds": 455,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Men’s Health Muscle",
+        "source": "workout-database"
+      }
+    ],
+    "Superman": [
+      {
+        "youtubeId": "eKB5rv5c7FQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 4,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coach Nelsinho",
+        "source": "workout-database"
+      }
+    ],
+    "Svend_Press": [
+      {
+        "youtubeId": "_2Ki_Cc4ImA",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "United Medical Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Tate_Press": [
+      {
+        "youtubeId": "1YmJgZAnIIQ",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Strength Is Science ",
+        "source": "workout-database"
+      }
+    ],
+    "Thigh_Abductor": [
+      {
+        "youtubeId": "tu4o4quPv2k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Thigh_Adductor": [
+      {
+        "youtubeId": "vNixlpsswr8",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Cjaejr",
+        "source": "workout-database"
+      }
+    ],
+    "Trap_Bar_Deadlift": [
+      {
+        "youtubeId": "oGVgO4wWmu4",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Coaching 101",
+        "source": "workout-database"
+      }
+    ],
+    "Tricep_Dumbbell_Kickback": [
+      {
+        "youtubeId": "WhBxKbe1-NU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Triceps_Pushdown": [
+      {
+        "youtubeId": "1FjkhpZsaxc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database"
+      }
+    ],
+    "Two-Arm_Dumbbell_Preacher_Curl": [
+      {
+        "youtubeId": "oOiSQMJgiDU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Arisian Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Underhand_Cable_Pulldowns": [
+      {
+        "youtubeId": "mIB0_HZE87k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "TORO",
+        "source": "workout-database"
+      }
+    ],
+    "Upright_Cable_Row": [
+      {
+        "youtubeId": "nfhe918YV9k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Your4® - Matt & Meag",
+        "source": "workout-database"
+      }
+    ],
+    "V-Bar_Pulldown": [
+      {
+        "youtubeId": "7FeEgk0bv9s",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Pratham Pajni  | Fitness & Nutrition Coach ",
+        "source": "workout-database"
+      }
+    ],
+    "Weighted_Bench_Dip": [
+      {
+        "youtubeId": "teUgrtLDqVE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Jason DeMelo",
+        "source": "workout-database"
+      }
+    ],
+    "Weighted_Crunches": [
+      {
+        "youtubeId": "A0TScZ8bwU0",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Marvthebrand",
+        "source": "workout-database"
+      }
+    ],
+    "Weighted_Jump_Squat": [
+      {
+        "youtubeId": "QkjeSZWEKCk",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Dontae Burks",
+        "source": "workout-database"
+      }
+    ],
+    "Weighted_Pull_Ups": [
+      {
+        "youtubeId": "qwXUU0JPYnY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Life with Abbey & Harry",
+        "source": "workout-database"
+      }
+    ],
+    "Weighted_Sissy_Squat": [
+      {
+        "youtubeId": "gcl5OgoeFaU",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Myokinetix Physical Therapy & Performance",
+        "source": "workout-database"
+      }
+    ],
+    "Wide-Grip_Lat_Pulldown": [
+      {
+        "youtubeId": "y7jGNnMV4_k",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "The UltraNurse",
+        "source": "workout-database"
+      }
+    ],
+    "Wide-Grip_Pulldown_Behind_The_Neck": [
+      {
+        "youtubeId": "mlR2u-NssXE",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Greg Saunders Fitness",
+        "source": "workout-database"
+      }
+    ],
+    "Wrist_Roller": [
+      {
+        "youtubeId": "ubHDHIHI1EI",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Edward Thomas",
+        "source": "workout-database"
+      }
+    ],
+    "Wrist_Rotations_with_Straight_Bar": [
+      {
+        "youtubeId": "2Z9GjGoDe3I",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Alex Hayes",
+        "source": "workout-database"
+      }
+    ],
+    "Yoke_Walk": [
+      {
+        "youtubeId": "Fc6e13us1hY",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Dr. Joel Seedman",
+        "source": "workout-database"
+      }
+    ],
+    "Zercher_Squats": [
+      {
+        "youtubeId": "tL-sysfKC8c",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Movement Physio",
+        "source": "workout-database"
+      }
+    ],
+    "Zottman_Curl": [
+      {
+        "youtubeId": "8Ubr8L_vo1Q",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": null,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Tiffany LeRoy - Envision Personalized Training ",
+        "source": "workout-database"
+      }
+    ],
+    "Cable_Squat": [
+      {
+        "youtubeId": "X60Uv2Fftkg",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "clipSeconds": 12,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Live Lean TV Daily Exercises",
+        "source": "curated-youtube",
+        "title": "Low Cable Squat exercise demonstration"
+      }
+    ],
+    "Cable_Romanian_Deadlift": [
+      {
+        "youtubeId": "kMdsruYbF9k",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "clipSeconds": 12,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Jim Stoppani, PhD",
+        "source": "curated-youtube",
+        "title": "Cable Romanian Deadlift demonstration"
+      }
+    ],
+    "Bulgarian_Split_Squat": [
+      {
+        "youtubeId": "or1frhkjBDc",
+        "type": "short",
+        "priority": 1,
+        "startSeconds": 0,
+        "durationSeconds": 15,
+        "aspectRatio": "9:16",
+        "language": "en",
+        "channel": "Andrew Kwong (DeltaBolic)",
+        "source": "workout-database",
+        "title": "Bulgarian Split Squat"
+      }
+    ],
+    "Cable_Leg_Curl": [
+      {
+        "youtubeId": "_V0Y9YFAyFo",
+        "type": "standard",
+        "priority": 1,
+        "startSeconds": 0,
+        "clipSeconds": 12,
+        "aspectRatio": "16:9",
+        "language": "en",
+        "channel": "Andrew Heming",
+        "source": "curated-youtube",
+        "title": "Standing Cable Leg Curl"
+      }
+    ]
+  }
+}
