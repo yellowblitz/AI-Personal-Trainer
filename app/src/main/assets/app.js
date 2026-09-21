@@ -1,5 +1,5 @@
 import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
-import {askGemini,MODELS,DEFAULT_MODEL} from './gemini.js';
+import {askDeepSeek,MODELS,DEFAULT_MODEL} from './deepseek.js';
 import {templates,makePlan,validPlan,secondsLeft,normalizeTimer} from './core.js';
 import {normalizeExercise,normalizePlan,resizeSets,setSetValue,setExerciseFeedback,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance,comparePlanPerformance,exerciseProgress,exerciseProgressionSignal,exerciseRecords,muscleTrainingLoad,muscleProgress,weeklyTrainingReview} from './training.js';
 import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './handoff.js';
@@ -28,9 +28,11 @@ let collapsedExercises=new Set((Array.isArray(read('collapsedExercises',[]))?rea
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.14.0';
-let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null,handoffTiming=read('handoffTiming',{}),lastHandoff=read('lastHandoff',null);
-if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
+const APP_VERSION='0.15.0-deepseek-exp';
+let apiKey='',messages=read('chat',[]),pending=read('proposal',null),aiModel=read('deepseekModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null,handoffTiming=read('handoffTiming',{}),lastHandoff=read('lastHandoff',null);
+let googleClientId=typeof read('googleClientId','')==='string'?read('googleClientId','').trim().slice(0,512):'',googleAccount=read('googleAccount',null);
+if(!googleAccount||typeof googleAccount!=='object'||typeof googleAccount.email!=='string')googleAccount=null;
+if(!MODELS.some(m=>m.id===aiModel))aiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
 if(!handoffTiming||typeof handoffTiming!=='object'||Array.isArray(handoffTiming))handoffTiming={};
 if(!lastHandoff||typeof lastHandoff!=='object'||!lastHandoff.batch||!Array.isArray(lastHandoff.batch.commands))lastHandoff=null;
@@ -90,7 +92,7 @@ const redact=value=>{let out=typeof value==='string'?value:JSON.stringify(value,
 errorReports=JSON.parse(redact(errorReports));
 localStorage.setItem('errorReports',JSON.stringify(errorReports));
 function recordErrorReport(diagnostic,request='',visibleMessage=''){
- const report={id:'E'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),appVersion:APP_VERSION,model:geminiModel,selectedDay:selected,category:diagnostic?.category||'unknown',visibleMessage:String(visibleMessage||'').slice(0,1000),request:String(request||'').slice(0,1200),diagnostic:diagnostic&&typeof diagnostic==='object'?diagnostic:{}};
+ const report={id:'E'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),appVersion:APP_VERSION,model:aiModel,selectedDay:selected,category:diagnostic?.category||'unknown',visibleMessage:String(visibleMessage||'').slice(0,1000),request:String(request||'').slice(0,1200),diagnostic:diagnostic&&typeof diagnostic==='object'?diagnostic:{}};
  const safeReport=JSON.parse(redact(report));
  errorReports.unshift(safeReport);errorReports=errorReports.slice(0,20);localStorage.setItem('errorReports',JSON.stringify(errorReports));return safeReport;
 }
@@ -117,7 +119,7 @@ function recordHandoffAttempts(attempts=[]){
 function lastHandoffLabel(){
  if(!lastHandoff)return '';
  const when=Number.isFinite(Date.parse(lastHandoff.translatedAt))?new Date(lastHandoff.translatedAt).toLocaleString():'saved';
- const source=lastHandoff.batch?.translationPath==='local'?'on-device parser':(lastHandoff.batch?.modelUsed||'Gemini');
+ const source=lastHandoff.batch?.translationPath==='local'?'on-device parser':(lastHandoff.batch?.modelUsed||'DeepSeek');
  const state=lastHandoff.status==='applied'?'applied':lastHandoff.status==='apply_failed'?'apply failed':'ready';
  return 'Last translation · '+when+' · '+source+' · '+state;
 }
@@ -126,13 +128,25 @@ function errorReportText(){
  return errorReports.map(r=>redact(['AI Personal Trainer error '+r.id,'Time: '+r.time,'App: v'+r.appVersion,'Model: '+r.model,'Category: '+r.category,'Selected day: '+r.selectedDay,'Message: '+r.visibleMessage,'Request: '+r.request,'Diagnostic: '+redact(r.diagnostic)].join('\n'))).join('\n\n--------------------\n\n');
 }
 function showErrorReports(){
- modal('<h2>AI error reports</h2><p class="small muted">Reports never include your saved Gemini API key. They contain the failed request text, selected model, error category, and validation/API details so a problem can be diagnosed.</p><textarea id="errorReportText" rows="16" readonly></textarea><div class="row"><button id="copyErrorReport" class="primary">Copy reports</button><button id="clearErrorReports" class="secondary">Clear reports</button></div>');
+ modal('<h2>AI error reports</h2><p class="small muted">Reports never include your saved DeepSeek API key. They contain the failed request text, selected model, error category, and validation/API details so a problem can be diagnosed.</p><textarea id="errorReportText" rows="16" readonly></textarea><div class="row"><button id="copyErrorReport" class="primary">Copy reports</button><button id="clearErrorReports" class="secondary">Clear reports</button></div>');
  $('errorReportText').value=errorReportText();
  $('copyErrorReport').onclick=async()=>{const text=$('errorReportText').value;try{await navigator.clipboard.writeText(text);toast('Error report copied.');}catch{$('errorReportText').focus();$('errorReportText').select();toast('Report selected. Use Copy.');}};
  $('clearErrorReports').onclick=()=>{errorReports=[];localStorage.removeItem('errorReports');$('errorReportText').value=errorReportText();toast('Error reports cleared.');};
 }
 
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4500);}
+function renderGoogleAccountStatus(){
+ const el=$('googleAccountStatus');if(!el)return;
+ el.innerHTML=googleAccount?'<b>'+escape(googleAccount.name||'Google account')+'</b><br><span class="small muted">'+escape(googleAccount.email||'')+'</span>':'<span class="small muted">Not signed in.</span>';
+ const out=$('googleSignOut');if(out)out.hidden=!googleAccount;
+}
+window.onTrainerGoogleSignIn=account=>{
+ if(!account||typeof account!=='object'||typeof account.email!=='string')return toast('Google sign-in returned an invalid account.');
+ googleAccount={uniqueId:String(account.uniqueId||'').slice(0,200),email:String(account.email||'').slice(0,320),name:String(account.name||'').slice(0,200),picture:typeof account.picture==='string'?account.picture.slice(0,1000):''};
+ localStorage.setItem('googleAccount',JSON.stringify(googleAccount));renderGoogleAccountStatus();toast('Signed in with Google.');
+};
+window.onTrainerGoogleSignInError=message=>toast(String(message||'Google sign-in failed.').slice(0,300));
+
 function modal(html){clearInterval(demoInterval);$('modalBody').innerHTML=html;$('modal').showModal();}
 $('closeModal').onclick=()=>$('modal').close();$('closeModalTop').onclick=()=>$('modal').close();$('modal').onclose=()=>{clearInterval(demoInterval);$('modalBody').innerHTML='';};
 
@@ -159,21 +173,21 @@ function renderNextWeekRecommendation(){
  const rec=nextWeekRecommendation,refresh=$('refreshNextWeek'),view=$('viewNextWeek'),use=$('useNextWeek'),days=$('nextWeekDays');
  refresh.disabled=recommendationBusy||!apiKey;
  view.hidden=!rec;use.hidden=!rec;
- if(recommendationBusy)$('nextWeekStatus').textContent='Gemini is updating…';
+ if(recommendationBusy)$('nextWeekStatus').textContent='DeepSeek is updating…';
  else if(rec){const when=Number.isFinite(Date.parse(rec.generatedAt))?new Date(rec.generatedAt).toLocaleDateString():'';$('nextWeekStatus').textContent=(rec.stale?'Refresh suggested':'Ready')+(when?' · '+when:'');}
- else if(!apiKey)$('nextWeekStatus').textContent='Add a Gemini key to enable recommendations.';
+ else if(!apiKey)$('nextWeekStatus').textContent='Add a DeepSeek key to enable recommendations.';
  else if(!history.length)$('nextWeekStatus').textContent='Save a workout to start recommendations.';
  else $('nextWeekStatus').textContent='Build a plan from your recent training.';
  days.innerHTML=rec?rec.week.days.filter(d=>d.enabled&&d.plan).map(d=>'<span class="next-week-day"><b>'+escape(dayName(d.id).slice(0,3))+'</b>'+escape(d.plan.name)+' · '+d.plan.exercises.length+'</span>').join(''):'';
 }
 async function refreshNextWeekRecommendation(trigger='manual'){
  if(recommendationBusy)return;
- if(!apiKey){if(trigger==='manual')toast('Add your Gemini API key in Settings first.');return;}
+ if(!apiKey){if(trigger==='manual')toast('Add your DeepSeek API key in Settings first.');return;}
  recommendationBusy=true;renderNextWeekRecommendation();
  try{
   const message='Create a proposal for my recommended training week NEXT WEEK. Use my current week as the baseline and recentTraining as progression evidence. Compare plannedReps/plannedWeight with actualReps/actualWeight for every completed set, and use exercise-level RIR, effort, form, discomfort and notes. If actual reps missed target, especially with RIR 0-1, effort too_hard, form breaking/poor, or discomfort, do not blindly progress that prescription; hold, reduce, or substitute as appropriate. If targets were met with RIR 2-4+, good form, manageable effort and no discomfort, gradual progression may be appropriate. Treat one unusual session cautiously. Consider exercisePreferences: repeated removals are a signal to avoid an exercise, repeated completed/added exercises are a positive preference signal, and persistent exercise notes describe setup preferences that should be respected. Preserve enabled training days and time budgets unless evidence supports a change. Recommend exact exercises, set-by-set reps, rest, and loads. This is a next-week recommendation only; do not claim the current week was changed.';
-  const data=await askGemini({message,week,selectedDay:selected,proposal:null,history:[],profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:geminiModel},catalog,apiKey);
-  if(data.action!=='proposal'||!data.week)throw new Error('Gemini did not return a next-week plan.');
+  const data=await askDeepSeek({message,week,selectedDay:selected,proposal:null,history:[],profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:aiModel},catalog,apiKey);
+  if(data.action!=='proposal'||!data.week)throw new Error('DeepSeek did not return a next-week plan.');
   nextWeekRecommendation={week:normalizeWeek(data.week),generatedAt:new Date().toISOString(),historyCount:history.length,stale:false,note:String(data.reply||'').slice(0,1200)};
   saveNextWeekRecommendation();
   if(typeof data.memory==='string'&&data.memory.trim()){coachMemory=data.memory.trim().slice(0,4000);saveMemory();}
@@ -486,7 +500,7 @@ function render(){
  $('summary').textContent=active?plan.exercises.length+' exercises · '+done+'/'+total+' sets · ~'+estimate+' min':'Rest day';$('progress').value=done;$('progress').max=total;$('undo').disabled=!undo||busy;renderHeroMuscle(active);
  $('exercises').innerHTML=plan.exercises.map(renderExerciseCard).join('');
  $('add').disabled=busy||plan.exercises.length>=12;$('newWorkout').disabled=busy;$('finish').disabled=busy;$('settings').disabled=busy;$('editWeek').disabled=busy;drawProposal();
- const modelName=MODELS.find(m=>m.id===geminiModel)?.name||geminiModel;$('connection').textContent=apiKey?(pending?modelName+' ready · Draft waiting':modelName+' ready'):'Add Gemini key in Settings.';
+ const modelName=MODELS.find(m=>m.id===aiModel)?.name||aiModel;$('connection').textContent=apiKey?(pending?modelName+' ready · Draft waiting':modelName+' ready'):'Add DeepSeek key in Settings.';
 }
 $('exercises').onchange=e=>{
  const i=Number(e.target.dataset.index);if(!Number.isInteger(i))return;const value=Number(e.target.value),next=normalizePlan(structuredClone(plan));
@@ -690,13 +704,21 @@ $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
 
 $('settings').onclick=()=>{
- modal('<h2>Settings</h2><p class="small muted">v'+APP_VERSION+' · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><label for="geminiModel">Gemini model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste key"><div class="row"><button id="showKey" class="secondary">Show</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get key ↗</a></div><button id="saveSettings" class="primary wide">Save</button><button id="clearKey" class="secondary wide">Remove key</button><button id="clearDemoCache" class="secondary wide">Clear demo cache ('+Object.keys(demoMetaCache).length+')</button><button id="resetDemoProblems" class="secondary wide">Reset skipped demos ('+Object.values(demoProblems).reduce((n,v)=>n+Object.keys(v||{}).length,0)+')</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">Demo videos are never bulk-downloaded. Only videos you open can enter the Android WebView cache.</p>');
- $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;$('appTheme').value=theme;
+ modal('<h2>Settings</h2><p class="small muted">v'+APP_VERSION+' · Experimental DeepSeek unified build · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><label for="aiModel">DeepSeek model</label><select id="aiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><label for="apiKey">DeepSeek API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste DeepSeek API key"><div class="row"><button id="showKey" class="secondary">Show</button><a href="https://platform.deepseek.com/" target="_blank" rel="noopener noreferrer">DeepSeek platform ↗</a></div><hr><h3>Google sign-in</h3><p class="small muted">Uses the Google account already on this Android device. This experimental sign-in is for the local trainer profile; DeepSeek API access still uses your API key.</p><label for="googleClientId">Google OAuth Web Client ID</label><input id="googleClientId" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="One-time app OAuth client ID"><div id="googleAccountStatus" class="notice"></div><div class="row"><button id="googleSignIn" class="secondary">Sign in with Google</button><button id="googleSignOut" class="secondary" hidden>Sign out</button></div><button id="saveSettings" class="primary wide">Save</button><button id="clearKey" class="secondary wide">Remove key</button><button id="clearDemoCache" class="secondary wide">Clear demo cache ('+Object.keys(demoMetaCache).length+')</button><button id="resetDemoProblems" class="secondary wide">Reset skipped demos ('+Object.values(demoProblems).reduce((n,v)=>n+Object.keys(v||{}).length,0)+')</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">Demo videos are never bulk-downloaded. Only videos you open can enter the Android WebView cache.</p>');
+ $('apiKey').value=apiKey;$('aiModel').value=aiModel;$('appTheme').value=theme;$('googleClientId').value=googleClientId;renderGoogleAccountStatus();
  $('showKey').onclick=()=>{const show=$('apiKey').type==='password';$('apiKey').type=show?'text':'password';$('showKey').textContent=show?'Hide':'Show';};
  $('appTheme').onchange=()=>applyTheme($('appTheme').value);
  const setKey=value=>{try{if(window.TrainerKeys&&!window.TrainerKeys.saveKey(value))throw new Error();}catch{toast('Could not save your key.');return false;}apiKey=value;return true;};
- $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('geminiModel').value,nextTheme=$('appTheme').value;if(value&&/\s/.test(value))return toast('API key cannot contain spaces.');if(value!==apiKey&&!setKey(value))return;geminiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('geminiModel',JSON.stringify(geminiModel));applyTheme(nextTheme);$('modal').close();render();toast('Settings saved.');};
- $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('Gemini key removed.');}};
+ $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('aiModel').value,nextTheme=$('appTheme').value,clientId=$('googleClientId').value.trim();if(value&&/\s/.test(value))return toast('API key cannot contain spaces.');if(value!==apiKey&&!setKey(value))return;if(clientId&&clientId.length<20)return toast('Check the Google OAuth Web Client ID.');googleClientId=clientId;localStorage.setItem('googleClientId',JSON.stringify(googleClientId));aiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('deepseekModel',JSON.stringify(aiModel));applyTheme(nextTheme);$('modal').close();render();toast('Settings saved.');};
+ $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('DeepSeek key removed.');}};
+ $('googleSignIn').onclick=()=>{
+  const clientId=$('googleClientId').value.trim();if(!clientId)return toast('Add the Google OAuth Web Client ID first.');
+  googleClientId=clientId;localStorage.setItem('googleClientId',JSON.stringify(googleClientId));
+  if(!window.TrainerGoogle?.signIn)return toast('Google sign-in is available in the Android experimental build.');
+  window.TrainerGoogle.signIn(clientId);
+ };
+ $('googleSignOut').onclick=()=>{googleAccount=null;localStorage.removeItem('googleAccount');renderGoogleAccountStatus();toast('Google profile signed out.');};
+
  $('clearDemoCache').onclick=()=>{demoMetaCache={};localStorage.removeItem('demoMetaCache');wgerExerciseIndexPromise=null;youtubeDemoIndexPromise=null;try{window.TrainerShare?.clearMediaCache?.();}catch{};$('clearDemoCache').textContent='Clear demo cache (0)';toast('Demo cache cleared.');};
  $('resetDemoProblems').onclick=()=>{demoProblems={};localStorage.removeItem('demoProblems');$('resetDemoProblems').textContent='Reset skipped demos (0)';toast('Skipped demo list reset.');};
  $('viewErrorReports').onclick=showErrorReports;
@@ -709,7 +731,7 @@ function renderHandoff(){
  if($('lastHandoffStatus'))$('lastHandoffStatus').textContent=lastHandoffLabel();
  if(!handoffDraft)return;
  const preview=handoffDraft.preview,batch=handoffDraft.batch;
- const engine=batch.translationPath==='local'?'On-device fast parser':(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed||'Gemini');
+ const engine=batch.translationPath==='local'?'On-device fast parser':(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed||'DeepSeek');
  $('handoffSummary').innerHTML='<p>'+escape(batch.summary||'ChatGPT changes interpreted.')+'</p><p class="small muted">Translator: '+escape(engine)+'</p>';
  $('handoffWarnings').innerHTML=batch.warnings?.length?'<div class="notice"><b>Needs attention</b><ul>'+batch.warnings.map(w=>'<li>'+escape(w)+'</li>').join('')+'</ul></div>':'';
  $('handoffCommands').innerHTML=preview.descriptions.length?'<h3>Local commands</h3><ul>'+preview.descriptions.map(d=>'<li>'+escape(d)+'</li>').join('')+'</ul>':'<p class="muted">No executable changes were found in the ChatGPT response.</p>';
@@ -765,15 +787,15 @@ if(typeof window.__trainerSharedText==='string'&&window.__trainerSharedText.trim
 $('interpretHandoff').onclick=async()=>{
  if(busy)return;
  const sourceText=$('handoffText').value.trim();if(!sourceText)return toast('Paste or share a ChatGPT response first.');
- busy=true;handoffDraft=null;$('handoffStatus').textContent='Translating response… exact workout blocks are parsed on-device first; Gemini is used only when needed.';render();renderHandoff();
+ busy=true;handoffDraft=null;$('handoffStatus').textContent='Translating response… exact workout blocks are parsed on-device first; DeepSeek is used only when needed.';render();renderHandoff();
  try{
-  const batch=await interpretChatGPTResponse({sourceText,week,profile,memory:coachMemory,selectedDay:selected,model:geminiModel,timing:handoffTiming},catalog,apiKey);
+  const batch=await interpretChatGPTResponse({sourceText,week,profile,memory:coachMemory,selectedDay:selected,model:aiModel,timing:handoffTiming},catalog,apiKey);
   recordHandoffAttempts(batch.attempts);
   const preview=applyCommandBatch(batch,{week,profile,memory:coachMemory},catalog);
   handoffDraft={sourceText,batch,preview};
   lastHandoff={sourceText,batch:structuredClone(batch),translatedAt:new Date().toISOString(),status:'ready'};saveLastHandoff();
   const fallback=batch.translationPath==='local'
-   ?' Parsed on-device without waiting for Gemini.'
+   ?' Parsed on-device without waiting for DeepSeek.'
    :batch.fallbackFrom&&batch.modelUsed?' '+(MODELS.find(m=>m.id===batch.fallbackFrom)?.name||batch.fallbackFrom)+' was unavailable or slow, so '+(MODELS.find(m=>m.id===batch.modelUsed)?.name||batch.modelUsed)+' completed it.':'';
   $('handoffStatus').textContent='Command translation complete.'+fallback+' Nothing has been changed yet.';
   renderHandoff();toast(preview.descriptions.length?'Commands ready for review.':'No executable changes found.');
@@ -834,7 +856,7 @@ $('undo').onclick=()=>{
  markNextWeekStale();messages.push({role:'assistant',content:'You undid the last applied AI change. The previous planner/profile state is restored.'});saveChat();drawMessages();toast('Previous week restored.');
 };
 function drawMessages(){
- $('messages').innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role}${m.error?' error':''}"><small>${m.role==='user'?'YOU':'GEMINI COACH'}</small>${escape(m.content)}</div>`).join(''):'<div class="notice">Ask Gemini about training or planning.</div>';
+ $('messages').innerHTML=messages.length?messages.map(m=>`<div class="message ${m.role}${m.error?' error':''}"><small>${m.role==='user'?'YOU':'DEEPSEEK COACH'}</small>${escape(m.content)}</div>`).join(''):'<div class="notice">Ask DeepSeek about training or planning.</div>';
  $('messages').scrollTop=$('messages').scrollHeight;
 }
 function renderWeek(){
@@ -904,12 +926,12 @@ $('discardProposal').onclick=()=>{if(busy)return;pending=null;messages.push({rol
 $('clearChat').onclick=()=>{if(busy)return;modal('<h2>Start a new conversation?</h2><p>This clears the visible chat and pending draft. Your long-term coach memory, profile, logged sessions, and weekly plan stay.</p><button id="confirmClearChat" class="primary wide">Clear chat</button>');$('confirmClearChat').onclick=()=>{messages=[];pending=null;saveChat();drawMessages();drawProposal();$('modal').close();};};
 document.querySelectorAll('[data-prompt]').forEach(b=>b.onclick=()=>{$('chatInput').value=b.dataset.prompt;$('chatInput').focus();});
 $('chatForm').onsubmit=async e=>{
- e.preventDefault();if(busy)return;if(!apiKey){toast('Add your Gemini API key in Settings first.');return;}
+ e.preventDefault();if(busy)return;if(!apiKey){toast('Add your DeepSeek API key in Settings first.');return;}
  const message=$('chatInput').value.trim();if(!message)return;
  const previous=messages.filter(m=>!m.error).slice(-50);
  messages.push({role:'user',content:message});saveChat();drawMessages();busy=true;render();$('clearChat').disabled=true;$('send').disabled=true;$('send').textContent='Coach is thinking…';
  try{
-  const data=await askGemini({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:geminiModel},catalog,apiKey);
+  const data=await askDeepSeek({message,week,selectedDay:selected,proposal:pending?.week||null,history:previous,profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:aiModel},catalog,apiKey);
   messages.push({role:'assistant',content:data.reply});
   if(data.fallbackFrom&&data.modelUsed){const from=MODELS.find(m=>m.id===data.fallbackFrom)?.name||data.fallbackFrom,to=MODELS.find(m=>m.id===data.modelUsed)?.name||data.modelUsed;messages.push({role:'assistant',content:from+' was busy, so I automatically completed this request with '+to+'.'});}
   if(typeof data.memory==='string'&&data.memory.trim()){coachMemory=data.memory.trim().slice(0,4000);saveMemory();}
