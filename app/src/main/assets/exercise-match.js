@@ -10,7 +10,7 @@ const aliasMap={
  Dumbbell_Bicep_Curl:['dumbbell curl','bicep curl','db curl','db bicep curl'],
  Dumbbell_Lunges:['dumbbell lunge','db lunge'],
  Standing_Calf_Raises:['standing calf raise','calf raise'],
- Standing_Dumbbell_Calf_Raise:['dumbbell calf raise','db calf raise','standing db calf raise'],
+ Standing_Dumbbell_Calf_Raise:['dumbbell calf raise','db calf raise','standing db calf raise','db standing calf raise'],
  Side_Lateral_Raise:['lateral raise','side raise','dumbbell lateral raise','db lateral raise','dumbbell side lateral raise'],
  Cable_Rear_Delt_Fly:['rear delt fly','rear-delt fly','cable rear delt fly','cable rear-delt fly'],
  Face_Pull:['cable face pull','rope face pull'],
