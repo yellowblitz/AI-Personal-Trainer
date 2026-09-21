@@ -32,4 +32,14 @@ export function mergePlan(old, next) {
   return merged;
  })};
 }
-export function secondsLeft(timer,now=Date.now()) {return timer.paused!=null?timer.paused:timer.end?Math.max(0,Math.ceil((timer.end-now)/1000)):0;}
+// Persisted state is untrusted: a malformed timer must never stop app startup.
+export function normalizeTimer(timer){
+ if(!timer||typeof timer!=='object')return {};
+ const context={};
+ if(['mon','tue','wed','thu','fri','sat','sun'].includes(timer.day))context.day=timer.day;
+ if(typeof timer.exerciseId==='string')context.exerciseId=timer.exerciseId;
+ if(Number.isFinite(timer.paused)&&timer.paused>=0)return {...context,paused:Math.ceil(timer.paused)};
+ if(Number.isFinite(timer.end)&&timer.end>0)return {...context,end:timer.end};
+ return {};
+}
+export function secondsLeft(timer,now=Date.now()) {const t=normalizeTimer(timer);return t.paused!=null?t.paused:t.end?Math.max(0,Math.ceil((t.end-now)/1000)):0;}

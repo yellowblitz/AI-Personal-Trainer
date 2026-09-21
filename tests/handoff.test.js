@@ -3,25 +3,30 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {makeWeek,weekKey} from '../app/src/main/assets/week.js';
 import {summarizeHistory} from '../app/src/main/assets/training.js';
-import {buildChatGPTContext,buildInterpreterRequest,validateCommandBatch,applyCommandBatch,interpretChatGPTResponse} from '../app/src/main/assets/handoff.js';
+import {buildChatGPTContext,buildInterpreterRequest,validateCommandBatch,applyCommandBatch,interpretChatGPTResponse,extractExplicitPlanHints,validateSourceCoverage} from '../app/src/main/assets/handoff.js';
 
-const catalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/catalog.json',import.meta.url)));
+const baseCatalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/catalog.json',import.meta.url)));
+const customCatalog=JSON.parse(readFileSync(new URL('../app/src/main/assets/custom-exercises.json',import.meta.url)));
+const catalog=[...baseCatalog,...customCatalog];
 const profile={goal:'Strength',experience:'Intermediate',equipment:'Functional trainer',heightIn:70,weightLb:180};
 const week=makeWeek();
 const response=value=>({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(value)}]}}]});
 
 test('ChatGPT context contains current plan and logged set performance without app commands',()=>{
- const p=structuredClone(week.days[0].plan);p.exercises[0].done=2;p.exercises[0].setReps=[12,9,8];
+ const p=structuredClone(week.days[0].plan);p.exercises[0].done=2;p.exercises[0].setReps=[12,9,8];p.exercises[0].rir=0;p.exercises[0].note='Second set was hard';
  const recent=summarizeHistory([{date:'2026-09-20T10:00:00Z',day:'mon',plan:p}],catalog,20);
  const text=buildChatGPTContext({week,profile,memory:'Prefer controlled reps.',recentTraining:recent},catalog);
- assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 9 reps/);assert.match(text,/APP EXERCISE CATALOG/);assert.doesNotMatch(text,/Return only JSON/);
+ assert.match(text,/regular ChatGPT/);assert.match(text,/CURRENT WEEK/);assert.match(text,/S2 target 12 reps BW -> actual 9 reps BW/);assert.match(text,/RIR 0/);assert.match(text,/Second set was hard/);assert.match(text,/RELEVANT EXERCISE LIBRARY SAMPLE/);assert.doesNotMatch(text,/Return only JSON/);
 });
 
-test('interpreter request makes Gemini a translator rather than a coach',()=>{
- const body=buildInterpreterRequest({sourceText:'ChatGPT says make Monday push for about an hour.',week,profile,memory:'',selectedDay:'mon'},catalog);
+test('interpreter request makes Gemini a translator and carries explicit-day coverage hints',()=>{
+ const source='Monday Push: Cable Chest Press 60 lb/side 4x10; Incline DB Press 25 lb 3x10; Cable Fly 30 lb/side 3x12; DB Lateral Raise 10 lb 3x12; Triceps Pushdown 50 lb 3x12.';
+ const body=buildInterpreterRequest({sourceText:source,week,profile,memory:'',selectedDay:'mon'},catalog);
  const system=body.systemInstruction.parts[0].text;
- assert.match(system,/deterministic command translator/);assert.match(system,/NOT the coach/);assert.match(system,/Do not repeat the entire week/);
- const payload=JSON.parse(body.contents[0].parts[0].text);assert.match(payload.chatgptResponse,/Monday push/);
+ assert.match(system,/deterministic command translator/);assert.match(system,/NOT the coach/);assert.match(system,/day is atomic/);assert.match(system,/every listed strength exercise/);
+ const payload=JSON.parse(body.contents[0].parts[0].text);assert.match(payload.chatgptResponse,/Cable Chest Press/);
+ assert.equal(payload.explicitDayExerciseHints.length,1);assert.equal(payload.explicitDayExerciseHints[0].exercises.length,5);
+ assert.match(system,/Cable_Chest_Press/);assert.match(system,/Incline_Dumbbell_Press/);
 });
 
 test('validated handoff commands change only requested trainer data',()=>{
@@ -39,9 +44,79 @@ test('validated handoff commands change only requested trainer data',()=>{
 });
 
 test('unsupported exercise IDs and malformed commands never execute',()=>{
- assert.throws(()=>validateCommandBatch({summary:'bad',commands:[{type:'replace_plan',day:'mon',name:'Bad',exercises:[{id:'invented',sets:3,reps:10,rest:90,weight:0}]}]},catalog),/invalid or unsupported/);
+ assert.throws(()=>validateCommandBatch({summary:'bad',commands:[{type:'replace_plan',day:'mon',name:'Bad',exercises:[{id:'invented',sets:3,reps:10,rest:90,weight:0}]}]},catalog),/invalid, unsupported, or ambiguous/);
  assert.throws(()=>validateCommandBatch({summary:'bad',commands:[{type:'delete_everything'}]},catalog),/Unsupported command/);
 });
+
+test('normal ChatGPT exercise names and common aliases resolve to local catalog IDs',()=>{
+ const batch=validateCommandBatch({summary:'Translate natural exercise names.',warnings:[],commands:[{type:'replace_plan',day:'mon',name:'Cable Push',exercises:[
+  {name:'cable fly',sets:3,reps:12,rest:90,weight:20},
+  {exercise:'rope tricep pushdown',sets:3,setReps:[12,11,10],setWeights:[20,20,20],rest:75}
+ ]}]},catalog);
+ assert.equal(batch.commands[0].exercises[0].id,'Cable_Crossover');
+ assert.equal(batch.commands[0].exercises[1].id,'Triceps_Pushdown_-_Rope_Attachment');
+});
+
+test('screenshot-style PPL response resolves all fifteen exercises without dropping leg movements',()=>{
+ const batch=validateCommandBatch({summary:'Apply the full PPL plan.',warnings:[],commands:[
+  {type:'replace_plan',day:'mon',name:'Push',exercises:[
+   {name:'Cable Chest Press',sets:4,reps:10,weight:60,rest:120},
+   {name:'Incline DB Press',sets:3,reps:10,weight:25,rest:90},
+   {name:'Cable Fly',sets:3,reps:12,weight:30,rest:75},
+   {name:'DB Lateral Raise',sets:3,reps:12,weight:10,rest:60},
+   {name:'Triceps Pushdown',sets:3,reps:12,weight:50,rest:75}
+  ]},
+  {type:'replace_plan',day:'wed',name:'Pull',exercises:[
+   {name:'Lat Pulldown',sets:4,reps:10,weight:70,rest:120},
+   {name:'Seated Row',sets:3,reps:10,weight:70,rest:90},
+   {name:'Rear-Delt Fly',sets:3,reps:12,weight:20,rest:75},
+   {name:'Face Pull',sets:3,reps:12,weight:40,rest:75},
+   {name:'DB Curl',sets:3,reps:10,weight:20,rest:75}
+  ]},
+  {type:'replace_plan',day:'fri',name:'Legs',exercises:[
+   {name:'Cable Squat',sets:4,reps:10,weight:80,rest:120},
+   {name:'Cable RDL',sets:3,reps:10,weight:70,rest:120},
+   {name:'Bulgarian Split Squat',sets:3,reps:10,weight:20,rest:90},
+   {name:'Cable Leg Curl',sets:3,reps:12,weight:40,rest:75},
+   {name:'DB Calf Raise',sets:3,reps:15,weight:30,rest:60}
+  ]}
+ ]},catalog);
+ assert.deepEqual(batch.commands.map(x=>x.exercises.length),[5,5,5]);
+ assert.deepEqual(batch.commands[2].exercises.map(x=>x.id),['Cable_Squat','Cable_Romanian_Deadlift','Bulgarian_Split_Squat','Cable_Leg_Curl','Standing_Dumbbell_Calf_Raise']);
+});
+
+test('explicit day coverage detects a partial replacement before it can be applied',()=>{
+ const source='Friday Legs: Cable Squat 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15; optional 20-min easy bike.';
+ const hints=extractExplicitPlanHints(source);assert.equal(hints[0].exercises.length,5);
+ const partial=validateCommandBatch({summary:'partial',warnings:[],commands:[{type:'replace_plan',day:'fri',name:'Legs',exercises:[
+  {name:'Bulgarian Split Squat',sets:3,reps:10,weight:20,rest:90},
+  {name:'DB Calf Raise',sets:3,reps:15,weight:30,rest:60}
+ ]}]},catalog);
+ const gaps=validateSourceCoverage(source,partial.commands,catalog);
+ assert.equal(gaps.length,1);assert.equal(gaps[0].expected,5);assert.equal(gaps[0].actual,2);
+});
+
+test('interpreter retries an incomplete explicit day and returns only the complete repaired plan',async()=>{
+ const source='Friday Legs: Cable Squat 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15.';
+ let calls=0;
+ const batch=await interpretChatGPTResponse({sourceText:source,week,profile,memory:'',selectedDay:'fri',model:'gemini-3.8-flash'},catalog,'key',async()=>{
+  calls++;
+  const commands=calls===1?[{type:'replace_plan',day:'fri',name:'Legs',exercises:[
+   {name:'Bulgarian Split Squat',sets:3,reps:10,weight:20,rest:90},
+   {name:'DB Calf Raise',sets:3,reps:15,weight:30,rest:60}
+  ]}]:[{type:'replace_plan',day:'fri',name:'Legs',exercises:[
+   {name:'Cable Squat',sets:4,reps:10,weight:80,rest:120},
+   {name:'Cable RDL',sets:3,reps:10,weight:70,rest:120},
+   {name:'Bulgarian Split Squat',sets:3,reps:10,weight:20,rest:90},
+   {name:'Cable Leg Curl',sets:3,reps:12,weight:40,rest:75},
+   {name:'DB Calf Raise',sets:3,reps:15,weight:30,rest:60}
+  ]}];
+  return {ok:true,json:async()=>response({summary:'Leg day',warnings:[],commands})};
+ });
+ assert.equal(calls,2);assert.equal(batch.commands[0].exercises.length,5);
+ assert.deepEqual(batch.commands[0].exercises.map(x=>x.id),['Cable_Squat','Cable_Romanian_Deadlift','Bulgarian_Split_Squat','Cable_Leg_Curl','Standing_Dumbbell_Calf_Raise']);
+});
+
 
 test('interpreter falls back on 503 and returns a validated command batch',async()=>{
  const seen=[];
@@ -71,5 +146,7 @@ test('embedded ChatGPT uses an isolated WebView, persists login cookies, and app
  assert.match(activity,/button\[aria-label\*='voice'/);
  assert.doesNotMatch(activity,/chatWeb\.addJavascriptInterface/);
  assert.match(activity,/trainer\.addJavascriptInterface\(new KeyVault/);
+ assert.match(activity,/clearMediaCache/);
+ assert.match(activity,/web\.clearCache\(true\)/);
  assert.match(activity,/Use copied response/);
 });

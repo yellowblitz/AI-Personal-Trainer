@@ -1,14 +1,165 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com; connect-src 'self' https://generativelanguage.googleapis.com; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="color-scheme" content="dark"><title>AI Personal Trainer</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="logo">↗</div><div><b>FORM / TRAINER</b><small>Your pace. Your progress.</small></div><button id="settings" class="icon" aria-label="Settings">⚙</button></header>
-<main><section id="workout" class="page"><div class="eyebrow">MAKE TIME FOR YOURSELF</div><h1>Let’s get stronger.</h1><p class="muted">Plan your week. Take it one session at a time.</p><div class="section-title"><div><h2>Your week</h2><p id="weekSummary" class="muted small"></p></div><button id="editWeek" class="secondary">Edit week</button></div><div id="weekDays"></div><div id="updateNotice" class="notice" hidden></div><div class="hero"><span id="sessionLabel">SELECTED SESSION</span><h2 id="planName"></h2><p id="summary"></p><progress id="progress" value="0" max="1"></progress><div class="row"><button id="newWorkout" class="secondary">New session</button><button id="undo" class="secondary" disabled>Undo AI edit</button></div></div><div id="trainingDetails"><div class="section-title"><h2>Your exercises</h2><button id="add" class="secondary">＋ Add</button></div><div id="exercises"></div><button id="finish" class="primary wide">Finish & save session</button><p class="muted small">Rest starts after each completed set. Use a comfortable load and stop if an exercise causes pain.</p></div></section>
-<section id="coach" class="page" hidden><div class="eyebrow">CHATGPT COACH → TRAINER APP</div><h1>ChatGPT, inside the trainer.</h1><p class="muted">Use your normal ChatGPT account without leaving this app. The first time, sign in inside the embedded view. After login, the trainer keeps the ChatGPT session and shows a simplified chat-focused layout with the conversation and message box.</p>
-<article class="card"><h2>1. Open embedded ChatGPT</h2><p class="small muted">Copy your latest trainer context when you want ChatGPT to see your current week, body profile, and logged sets. Then open the in-app ChatGPT screen and paste it into the message box.</p><div class="row"><button id="copyChatGPTContext" class="primary">Copy latest trainer context</button><button id="openChatGPT" class="secondary">Open in-app ChatGPT</button></div></article>
-<article class="card"><h2>2. Send a ChatGPT response to the trainer</h2><p class="small muted">Copy the response inside ChatGPT, then tap <b>Use copied response</b> in the small in-app toolbar. You can also paste text below manually.</p><textarea id="handoffText" maxlength="24000" rows="9" placeholder="Paste ChatGPT's workout recommendation here…"></textarea><button id="interpretHandoff" class="primary wide">Interpret with Gemini</button><p id="handoffStatus" class="small muted">Gemini is used only as a command interpreter. It does not redesign ChatGPT's coaching response.</p></article>
-<section id="handoffPreview" class="card" hidden><h2>Commands ready for review</h2><div id="handoffSummary"></div><div id="handoffWarnings"></div><div id="handoffCommands"></div><button id="applyHandoff" class="primary wide">Apply commands to trainer</button><button id="discardHandoff" class="secondary wide">Discard commands</button></section>
-<details class="card"><summary><b>Direct Gemini coach (optional)</b></summary><p class="small muted">This older mode is still available as a fallback. Embedded ChatGPT plus the Gemini command interpreter is now the recommended workflow.</p><div id="connection" class="notice"></div><button id="clearChat" class="secondary wide">New Gemini conversation</button><div class="chips"><button data-prompt="Explain how I should progress my weights over time. Give advice without changing my plan.">Training advice</button><button data-prompt="Help me refine my weekly schedule for my selected training days and time budgets. Ask about my goals and equipment first.">Plan my week</button><button data-prompt="Refine the draft to make the sessions easier while keeping my chosen training days.">Refine the draft</button></div><div id="messages" aria-live="polite"></div><section id="proposal" class="card" hidden><h2>Draft changes — not applied</h2><div id="proposalDetails"></div><button id="applyProposal" class="primary wide">Apply & view workout</button><div class="row"><button id="refineProposal" class="secondary">Refine draft</button><button id="discardProposal" class="secondary">Discard draft</button></div></section><form id="chatForm"><label for="chatInput">Message your coach</label><textarea id="chatInput" maxlength="6000" rows="4" placeholder="Ask a question or tell me how you want to refine your week…" required></textarea><button id="send" class="primary wide">Send to Gemini ↗</button></form><p class="small muted">When connected, your recent chat, long-term coach memory, training profile, recent logged sessions, saved week, and any draft are sent to Google Gemini. Apply a draft to update your planner or body profile.</p></details></section>
-<section id="history" class="page" hidden><div class="eyebrow">SHOWING UP COUNTS</div><h1>Your progress.</h1><div id="historyList"></div></section>
-<section id="profilePage" class="page" hidden><div class="eyebrow">YOUR TRAINING CONTEXT</div><h1>Profile & body data.</h1><p class="muted">These details stay on this device and help the coach tailor future plans. AI-suggested changes are shown as drafts before they are applied.</p><article class="card"><label for="profileGoal">Primary goal</label><select id="profileGoal"><option>General fitness</option><option>Build muscle</option><option>Strength</option><option>Endurance</option><option>Fat loss</option><option>Mobility / athleticism</option></select><label for="profileExperience">Training experience</label><select id="profileExperience"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><label for="profileEquipment">Equipment available</label><textarea id="profileEquipment" rows="3" maxlength="500" placeholder="Functional trainer, dumbbells, bike, or bodyweight only"></textarea><div class="body-grid"><label>Height — ft<input id="heightFeet" type="number" inputmode="numeric" min="3" max="8"></label><label>Height — in<input id="heightInches" type="number" inputmode="numeric" min="0" max="11"></label><label>Weight — lb<input id="weightLb" type="number" inputmode="decimal" min="50" max="1000" step="0.1"></label></div><button id="saveProfilePage" class="primary wide">Save profile</button></article><article class="card"><h2>Coach memory</h2><p class="small muted">The coach keeps a compact long-term summary of useful preferences and training context even when you start a new chat.</p><textarea id="coachMemory" rows="7" maxlength="4000" placeholder="No long-term coach memory yet."></textarea><div class="row"><button id="saveMemory" class="secondary">Save memory</button><button id="clearMemory" class="secondary">Clear memory</button></div></article></section></main>
-<aside id="timer" hidden><div><small>REST BETWEEN SETS</small><strong id="time">01:30</strong></div><button id="pause" class="secondary">Pause</button><button id="plus" class="secondary">+15s</button><button id="skip" class="secondary">Skip</button></aside>
-<nav><button data-tab="workout" class="active">◉ Workout</button><button data-tab="coach">✦ ChatGPT</button><button data-tab="history">▥ Progress</button><button data-tab="profilePage">◎ Profile</button></nav>
-<dialog id="modal"><div id="modalBody"></div><button id="closeModal" class="secondary wide">Close</button></dialog><div id="toast" role="status" hidden></div>
-<script type="module" src="app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com https://api.anatome.dev; connect-src 'self' https://generativelanguage.googleapis.com https://wger.de https://api.anatome.dev; media-src 'self' https://wger.de https://*.wger.de; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="color-scheme" content="dark light">
+<title>AI Personal Trainer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="logo">↗</div>
+  <div><b>FORM / TRAINER</b><small>Train. Track. Progress.</small></div>
+  <button id="settings" class="icon" aria-label="Settings">⚙</button>
+</header>
+
+<main>
+<section id="workout" class="page">
+  <h1>Workout</h1>
+  <div class="section-title compact-title">
+    <div><h2>This week</h2><p id="weekSummary" class="muted small"></p></div>
+    <button id="editWeek" class="secondary">Edit</button>
+  </div>
+  <div id="weekDays"></div>
+
+  <article id="nextWeekCard" class="card next-week-card">
+    <div class="section-title compact-title">
+      <div><span class="micro-label">GEMINI</span><h2>Next week</h2></div>
+      <button id="refreshNextWeek" class="secondary">Refresh</button>
+    </div>
+    <p id="nextWeekStatus" class="small muted">Save a workout to start recommendations.</p>
+    <div id="nextWeekDays" class="next-week-days"></div>
+    <div class="row next-week-actions">
+      <button id="viewNextWeek" class="secondary">Review</button>
+      <button id="useNextWeek" class="primary">Use plan</button>
+    </div>
+  </article>
+
+  <div id="updateNotice" class="notice" hidden></div>
+
+  <div class="hero">
+    <span id="sessionLabel">SELECTED SESSION</span>
+    <h2 id="planName"></h2>
+    <p id="summary"></p>
+    <progress id="progress" value="0" max="1"></progress>
+    <div class="row">
+      <button id="newWorkout" class="secondary">New session</button>
+      <button id="undo" class="secondary" disabled>Undo</button>
+    </div>
+  </div>
+
+  <div id="trainingDetails">
+    <div class="section-title compact-title"><h2>Exercises</h2><button id="add" class="secondary">＋ Add</button></div>
+    <div id="exercises"></div>
+    <button id="finish" class="primary wide">Finish & save</button>
+  </div>
+</section>
+
+<section id="coach" class="page" hidden>
+  <h1>ChatGPT Coach</h1>
+  <div class="row chat-actions">
+    <button id="copyChatGPTContext" class="primary">Copy context</button>
+    <button id="useCopiedResponse" class="secondary">Use response</button>
+    <button id="reloadChatGPT" class="secondary">Reload</button>
+  </div>
+  <div id="inlineChatSlot" aria-label="ChatGPT conversation"><p id="inlineChatFallback" class="small muted">ChatGPT appears here in the Android app.</p></div>
+
+  <details id="handoffPanel" class="card compact-details">
+    <summary><b>Apply ChatGPT changes</b></summary>
+    <textarea id="handoffText" maxlength="24000" rows="7" placeholder="Paste or import ChatGPT's recommendation…"></textarea>
+    <button id="interpretHandoff" class="primary wide">Interpret with Gemini</button>
+    <p id="handoffStatus" class="small muted">Nothing changes until you review and apply it.</p>
+  </details>
+
+  <section id="handoffPreview" class="card" hidden>
+    <h2>Review changes</h2>
+    <div id="handoffSummary"></div>
+    <div id="handoffWarnings"></div>
+    <div id="handoffCommands"></div>
+    <button id="applyHandoff" class="primary wide">Apply</button>
+    <button id="discardHandoff" class="secondary wide">Discard</button>
+  </section>
+
+  <details id="geminiCoach" class="card compact-details">
+    <summary><b>Gemini tools</b></summary>
+    <div id="connection" class="notice"></div>
+    <button id="clearChat" class="secondary wide">New Gemini conversation</button>
+    <div class="chips">
+      <button data-prompt="Explain how I should progress my weights over time. Give advice without changing my plan.">Progression</button>
+      <button data-prompt="Help me refine my weekly schedule for my selected training days and time budgets. Ask about my goals and equipment first.">Plan week</button>
+      <button data-prompt="Refine the draft to make the sessions easier while keeping my chosen training days.">Refine</button>
+    </div>
+    <div id="messages" aria-live="polite"></div>
+    <section id="proposal" class="card" hidden>
+      <h2>Draft changes</h2>
+      <div id="proposalDetails"></div>
+      <button id="applyProposal" class="primary wide">Apply</button>
+      <div class="row"><button id="refineProposal" class="secondary">Refine</button><button id="discardProposal" class="secondary">Discard</button></div>
+    </section>
+    <form id="chatForm">
+      <textarea id="chatInput" maxlength="6000" rows="3" aria-label="Message Gemini coach" placeholder="Ask Gemini…" required></textarea>
+      <button id="send" class="primary wide">Send ↗</button>
+    </form>
+  </details>
+</section>
+
+<section id="history" class="page" hidden>
+  <h1>Progress</h1>
+  <article id="progressionCard" class="card progression-card">
+    <label for="progressExercise">Exercise</label>
+    <select id="progressExercise"></select>
+    <div id="progressCharts"></div>
+  </article>
+  <div id="historyList"></div>
+</section>
+
+<section id="profilePage" class="page" hidden>
+  <h1>Profile</h1>
+  <article class="card">
+    <label for="profileGoal">Goal</label>
+    <select id="profileGoal"><option>General fitness</option><option>Build muscle</option><option>Strength</option><option>Endurance</option><option>Fat loss</option><option>Mobility / athleticism</option></select>
+    <label for="profileExperience">Experience</label>
+    <select id="profileExperience"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
+    <label for="profileEquipment">Equipment</label>
+    <textarea id="profileEquipment" rows="2" maxlength="500" placeholder="Functional trainer, dumbbells, bike…"></textarea>
+    <div class="body-grid">
+      <label>Height ft<input id="heightFeet" type="number" inputmode="numeric" min="3" max="8"></label>
+      <label>Height in<input id="heightInches" type="number" inputmode="numeric" min="0" max="11"></label>
+      <label>Weight lb<input id="weightLb" type="number" inputmode="decimal" min="50" max="1000" step="0.1"></label>
+    </div>
+    <button id="saveProfilePage" class="primary wide">Save profile</button>
+  </article>
+  <details class="card compact-details">
+    <summary><b>Coach memory</b></summary>
+    <textarea id="coachMemory" rows="6" maxlength="4000" placeholder="No long-term coach memory yet."></textarea>
+    <div class="row"><button id="saveMemory" class="secondary">Save</button><button id="clearMemory" class="secondary">Clear</button></div>
+  </details>
+</section>
+</main>
+
+<aside id="timer" hidden>
+  <div><small id="timerLabel">REST</small><strong id="time">01:30</strong></div>
+  <button id="pause" class="secondary">Pause</button>
+  <button id="plus" class="secondary">+15s</button>
+  <button id="skip" class="secondary">Skip</button>
+</aside>
+
+<nav>
+  <button data-tab="workout" class="active">◉ Workout</button>
+  <button data-tab="coach">✦ ChatGPT</button>
+  <button data-tab="history">▥ Progress</button>
+  <button data-tab="profilePage">◎ Profile</button>
+</nav>
+
+<dialog id="modal">
+  <button id="closeModalTop" class="modal-x" aria-label="Close dialog">×</button>
+  <div id="modalBody"></div>
+  <button id="closeModal" class="secondary wide modal-bottom-close">Close</button>
+</dialog>
+
+<div id="toast" role="status" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
