@@ -28,7 +28,7 @@ let collapsedExercises=new Set((Array.isArray(read('collapsedExercises',[]))?rea
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.13.0';
+const APP_VERSION='0.14.0';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null,handoffTiming=read('handoffTiming',{}),lastHandoff=read('lastHandoff',null);
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -458,13 +458,32 @@ function openReplacementPicker(index){
  };
 }
 
+function renderDashboardSummary(){
+ const review=weeklyTrainingReview(history,catalog,{days:7,now:Date.now()});
+ if($('todayDateLabel'))$('todayDateLabel').textContent=new Date().toLocaleDateString(undefined,{month:'short',day:'numeric'});
+ if($('dashWorkouts'))$('dashWorkouts').textContent=String(review.sessions||0);
+ if($('dashSets'))$('dashSets').textContent=String(review.sets||0);
+ if($('dashAdherence'))$('dashAdherence').textContent=review.sets?review.adherencePct+'%':'—';
+ const enabled=week.days.filter(d=>d.enabled).length;
+ const now=new Date(),day=(now.getDay()+6)%7,start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day),end=new Date(start.getTime()+7*86400000);
+ const completedDays=new Set(history.filter(h=>{const t=new Date(h.date);return t>=start&&t<end;}).map(h=>h.day).filter(Boolean));
+ const completedScheduled=week.days.filter(d=>d.enabled&&completedDays.has(d.id)).length;
+ const consistency=enabled?Math.min(100,Math.round(completedScheduled/enabled*100)):0;
+ if($('dashConsistency'))$('dashConsistency').textContent=consistency+'%';
+}
+function renderHeroMuscle(active){
+ const target=$('heroMuscle');if(!target)return;
+ if(!active||!plan.exercises.length){target.innerHTML='';return;}
+ const c=catalog.find(x=>x.id===plan.exercises[0].id);
+ target.innerHTML=c?musclePicture(c):'';
+}
 function render(){
- renderWeek();renderNextWeekRecommendation();
+ renderWeek();renderNextWeekRecommendation();renderDashboardSummary();
  const active=currentDay().enabled;
  $('sessionLabel').textContent=dayName(selected).toUpperCase()+' · '+(active?currentDay().minutes+' MIN BUDGET':'REST DAY');
  $('trainingDetails').hidden=!active;$('newWorkout').hidden=!active;$('progress').hidden=!active;
  $('planName').textContent=active?plan.name:'Rest & recover';const done=completedSetTotal(plan),total=totalSets(plan),estimate=estimatePlanMinutes(plan);
- $('summary').textContent=active?plan.exercises.length+' exercises · '+done+'/'+total+' sets · ~'+estimate+' min':'Rest day';$('progress').value=done;$('progress').max=total;$('undo').disabled=!undo||busy;
+ $('summary').textContent=active?plan.exercises.length+' exercises · '+done+'/'+total+' sets · ~'+estimate+' min':'Rest day';$('progress').value=done;$('progress').max=total;$('undo').disabled=!undo||busy;renderHeroMuscle(active);
  $('exercises').innerHTML=plan.exercises.map(renderExerciseCard).join('');
  $('add').disabled=busy||plan.exercises.length>=12;$('newWorkout').disabled=busy;$('finish').disabled=busy;$('settings').disabled=busy;$('editWeek').disabled=busy;drawProposal();
  const modelName=MODELS.find(m=>m.id===geminiModel)?.name||geminiModel;$('connection').textContent=apiKey?(pending?modelName+' ready · Draft waiting':modelName+' ready'):'Add Gemini key in Settings.';
@@ -665,6 +684,7 @@ function renderProfilePage(){
 }
 function showTab(tab){document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==tab);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='history')renderHistory();if(tab==='profilePage')renderProfilePage();if(tab==='coach')renderHandoff();document.body.classList.toggle('coach-active',tab==='coach');window.scrollTo(0,0);window.syncInlineChat?.();}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+if($('dashboardCoachOpen'))$('dashboardCoachOpen').onclick=()=>showTab('coach');
 $('saveProfilePage').onclick=()=>{const ft=$('heightFeet').value.trim(),inch=$('heightInches').value.trim(),weight=$('weightLb').value.trim();const height=ft===''&&inch===''?null:Number(ft||0)*12+Number(inch||0);const next=normalizeProfile({goal:$('profileGoal').value,experience:$('profileExperience').value,equipment:$('profileEquipment').value,heightIn:height,weightLb:weight===''?null:Number(weight)});if((height!==null&&next.heightIn===null)||(weight!==''&&next.weightLb===null))return toast('Check your height and weight values.');profile=next;saveProfile();markNextWeekStale();renderProfilePage();drawProposal();toast('Profile saved.');};
 $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4000);saveMemory();toast('Coach memory saved.');};
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
@@ -846,7 +866,12 @@ $('editWeek').onclick=()=>{
  };
 };
 function drawProposal(){
- const coachTab=document.querySelector('[data-tab="coach"]');if(coachTab)coachTab.textContent=pending?'✦ ChatGPT · Gemini draft':'✦ ChatGPT';
+ const coachTab=document.querySelector('[data-tab="coach"]');
+ if(coachTab){
+  const label=coachTab.querySelector('.nav-label'),badge=coachTab.querySelector('.nav-badge');
+  if(label)label.textContent=pending?'Coach · Draft':'Coach';else coachTab.textContent=pending?'Coach · Draft':'Coach';
+  if(badge)badge.hidden=!pending;
+ }
  $('proposal').hidden=!pending;if(!pending)return;
  const weekChangesList=pending.week?weekChanges(week,pending.week,catalog):[],profileChangesList=pending.profile?profileChanges(profile,pending.profile):[];
  const staleWeek=!!pending.week&&pending.base!==weekKey(week),staleProfile=!!pending.profile&&pending.profileBase!==profileKey(profile),stale=staleWeek||staleProfile;
