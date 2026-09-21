@@ -23,7 +23,7 @@ const assert=require('node:assert/strict');
   });
   await page.route('https://wger.de/api/v2/exerciseinfo/**',route=>route.fulfill({json:{results:[{translations:[{name:'Dumbbell Bench Press',aliases:[]}],videos:[{video:'https://wger.de/media/demo.mp4',is_main:true,license_author:'Open demo author',license_title:'CC BY-SA'}]}]}}));
   await page.route('https://wger.de/media/**',route=>route.abort());
-  await page.locator('[data-demo="Dumbbell_Bench_Press"]').first().click();await page.waitForSelector('#demoVideo');assert.equal(await page.locator('.muscle-picture.large').isVisible(),true);assert.match(await page.locator('#anatomyDetail').textContent(),/Primary: Chest/);assert.match(await page.locator('#anatomyDetail').textContent(),/Secondary: Triceps, Deltoids/);assert.match(await page.evaluate(()=>localStorage.getItem('demoMetaCache')||''),/anatome_secondary_slugs/);await page.locator('#closeModalTop').click();
+  await page.locator('[data-demo="Dumbbell_Bench_Press"]').first().click();await page.waitForSelector('#demoVideo');assert.equal(await page.locator('.muscle-picture.large').isVisible(),true);assert.match(await page.locator('#anatomyDetail').textContent(),/Primary: Chest/);assert.match(await page.locator('#anatomyDetail').textContent(),/Secondary: Triceps, Shoulders/);assert.match(await page.evaluate(()=>localStorage.getItem('demoMetaCache')||''),/anatome_secondary_slugs/);await page.locator('#closeModalTop').click();
 
   // Each exercise card can collapse from its dropdown button and keeps that state across rerenders/reload.
   let collapseButton=page.locator('[data-collapse="0"]');
