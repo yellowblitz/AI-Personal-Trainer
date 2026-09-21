@@ -171,7 +171,7 @@ async function refreshNextWeekRecommendation(trigger='manual'){
  if(!apiKey){if(trigger==='manual')toast('Add your Gemini API key in Settings first.');return;}
  recommendationBusy=true;renderNextWeekRecommendation();
  try{
-  const message='Create a proposal for my recommended training week NEXT WEEK. Use my current week as the baseline and recentTraining as progression evidence. Compare plannedReps/plannedWeight with actualReps/actualWeight for every completed set, and use exercise-level RIR and notes. If actual reps missed target, especially with RIR 0-1, do not progress that prescription and consider reducing load/reps/volume. If targets were met with RIR 2-4+, gradual progression may be appropriate. Consider exercisePreferences: repeated removals are a signal to avoid an exercise and repeated completed/added exercises are a preference signal unless programming needs suggest otherwise. Preserve enabled training days and time budgets unless evidence supports a change. Recommend exact exercises, set-by-set reps, rest, and loads. This is a next-week recommendation only; do not claim the current week was changed.';
+  const message='Create a proposal for my recommended training week NEXT WEEK. Use my current week as the baseline and recentTraining as progression evidence. Compare plannedReps/plannedWeight with actualReps/actualWeight for every completed set, and use exercise-level RIR, effort, form, discomfort and notes. If actual reps missed target, especially with RIR 0-1, effort too_hard, form breaking/poor, or discomfort, do not blindly progress that prescription; hold, reduce, or substitute as appropriate. If targets were met with RIR 2-4+, good form, manageable effort and no discomfort, gradual progression may be appropriate. Treat one unusual session cautiously. Consider exercisePreferences: repeated removals are a signal to avoid an exercise, repeated completed/added exercises are a positive preference signal, and persistent exercise notes describe setup preferences that should be respected. Preserve enabled training days and time budgets unless evidence supports a change. Recommend exact exercises, set-by-set reps, rest, and loads. This is a next-week recommendation only; do not claim the current week was changed.';
   const data=await askGemini({message,week,selectedDay:selected,proposal:null,history:[],profile,memory:coachMemory,recentTraining:summarizeHistory(history,catalog,20),preferences:compactPreferences(),model:geminiModel},catalog,apiKey);
   if(data.action!=='proposal'||!data.week)throw new Error('Gemini did not return a next-week plan.');
   nextWeekRecommendation={week:normalizeWeek(data.week),generatedAt:new Date().toISOString(),historyCount:history.length,stale:false,note:String(data.reply||'').slice(0,1200)};
@@ -361,8 +361,8 @@ async function openExerciseDemo(c){
   const v=videos[index];if(!v){ensureYoutube().then(list=>list.length?renderYoutube(0):renderAnimated('No other verified motion demo is available yet.'));return;}
   active={kind:'wger',key:problemKey('wger',v),index};
   $('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video><div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">Video '+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div>'+actions()+'<p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+(v.title?' · '+escape(v.title):'')+'</p>';
-  const player=$('demoVideo');player?.play?.().catch(()=>{});
-  if(player)player.onerror=async()=>{flag(active?.key);videos=videos.filter(x=>problemKey('wger',x)!==active?.key);const list=await ensureYoutube();if(list.length)renderYoutube(0);else if(videos.length)renderVideo(0);else renderAnimated('That video failed to load and was skipped.');};
+  const player=$('demoVideo'),videoKey=active.key;player?.play?.().catch(()=>{});
+  if(player)player.onerror=async()=>{flag(videoKey);videos=videos.filter(x=>problemKey('wger',x)!==videoKey);active=null;if(videos.length)renderVideo(0);else{const list=await ensureYoutube();if(list.length)renderYoutube(0);else renderAnimated('That video failed to load and was skipped.');}};
  };
  const renderYoutube=index=>{
   const v=youtubeDemos[index];if(!v){renderAnimated('No other verified motion demo is available yet.');return;}
@@ -385,9 +385,17 @@ async function openExerciseDemo(c){
   if(e.target.closest('[data-demo-animated]')){renderAnimated('Showing the local fallback.');return;}
   if(e.target.closest('[data-demo-next]')){await nextDemo();return;}
   if(e.target.closest('[data-demo-problem]')&&active){
-   const bad={...active};flag(bad.key);
-   if(bad.kind==='wger')videos=videos.filter(v=>problemKey('wger',v)!==bad.key);else youtubeDemos=youtubeDemos.filter(v=>problemKey('youtube',v)!==bad.key);
-   toast('Demo skipped. The app will avoid it next time.');await nextDemo();
+   const bad={...active};flag(bad.key);active=null;
+   if(bad.kind==='wger'){
+    videos=videos.filter(v=>problemKey('wger',v)!==bad.key);
+    toast('Demo skipped. The app will avoid it next time.');
+    if(videos.length)renderVideo(Math.min(bad.index,videos.length-1));
+    else{const list=await ensureYoutube();if(list.length)renderYoutube(0);else renderAnimated('Showing the local fallback.');}
+   }else{
+    youtubeDemos=youtubeDemos.filter(v=>problemKey('youtube',v)!==bad.key);
+    toast('Demo skipped. The app will avoid it next time.');
+    if(youtubeDemos.length)renderYoutube(Math.min(bad.index,youtubeDemos.length-1));else renderAnimated('Showing the local fallback.');
+   }
   }
  };
 }
@@ -658,14 +666,15 @@ $('saveMemory').onclick=()=>{coachMemory=$('coachMemory').value.trim().slice(0,4
 $('clearMemory').onclick=()=>{coachMemory='';saveMemory();$('coachMemory').value='';toast('Coach memory cleared.');};
 
 $('settings').onclick=()=>{
- modal('<h2>Settings</h2><p class="small muted">v'+APP_VERSION+' · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><label for="geminiModel">Gemini model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste key"><div class="row"><button id="showKey" class="secondary">Show</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get key ↗</a></div><button id="saveSettings" class="primary wide">Save</button><button id="clearKey" class="secondary wide">Remove key</button><button id="clearDemoCache" class="secondary wide">Clear demo cache ('+Object.keys(demoMetaCache).length+')</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">Demo videos are never bulk-downloaded. Only videos you open can enter the Android WebView cache.</p>');
+ modal('<h2>Settings</h2><p class="small muted">v'+APP_VERSION+' · '+catalog.length+' exercises</p><label for="appTheme">Theme</label><select id="appTheme"><option value="dark">Dark · Default</option><option value="light">Light</option><option value="green">Green · Classic</option></select><label for="geminiModel">Gemini model</label><select id="geminiModel">'+MODELS.map((m,i)=>'<option value="'+escape(m.id)+'">'+escape(m.name)+(i===0?' · Recommended':'')+'</option>').join('')+'</select><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="512" placeholder="Paste key"><div class="row"><button id="showKey" class="secondary">Show</button><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Get key ↗</a></div><button id="saveSettings" class="primary wide">Save</button><button id="clearKey" class="secondary wide">Remove key</button><button id="clearDemoCache" class="secondary wide">Clear demo cache ('+Object.keys(demoMetaCache).length+')</button><button id="resetDemoProblems" class="secondary wide">Reset skipped demos ('+Object.values(demoProblems).reduce((n,v)=>n+Object.keys(v||{}).length,0)+')</button><button id="viewErrorReports" class="secondary wide">Error reports ('+errorReports.length+')</button><p class="small muted">Demo videos are never bulk-downloaded. Only videos you open can enter the Android WebView cache.</p>');
  $('apiKey').value=apiKey;$('geminiModel').value=geminiModel;$('appTheme').value=theme;
  $('showKey').onclick=()=>{const show=$('apiKey').type==='password';$('apiKey').type=show?'text':'password';$('showKey').textContent=show?'Hide':'Show';};
  $('appTheme').onchange=()=>applyTheme($('appTheme').value);
  const setKey=value=>{try{if(window.TrainerKeys&&!window.TrainerKeys.saveKey(value))throw new Error();}catch{toast('Could not save your key.');return false;}apiKey=value;return true;};
  $('saveSettings').onclick=()=>{const value=$('apiKey').value.trim(),model=$('geminiModel').value,nextTheme=$('appTheme').value;if(value&&/\s/.test(value))return toast('API key cannot contain spaces.');if(value!==apiKey&&!setKey(value))return;geminiModel=MODELS.some(m=>m.id===model)?model:DEFAULT_MODEL;localStorage.setItem('geminiModel',JSON.stringify(geminiModel));applyTheme(nextTheme);$('modal').close();render();toast('Settings saved.');};
  $('clearKey').onclick=()=>{if(setKey('')){$('apiKey').value='';$('modal').close();render();toast('Gemini key removed.');}};
- $('clearDemoCache').onclick=()=>{demoMetaCache={};localStorage.removeItem('demoMetaCache');wgerExerciseIndexPromise=null;try{window.TrainerShare?.clearMediaCache?.();}catch{};$('clearDemoCache').textContent='Clear demo cache (0)';toast('Demo cache cleared.');};
+ $('clearDemoCache').onclick=()=>{demoMetaCache={};localStorage.removeItem('demoMetaCache');wgerExerciseIndexPromise=null;youtubeDemoIndexPromise=null;try{window.TrainerShare?.clearMediaCache?.();}catch{};$('clearDemoCache').textContent='Clear demo cache (0)';toast('Demo cache cleared.');};
+ $('resetDemoProblems').onclick=()=>{demoProblems={};localStorage.removeItem('demoProblems');$('resetDemoProblems').textContent='Reset skipped demos (0)';toast('Skipped demo list reset.');};
  $('viewErrorReports').onclick=showErrorReports;
 };
 function renderHandoff(){
