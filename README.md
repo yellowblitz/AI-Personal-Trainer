@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.12.0
+# AI Personal Trainer — Android v0.12.1
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -33,10 +33,18 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.1-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
+
+## v0.12.1 — broader short demo coverage
+
+- Demo lookup now has a second, conservative fallback library: 373 locally indexed exercise-to-YouTube mappings derived from the MIT-licensed `rthepen/workout-database` metadata plus reviewed supplemental cable-exercise mappings.
+- Playback priority is **wger full-motion → curated YouTube short clip → exact Anatome animation → image/anatomy fallback**. Standard YouTube tutorials are clipped to a 6–15 second movement preview; native short entries stay short.
+- YouTube videos use privacy-enhanced `youtube-nocookie.com` embeds and are requested only after you open **Demo**. Video files are not bundled or bulk-downloaded, keeping the APK/storage footprint small.
+- The four supplemental movements now all have a motion-video fallback: Cable Squat, Cable Romanian Deadlift, Bulgarian Split Squat and Cable Leg Curl.
+- Matching stays conservative: the generated YouTube index accepts exact exercise names and compatible equipment rather than guessing visually similar exercises. Tests validate every indexed exercise ID and YouTube ID.
 
 ## v0.12.0 — anatomical muscle illustrations and exact demo pairing
 - Replaces the abstract mini muscle map with anatomy-style body illustrations: the primary muscle is highlighted in red and secondary muscles in orange when exact metadata is available.
@@ -85,7 +93,7 @@ Open http://localhost:8000. The API key is intentionally not persisted in the br
 The WebView only displays packaged assets at `https://appassets.androidplatform.net/assets/index.html`. Its native bridge exposes only encrypted key read/write. A Content Security Policy disallows remote scripts, frames and objects, and permits network connections only to the local asset origin and Google's Gemini endpoint. The AI Studio key link opens in the external browser. All other remote navigation is blocked.
 
 ## Media
-Catalog and photos: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), declared Unlicense. See `MEDIA-SOURCES.md` and the included upstream license. Demonstrations loop two photos; they are not full-motion videos. Check asset rights before commercial distribution.
+Catalog and photos: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), declared Unlicense. See `MEDIA-SOURCES.md` and the included upstream license. Demonstrations loop two photos; they are not full-motion videos. Check asset rights before commercial distribution. Optional full-motion/short demos are streamed on demand from wger or embedded YouTube references; `MEDIA-SOURCES.md` records source and licensing notes.
 
 ## Limitations
 Rest deadlines survive background suspension, but alerts only fire while the app is active. Session duration is still an estimate based on reps, rest and transition assumptions; real completion time depends on pace and interruptions. The schedule is a recurring weekly template, not a dated calendar. No background notifications, cloud sync, kg selector, or export yet. Physical device/Keystore QA and live Gemini calls are not covered by the browser test.
