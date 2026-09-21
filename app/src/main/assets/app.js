@@ -547,11 +547,14 @@ function openExercisePicker(){
 $('add').onclick=openExercisePicker;
 $('newWorkout').onclick=()=>{modal('<h2>New session</h2>'+Object.keys(templates).map(day=>`<button class="wide" data-day="${day}">${day}</button>`).join(''));$('modalBody').onclick=e=>{if(!e.target.dataset.day)return;plan=makePlan(e.target.dataset.day);timer={};undo=null;save();markNextWeekStale();render();tick();$('modal').close();};};
 
-function showSessionComparison(snapshot,comparison){
+function showSessionComparison(snapshot,comparison,previousById={}){
+ const formatSets=(sets=[])=>sets.map((v,n)=>'S'+(n+1)+' '+v.reps+(v.weight?' @ '+v.weight+' lb':' BW')).join(' · ');
  const byExercise=(snapshot.exercises||[]).filter(x=>normalizeExercise(x).done>0).map(raw=>{
-  const e=normalizeExercise(raw),name=catalog.find(x=>x.id===e.id)?.name||e.id;
+  const e=normalizeExercise(raw),name=catalog.find(x=>x.id===e.id)?.name||e.id,previous=previousById[e.id];
   const short=e.setReps.slice(0,e.done).filter((v,i)=>v<e.plannedReps[i]).length;
-  return '<div class="comparison-row"><div><b>'+escape(name)+'</b><small>'+e.done+' sets'+(e.rir!=null?' · RIR '+(e.rir===4?'4+':e.rir):'')+'</small></div><span class="'+(short?'below':'met')+'">'+(short?short+' below target':'On target')+'</span></div>';
+  const today=Array.from({length:e.done},(_,i)=>({reps:e.setReps[i],weight:e.setWeights[i]}));
+  const prior=previous?.sets?.length?'<small class="comparison-previous"><b>Previous:</b> '+escape(formatSets(previous.sets))+'<br><b>Today:</b> '+escape(formatSets(today))+'</small>':'<small class="comparison-previous">First logged comparison for this exercise.</small>';
+  return '<div class="comparison-row comparison-row-detailed"><div><b>'+escape(name)+'</b><small>'+e.done+' sets'+(e.rir!=null?' · RIR '+(e.rir===4?'4+':e.rir):'')+'</small>'+prior+'</div><span class="'+(short?'below':'met')+'">'+(short?short+' below target':'On target')+'</span></div>';
  }).join('');
  const repDelta=comparison.actualReps-comparison.plannedReps;
  const volDelta=Math.round(comparison.actualVolume-comparison.plannedVolume);
@@ -560,10 +563,11 @@ function showSessionComparison(snapshot,comparison){
 }
 $('finish').onclick=()=>{
  const count=completedSetTotal(plan);if(!count)return toast('Complete a set before saving.');
- const snapshot=normalizePlan(structuredClone(plan)),comparison=comparePlanPerformance(snapshot);
+ const snapshot=normalizePlan(structuredClone(plan)),comparison=comparePlanPerformance(snapshot),previousById={};
+ for(const raw of snapshot.exercises){const e=normalizeExercise(raw);if(e.done)previousById[e.id]=lastExercisePerformance(history,e.id);}
  history.unshift({date:new Date().toISOString(),day:selected,plan:snapshot});history=history.slice(0,200);localStorage.setItem('history',JSON.stringify(history));
  plan.exercises=plan.exercises.map(raw=>{const e=normalizeExercise(raw);return {...e,setReps:[...e.plannedReps],setWeights:[...e.plannedWeights],reps:e.plannedReps[0],weight:e.plannedWeights[0],done:0,rir:null,note:'',effort:'',form:'',discomfort:''};});
- timer={};undo=null;save();render();tick();showSessionComparison(snapshot,comparison);if(apiKey)refreshNextWeekRecommendation('session');
+ timer={};undo=null;save();render();tick();showSessionComparison(snapshot,comparison,previousById);if(apiKey)refreshNextWeekRecommendation('session');
 };
 function tick(){const left=secondsLeft(timer);$('timerLabel').textContent=timer.day?dayName(timer.day)+' · REST':'REST BETWEEN SETS';$('timer').hidden=!timer.end&&timer.paused==null;$('time').textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;$('pause').textContent=timer.paused!=null?'Resume':'Pause';if(timer.end&&left===0){timer={};save();$('timer').hidden=true;toast('Rest complete — ready for your next set.');navigator.vibrate?.([150,80,150]);}}
 $('pause').onclick=()=>{timer=timer.paused!=null?{...timer,end:Date.now()+timer.paused*1000,paused:null}:{...timer,end:null,paused:secondsLeft(timer)};save();tick();};$('plus').onclick=()=>{if(timer.paused!=null)timer.paused+=15;else timer.end=Math.max(timer.end||0,Date.now())+15000;save();tick();};$('skip').onclick=()=>{timer={};save();tick();};setInterval(tick,250);document.addEventListener('visibilitychange',tick);
