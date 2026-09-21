@@ -223,7 +223,7 @@ function anatomyLabel(primary,secondary=[],info=null){
  const p=(Array.isArray(info?.primaryMuscles)&&info.primaryMuscles.length?info.primaryMuscles.map(prettyMuscle):fallbackPrimary);
  const sec=(Array.isArray(info?.secondaryMuscles)&&info.secondaryMuscles.length?info.secondaryMuscles.map(prettyMuscle):fallbackSecondary);
  const uniqueP=[...new Set(p)],uniqueS=[...new Set(sec.filter(x=>!uniqueP.includes(x)))];
- return '<div class="muscle-legend detailed"><span><i class="primary-dot"></i><b>Primary</b> '+escape(uniqueP.join(', ')||'Unknown')+'</span>'+(uniqueS.length?'<span><i class="secondary-dot"></i><b>Secondary</b> '+escape(uniqueS.join(', '))+'</span>':'')+'</div>';
+ return '<div class="muscle-legend detailed"><span><i class="primary-dot"></i><b>Primary:</b> '+escape(uniqueP.join(', ')||'Unknown')+'</span>'+(uniqueS.length?'<span><i class="secondary-dot"></i><b>Secondary:</b> '+escape(uniqueS.join(', '))+'</span>':'')+'</div>';
 }
 function musclePicture(c,large=false,info=null){
  const primary=safeMuscleSlugs(info?.anatome_primary_slugs?.length?info.anatome_primary_slugs:(Array.isArray(c.anatomePrimarySlugs)&&c.anatomePrimarySlugs.length?c.anatomePrimarySlugs:[c.muscleSlug]));
