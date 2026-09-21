@@ -44,6 +44,7 @@ When a high-confidence wger full-motion video is unavailable, the trainer can no
 Primary metadata source: https://github.com/rthepen/workout-database
 Pinned source revision: `ee61c50da94b60fd94b4a8fd5aefcc0fcaae28f7`
 Metadata repository license: MIT
+Bundled notice: `app/src/main/assets/YOUTUBE-DEMO-METADATA-LICENSE.txt`
 
 The imported source provides structured `youtube_id`, `type` (`short` or `standard`), priority, optional start time, aspect ratio and channel metadata. The trainer imports only conservative exact-name/equipment matches, then adds explicitly reviewed fallbacks for the four supplemental movements that are outside free-exercise-db: Cable Squat, Cable Romanian Deadlift, Bulgarian Split Squat and Cable Leg Curl.
 
