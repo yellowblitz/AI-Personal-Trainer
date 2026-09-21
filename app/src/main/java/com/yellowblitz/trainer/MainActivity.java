@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
     private int systemTopInset = 0;
     private int systemBottomInset = 0;
     private String currentTheme = "dark";
+    private DeepSeekBridge deepSeekBridge;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -114,8 +115,12 @@ public class MainActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
         // Native bridges exist only on the trusted packaged trainer origin.
-        trainer.addJavascriptInterface(new KeyVault(this), "TrainerKeys");
+        DeepSeekKeyVault deepSeekVault = new DeepSeekKeyVault(this);
+        trainer.addJavascriptInterface(deepSeekVault, "TrainerKeys");
         trainer.addJavascriptInterface(new ShareBridge(), "TrainerShare");
+        deepSeekBridge = new DeepSeekBridge(this, trainer, deepSeekVault);
+        trainer.addJavascriptInterface(deepSeekBridge, "TrainerDeepSeek");
+        trainer.addJavascriptInterface(new GoogleAuthBridge(this, trainer), "TrainerGoogle");
         trainer.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri uri = req.getUrl();
@@ -387,6 +392,7 @@ public class MainActivity extends Activity {
 
     @Override public void onDestroy() {
         CookieManager.getInstance().flush();
+        if (deepSeekBridge != null) deepSeekBridge.shutdown();
         if (chatWeb != null) chatWeb.destroy();
         if (web != null) web.destroy();
         super.onDestroy();
