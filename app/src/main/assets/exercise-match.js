@@ -5,8 +5,8 @@ const aliasMap={
  Seated_Cable_Rows:['seated cable row','seated row','cable row','low cable row'],
  Triceps_Pushdown:['tricep pushdown','triceps pushdown','triceps pressdown','cable pushdown','cable pressdown'],
  Cable_Crossover:['cable fly','cable chest fly','standing cable fly'],
- Cable_Chest_Press:['cable chest press','seated cable chest press'],
- 'Wide-Grip_Lat_Pulldown':['lat pulldown','wide grip pulldown','wide grip lat pulldown'],
+ Cable_Chest_Press:['cable chest press','dual cable chest press','seated cable chest press','standing dual cable chest press'],
+ 'Wide-Grip_Lat_Pulldown':['lat pulldown','dual cable lat pulldown','dual cable pulldown','wide grip pulldown','wide grip lat pulldown'],
  Dumbbell_Bicep_Curl:['dumbbell curl','bicep curl','db curl','db bicep curl'],
  Dumbbell_Lunges:['dumbbell lunge','db lunge'],
  Standing_Calf_Raises:['standing calf raise','calf raise'],
@@ -26,10 +26,11 @@ const aliasMap={
  'Single-Arm_Cable_Crossover':['single arm cable fly','one arm cable fly'],
  'Cable_Internal_Rotation':['cable internal rotation'],
  'Cable_External_Rotation':['cable external rotation'],
- Cable_Squat:['cable squat','low cable squat','functional trainer squat'],
- Cable_Romanian_Deadlift:['cable rdl','cable romanian deadlift','romanian deadlift cable','functional trainer rdl'],
+ Cable_Squat:['cable squat','dual cable squat','low cable squat','functional trainer squat'],
+ Cable_Romanian_Deadlift:['cable rdl','dual cable rdl','cable romanian deadlift','dual cable romanian deadlift','romanian deadlift cable','functional trainer rdl'],
  Bulgarian_Split_Squat:['bulgarian split squat','dumbbell bulgarian split squat','rear foot elevated split squat','rfess'],
  Cable_Leg_Curl:['cable leg curl','standing cable leg curl','cable hamstring curl','ankle strap leg curl']
+ Single_Leg_Cable_Leg_Extension:['single leg cable leg extension','single-leg cable leg extension','cable leg extension','ankle strap leg extension']
 };
 
 export const normalizeExerciseText=value=>String(value??'').toLowerCase().normalize('NFKD')
