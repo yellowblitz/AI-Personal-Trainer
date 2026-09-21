@@ -17,7 +17,10 @@ export function normalizeExercise(ex){
  const plannedWeights=Array.from({length:sets},(_,i)=>num(sourcePlannedWeights[i],0,1000,setWeights[i]));
  const done=Math.max(0,Math.min(sets,Number.isInteger(ex.done)?ex.done:0));
  const rir=Number.isInteger(ex.rir)&&ex.rir>=0&&ex.rir<=4?ex.rir:null;
- return {...ex,sets,reps:setReps[0],weight:setWeights[0],setReps,setWeights,plannedReps,plannedWeights,done,rir,note:cleanText(ex.note)};
+ const effort=['too_easy','right','too_hard'].includes(ex.effort)?ex.effort:'';
+ const form=['good','breaking','poor'].includes(ex.form)?ex.form:'';
+ const discomfort=['none','mild','pain'].includes(ex.discomfort)?ex.discomfort:'';
+ return {...ex,sets,reps:setReps[0],weight:setWeights[0],setReps,setWeights,plannedReps,plannedWeights,done,rir,note:cleanText(ex.note),effort,form,discomfort};
 }
 export function normalizePlan(plan){
  if(!plan||!Array.isArray(plan.exercises))return plan;
@@ -47,10 +50,13 @@ export function setSetValue(ex,setIndex,field,value){
  }
  return next;
 }
-export function setExerciseFeedback(ex,rir,note=''){
+export function setExerciseFeedback(ex,rir,note='',feedback={}){
  const next=normalizeExercise(ex);
  next.rir=Number.isInteger(rir)&&rir>=0&&rir<=4?rir:null;
  next.note=cleanText(note);
+ next.effort=['too_easy','right','too_hard'].includes(feedback?.effort)?feedback.effort:next.effort;
+ next.form=['good','breaking','poor'].includes(feedback?.form)?feedback.form:next.form;
+ next.discomfort=['none','mild','pain'].includes(feedback?.discomfort)?feedback.discomfort:next.discomfort;
  return next;
 }
 export function completedSets(ex){return normalizeExercise(ex)?.done||0;}
@@ -106,7 +112,7 @@ export function summarizeHistory(history,catalog,limit=20){
  return (Array.isArray(history)?history:[]).slice(0,limit).map(h=>({
   date:h.date,day:h.day,name:h.plan?.name||'Workout',
   exercises:(h.plan?.exercises||[]).map(raw=>{const e=normalizeExercise(raw);return {
-   id:e.id,name:names.get(e.id)||e.id,completedSets:e.done,rir:e.rir,note:e.note,
+   id:e.id,name:names.get(e.id)||e.id,completedSets:e.done,rir:e.rir,note:e.note,effort:e.effort,form:e.form,discomfort:e.discomfort,
    sets:Array.from({length:e.done},(_,i)=>({set:i+1,plannedReps:e.plannedReps[i],plannedWeight:e.plannedWeights[i],actualReps:e.setReps[i],actualWeight:e.setWeights[i],
     reps:e.setReps[i],weight:e.setWeights[i]}))
   };})
@@ -118,9 +124,11 @@ export function lastExercisePerformance(history,id){
   const raw=session.plan?.exercises?.find(e=>e?.id===id);
   const ex=normalizeExercise(raw);
   if(!ex?.done)continue;
-  return {date:session.date,rir:ex.rir,note:ex.note,sets:Array.from({length:ex.done},(_,i)=>({
-   reps:ex.setReps[i],weight:ex.setWeights[i],plannedReps:ex.plannedReps[i],plannedWeight:ex.plannedWeights[i]
-  }))};
+  return {date:session.date,rir:ex.rir,note:ex.note,
+   ...(ex.effort?{effort:ex.effort}:{}),...(ex.form?{form:ex.form}:{}),...(ex.discomfort?{discomfort:ex.discomfort}:{}),
+   sets:Array.from({length:ex.done},(_,i)=>({
+    reps:ex.setReps[i],weight:ex.setWeights[i],plannedReps:ex.plannedReps[i],plannedWeight:ex.plannedWeights[i]
+   }))};
  }
  return null;
 }
@@ -135,4 +143,136 @@ export function exerciseProgress(history,id){
   const estimated1RM=Math.max(...ex.setReps.slice(0,ex.done).map((r,i)=>ex.setWeights[i]>0?ex.setWeights[i]*(1+r/30):0),0);
   return [{date:session.date,actualReps,plannedReps,actualVolume,plannedVolume,estimated1RM,rir:ex.rir}];
  });
+}
+
+
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const mean=values=>values.length?values.reduce((a,b)=>a+b,0)/values.length:0;
+const MUSCLE_ALIASES={
+ shoulders:'deltoids',shoulder:'deltoids',deltoid:'deltoids',
+ glutes:'gluteal',glute:'gluteal',hamstrings:'hamstring',
+ abdominals:'abs',abdominal:'abs',lats:'upper-back',latissimus:'upper-back',
+ traps:'trapezius',forearms:'forearm',quadricep:'quadriceps'
+};
+const canonicalMuscle=value=>{
+ const raw=String(value||'').trim().toLowerCase().replace(/_/g,'-');
+ return MUSCLE_ALIASES[raw]||raw;
+};
+const exerciseMuscles=c=>{
+ const primary=[...(Array.isArray(c?.anatomePrimarySlugs)?c.anatomePrimarySlugs:[]),c?.muscleSlug||c?.muscle].map(canonicalMuscle).filter(Boolean);
+ const secondary=(Array.isArray(c?.secondaryMuscleSlugs)?c.secondaryMuscleSlugs:[]).map(canonicalMuscle).filter(Boolean);
+ return {primary:[...new Set(primary)],secondary:[...new Set(secondary.filter(x=>!primary.includes(x)))]};
+};
+const completedExerciseMetrics=raw=>{
+ const ex=normalizeExercise(raw);if(!ex?.done)return null;
+ const reps=ex.setReps.slice(0,ex.done),weights=ex.setWeights.slice(0,ex.done);
+ const weighted=weights.some(w=>w>0);
+ const performance=weighted?Math.max(...reps.map((r,i)=>weights[i]>0?weights[i]*(1+r/30):0),0):Math.max(...reps,0);
+ const volume=weighted?reps.reduce((n,r,i)=>n+r*weights[i],0):reps.reduce((a,b)=>a+b,0);
+ let met=0;for(let i=0;i<ex.done;i++)if(reps[i]>=ex.plannedReps[i]&&weights[i]>=ex.plannedWeights[i])met++;
+ return {ex,performance,volume,adherence:ex.done?met/ex.done:0};
+};
+
+export function exerciseProgressionSignal(history,id){
+ const recent=(Array.isArray(history)?history:[]).flatMap(session=>{
+  if(!session||!Number.isFinite(Date.parse(session.date)))return [];
+  const raw=session.plan?.exercises?.find(e=>e?.id===id),m=completedExerciseMetrics(raw);
+  return m?[{...m,date:session.date}]:[];
+ }).slice(0,3);
+ if(!recent.length)return {action:'collect',label:'Build history',reason:'Complete this exercise to build a progression signal.',sessions:0};
+ const latest=recent[0],ex=latest.ex;
+ if(ex.discomfort==='pain'||ex.discomfort==='mild')return {action:'replace',label:'Review exercise',reason:'Discomfort was reported last time, so automatic progression is paused.',sessions:recent.length};
+ if(ex.form==='poor')return {action:'hold',label:'Hold',reason:'Form was rated poor last time; improve execution before increasing the prescription.',sessions:recent.length};
+ const repeatedHard=recent.length>=2&&recent.slice(0,2).every(x=>x.adherence<.75&&(x.ex.rir==null||x.ex.rir<=1||x.ex.effort==='too_hard'));
+ if(repeatedHard)return {action:'reduce',label:'Consider reducing',reason:'Targets were missed in two recent sessions while effort was high.',sessions:recent.length};
+ if(latest.adherence>=.999&&(ex.effort==='too_easy'||(ex.rir!=null&&ex.rir>=2))&&ex.form!=='breaking')return {action:'progress',label:'Ready to progress',reason:'The latest prescription was completed with useful reps still in reserve.',sessions:recent.length};
+ if(latest.adherence<.75&&(ex.rir==null||ex.rir<=1||ex.effort==='too_hard'))return {action:'hold',label:'Hold',reason:'The latest session missed several targets at high effort; avoid increasing yet.',sessions:recent.length};
+ return {action:'hold',label:'Hold & observe',reason:'Keep the prescription stable until the recent trend is clearer.',sessions:recent.length};
+}
+
+export function exerciseRecords(history,id){
+ const sessions=(Array.isArray(history)?history:[]).flatMap(session=>{
+  if(!session||!Number.isFinite(Date.parse(session.date)))return [];
+  const raw=session.plan?.exercises?.find(e=>e?.id===id),m=completedExerciseMetrics(raw);
+  if(!m)return [];
+  const maxWeight=Math.max(...m.ex.setWeights.slice(0,m.ex.done),0);
+  const maxReps=Math.max(...m.ex.setReps.slice(0,m.ex.done),0);
+  return [{date:session.date,estimated1RM:m.performance,maxWeight,maxReps,volume:m.volume,rir:m.ex.rir}];
+ });
+ if(!sessions.length)return null;
+ return {
+  sessions:sessions.length,
+  bestEstimated1RM:Math.max(...sessions.map(x=>x.estimated1RM),0),
+  bestWeight:Math.max(...sessions.map(x=>x.maxWeight),0),
+  bestReps:Math.max(...sessions.map(x=>x.maxReps),0),
+  bestVolume:Math.max(...sessions.map(x=>x.volume),0)
+ };
+}
+
+export function muscleTrainingLoad(history,catalog,days=7,now=Date.now()){
+ const since=Number(now)-Math.max(1,Number(days)||7)*86400000,byId=new Map((catalog||[]).map(c=>[c.id,c])),scores=new Map();
+ for(const session of Array.isArray(history)?history:[]){
+  const when=Date.parse(session?.date);if(!Number.isFinite(when)||when<since||when>Number(now)+86400000)continue;
+  for(const raw of session.plan?.exercises||[]){
+   const m=completedExerciseMetrics(raw);if(!m)continue;
+   const muscles=exerciseMuscles(byId.get(m.ex.id));
+   for(const slug of muscles.primary)scores.set(slug,(scores.get(slug)||0)+m.ex.done);
+   for(const slug of muscles.secondary)scores.set(slug,(scores.get(slug)||0)+m.ex.done*.5);
+  }
+ }
+ return [...scores.entries()].map(([slug,sets])=>({slug,sets:Math.round(sets*10)/10})).sort((a,b)=>b.sets-a.sets);
+}
+
+export function muscleProgress(history,catalog,{days=56,now=Date.now()}={}){
+ const since=Number(now)-Math.max(14,Number(days)||56)*86400000,byId=new Map((catalog||[]).map(c=>[c.id,c])),perExercise=new Map();
+ const chronological=(Array.isArray(history)?history:[]).filter(s=>Number.isFinite(Date.parse(s?.date))).slice().sort((a,b)=>Date.parse(a.date)-Date.parse(b.date));
+ for(const session of chronological){
+  const when=Date.parse(session.date);if(when<since||when>Number(now)+86400000)continue;
+  for(const raw of session.plan?.exercises||[]){
+   const m=completedExerciseMetrics(raw);if(!m)continue;
+   const list=perExercise.get(m.ex.id)||[];list.push({...m,date:session.date});perExercise.set(m.ex.id,list);
+  }
+ }
+ const muscle=new Map();
+ for(const [id,points] of perExercise){
+  const c=byId.get(id);if(!c)continue;
+  const muscles=exerciseMuscles(c),take=Math.min(2,Math.max(1,Math.floor(points.length/2)));
+  const first=points.slice(0,take),last=points.slice(-take);
+  const perfBase=mean(first.map(x=>x.performance)),perfRecent=mean(last.map(x=>x.performance));
+  const volBase=mean(first.map(x=>x.volume)),volRecent=mean(last.map(x=>x.volume));
+  const strengthPct=points.length>=2&&perfBase>0?clamp((perfRecent-perfBase)/perfBase*100,-100,100):null;
+  const volumePct=points.length>=2&&volBase>0?clamp((volRecent-volBase)/volBase*100,-100,100):null;
+  const add=(slug,roleWeight)=>{
+   const key=canonicalMuscle(slug);if(!key)return;
+   const a=muscle.get(key)||{slug:key,strengthSum:0,strengthWeight:0,volumeSum:0,volumeWeight:0,met:0,sets:0,rir:[],dates:new Set(),exerciseIds:new Set()};
+   if(strengthPct!=null){a.strengthSum+=strengthPct*roleWeight;a.strengthWeight+=roleWeight;}
+   if(volumePct!=null){a.volumeSum+=volumePct*roleWeight;a.volumeWeight+=roleWeight;}
+   for(const p of points){
+    a.met+=p.adherence*p.ex.done*roleWeight;a.sets+=p.ex.done*roleWeight;
+    if(p.ex.rir!=null)a.rir.push(p.ex.rir);
+    a.dates.add(p.date.slice(0,10));
+   }
+   a.exerciseIds.add(id);muscle.set(key,a);
+  };
+  for(const slug of muscles.primary)add(slug,1);
+  for(const slug of muscles.secondary)add(slug,.5);
+ }
+ return [...muscle.values()].map(a=>{
+  const strengthPct=a.strengthWeight?Math.round(a.strengthSum/a.strengthWeight*10)/10:null;
+  const volumePct=a.volumeWeight?Math.round(a.volumeSum/a.volumeWeight*10)/10:null;
+  const trendParts=[];if(strengthPct!=null)trendParts.push([strengthPct,.7]);if(volumePct!=null)trendParts.push([volumePct,.3]);
+  const denom=trendParts.reduce((n,x)=>n+x[1],0),trendPct=denom?Math.round(trendParts.reduce((n,x)=>n+x[0]*x[1],0)/denom*10)/10:null;
+  const sessions=a.dates.size,confidence=sessions>=6?'high':sessions>=3?'medium':'low';
+  return {slug:a.slug,trendPct,strengthPct,volumePct,adherencePct:a.sets?Math.round(a.met/a.sets*100):0,avgRir:a.rir.length?Math.round(mean(a.rir)*10)/10:null,effectiveSets:Math.round(a.sets*10)/10,sessions,exerciseCount:a.exerciseIds.size,confidence};
+ }).sort((a,b)=>(b.sessions-a.sessions)||((b.trendPct??-999)-(a.trendPct??-999)));
+}
+
+export function weeklyTrainingReview(history,catalog,{days=7,now=Date.now()}={}){
+ const since=Number(now)-Math.max(1,Number(days)||7)*86400000,sessions=(Array.isArray(history)?history:[]).filter(s=>{const t=Date.parse(s?.date);return Number.isFinite(t)&&t>=since&&t<=Number(now)+86400000;});
+ let sets=0,met=0,rir=[],discomfortReports=0,formWarnings=0;
+ for(const session of sessions)for(const raw of session.plan?.exercises||[]){
+  const m=completedExerciseMetrics(raw);if(!m)continue;sets+=m.ex.done;met+=m.adherence*m.ex.done;
+  if(m.ex.rir!=null)rir.push(m.ex.rir);if(m.ex.discomfort&&m.ex.discomfort!=='none')discomfortReports++;if(m.ex.form==='breaking'||m.ex.form==='poor')formWarnings++;
+ }
+ return {sessions:sessions.length,sets,adherencePct:sets?Math.round(met/sets*100):0,avgRir:rir.length?Math.round(mean(rir)*10)/10:null,discomfortReports,formWarnings,muscles:muscleTrainingLoad(history,catalog,days,now)};
 }
