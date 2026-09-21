@@ -38,17 +38,23 @@ const assert=require('node:assert/strict');
   assert.equal(await collapseButton.getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('.exercise-card-body').first().isVisible(),true);
 
+  // Persistent per-exercise setup notes survive rerenders and are shown on the card.
+  await page.locator('[data-setup-note="0"]').click();await page.locator('#setupNoteText').fill('Bench notch 3 · pulley at shoulder height');await page.locator('#saveSetupNote').click();assert.match(await page.locator('.exercise-setup-note').first().textContent(),/Bench notch 3/);
+  await page.reload();await page.locator('[data-select-day="mon"]').click();assert.match(await page.locator('.exercise-setup-note').first().textContent(),/Bench notch 3/);
+
   // Per-set logging: later sets can differ and survive reload.
   const setRep=n=>page.locator('[data-index="0"][data-set-index="'+n+'"][data-set-field="reps"]');
   assert.equal(await setRep(0).inputValue(),'12');await setRep(1).fill('9');await setRep(1).press('Tab');assert.equal(await setRep(0).inputValue(),'12');assert.equal(await setRep(1).inputValue(),'9');
   await page.locator('[data-set="0"][data-n="0"]').click();await page.locator('[data-set="0"][data-n="1"]').click();await page.waitForSelector('#timer:not([hidden])');
   await page.reload();await page.waitForSelector('[data-set="0"][data-n="1"].done');await page.locator('[data-select-day="mon"]').click();assert.equal(await setRep(1).inputValue(),'9');
   await page.locator('[data-select-day="wed"]').click();assert.match(await page.locator('#timerLabel').textContent(),/Monday/);await page.locator('#pause').click();await page.reload();await page.waitForSelector('#pause');assert.equal(await page.locator('#pause').textContent(),'Resume');assert.match(await page.locator('#timerLabel').textContent(),/Monday/);await page.locator('[data-select-day="mon"]').click();
-  await page.locator('[data-set="0"][data-n="2"]').click();await page.waitForSelector('[data-rir="0"]');await page.locator('#exerciseNote').fill('Last reps were hard');await page.locator('[data-rir="0"]').click();
+  await page.locator('[data-set="0"][data-n="2"]').click();await page.waitForSelector('[data-rir="0"]');await page.locator('#exerciseNote').fill('Last reps were hard');await page.locator('[data-rir="0"]').click();await page.locator('[data-effort="too_hard"]').click();await page.locator('[data-form="breaking"]').click();await page.locator('#saveFeedback').click();
   assert.match(await page.locator('[data-feedback="0"]').textContent(),/RIR 0/);
+  assert.match(await page.locator('[data-feedback="0"]').textContent(),/too hard/);
   await page.locator('#finish').click();assert.match(await page.locator('#modalBody').textContent(),/Session complete/);assert.match(await page.locator('#modalBody').textContent(),/2\/3/);await page.locator('#closeModalTop').click();
   assert.match(await page.locator('.last-performance').first().textContent(),/S2 9 BW/);assert.match(await page.locator('.last-performance').first().textContent(),/RIR 0/);
-  await page.locator('[data-tab="history"]').click();assert.match(await page.locator('#historyList').textContent(),/S1 12→12 BW/);assert.match(await page.locator('#historyList').textContent(),/S2 12→9 BW/);assert.match(await page.locator('#historyList').textContent(),/Last reps were hard/);assert.match(await page.locator('#progressCharts').textContent(),/Reps · target vs actual/);
+  await page.locator('[data-tab="history"]').click();assert.match(await page.locator('#historyList').textContent(),/S1 12→12 BW/);assert.match(await page.locator('#historyList').textContent(),/S2 12→9 BW/);assert.match(await page.locator('#historyList').textContent(),/Last reps were hard/);assert.match(await page.locator('#historyList').textContent(),/form breaking/);assert.match(await page.locator('#progressCharts').textContent(),/Reps · target vs actual/);
+  assert.equal(await page.locator('#calendarGrid .logged').count(),1);assert.equal(await page.locator('#weeklyReview').isVisible(),true);assert.equal(await page.locator('#muscleProgressCard').isVisible(),true);assert.ok((await page.locator('#muscleProgressList').textContent()).length>0);
 
   // Set a 60-minute Monday and body/profile context.
   await page.locator('[data-tab="workout"]').click();await page.locator('#editWeek').click();assert.equal(await page.locator('[data-count]').count(),0);assert.match(await page.locator('#modalBody').textContent(),/Choose training days and approximate minutes/);await page.locator('[data-minutes="mon"]').fill('60');await page.locator('#saveWeek').click();assert.match(await page.locator('#sessionLabel').textContent(),/60 MIN/);
