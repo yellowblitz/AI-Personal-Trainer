@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com https://api.anatome.dev; connect-src 'self' https://generativelanguage.googleapis.com https://wger.de https://api.anatome.dev; media-src 'self' https://wger.de https://*.wger.de; frame-src https://www.youtube-nocookie.com https://www.youtube.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com https://api.anatome.dev; connect-src 'self' https://api.deepseek.com https://wger.de https://api.anatome.dev; media-src 'self' https://wger.de https://*.wger.de; frame-src https://www.youtube-nocookie.com https://www.youtube.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="dark light">
 <title>AI Personal Trainer</title>
 <link rel="stylesheet" href="style.css">
@@ -48,13 +48,13 @@
 
   <article class="dashboard-coach-card">
     <div class="coach-orb" aria-hidden="true"><span></span><svg viewBox="0 0 24 24"><path d="M8 10h8a4 4 0 0 1 4 4v4H4v-4a4 4 0 0 1 4-4Zm1-4h6m-3-3v3M9 14h.01M15 14h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-    <div><span class="micro-label">AI COACH</span><h3>Train smarter from your own data</h3><p class="small muted">Ask ChatGPT for advice, then apply verified changes to your planner.</p></div>
+    <div><span class="micro-label">AI COACH</span><h3>Train smarter from your own data</h3><p class="small muted">Chat with DeepSeek and apply reviewed workout changes from the same AI response.</p></div>
     <button id="dashboardCoachOpen" class="coach-open" aria-label="Open AI coach">›</button>
   </article>
 
   <article id="nextWeekCard" class="card next-week-card">
     <div class="section-title compact-title">
-      <div><span class="micro-label">GEMINI</span><h2>Next week</h2></div>
+      <div><span class="micro-label">DEEPSEEK</span><h2>Next week</h2></div>
       <button id="refreshNextWeek" class="secondary">Refresh</button>
     </div>
     <p id="nextWeekStatus" class="small muted">Save a workout to start recommendations.</p>
@@ -89,15 +89,15 @@
 </section>
 
 <section id="coach" class="page" hidden>
-  <h1>ChatGPT Coach</h1>
-  <div class="row chat-actions">
+  <h1>DeepSeek Coach</h1><p class="small muted">Experimental unified mode · one AI handles conversation, planning, and executable workout drafts.</p>
+  <div class="row chat-actions" hidden>
     <button id="copyChatGPTContext" class="primary">Copy context</button>
     <button id="useCopiedResponse" class="secondary">Use response</button>
     <button id="reloadChatGPT" class="secondary">Reload</button>
   </div>
-  <div id="inlineChatSlot" aria-label="ChatGPT conversation"><p id="inlineChatFallback" class="small muted">ChatGPT appears here in the Android app.</p></div>
+  <div id="inlineChatSlot" aria-label="Legacy ChatGPT conversation" hidden><p id="inlineChatFallback" class="small muted">ChatGPT appears here in the Android app.</p></div>
 
-  <details id="handoffPanel" class="card compact-details">
+  <details id="handoffPanel" class="card compact-details" hidden>
     <summary><b>Apply ChatGPT changes</b></summary>
     <textarea id="handoffText" maxlength="24000" rows="7" placeholder="Paste or import ChatGPT's recommendation…"></textarea>
     <button id="interpretHandoff" class="primary wide">Translate response</button>
@@ -114,10 +114,10 @@
     <button id="discardHandoff" class="secondary wide">Discard</button>
   </section>
 
-  <details id="geminiCoach" class="card compact-details">
-    <summary><b>Gemini tools</b></summary>
+  <details id="geminiCoach" class="card compact-details" open>
+    <summary><b>DeepSeek coach</b></summary>
     <div id="connection" class="notice"></div>
-    <button id="clearChat" class="secondary wide">New Gemini conversation</button>
+    <button id="clearChat" class="secondary wide">New DeepSeek conversation</button>
     <div class="chips">
       <button data-prompt="Explain how I should progress my weights over time. Give advice without changing my plan.">Progression</button>
       <button data-prompt="Help me refine my weekly schedule for my selected training days and time budgets. Ask about my goals and equipment first.">Plan week</button>
@@ -131,7 +131,7 @@
       <div class="row"><button id="refineProposal" class="secondary">Refine</button><button id="discardProposal" class="secondary">Discard</button></div>
     </section>
     <form id="chatForm">
-      <textarea id="chatInput" maxlength="6000" rows="3" aria-label="Message Gemini coach" placeholder="Ask Gemini…" required></textarea>
+      <textarea id="chatInput" maxlength="6000" rows="3" aria-label="Message Gemini coach" placeholder="Ask DeepSeek…" required></textarea>
       <button id="send" class="primary wide">Send ↗</button>
     </form>
   </details>
