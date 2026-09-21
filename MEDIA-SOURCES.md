@@ -36,3 +36,25 @@ The trainer now uses the open-source Anatome project for anatomy-style SVG rende
 - Optional wger full-motion videos remain a best-effort enhancement and are shown only after an exact or high-confidence name match. If no such match exists, the exact Anatome animation is used.
 
 No third-party demo-video library is bundled into the APK. Media enters the Android WebView cache only after the user opens it; Settings can clear the trainer media cache without clearing the isolated ChatGPT login.
+
+## v0.12.1 curated YouTube short-video fallback
+
+When a high-confidence wger full-motion video is unavailable, the trainer can now use a small local index of curated YouTube demo metadata. The index contains YouTube IDs and timing metadata only; YouTube video bytes are never bundled into the APK.
+
+Primary metadata source: https://github.com/rthepen/workout-database
+Pinned source revision: `ee61c50da94b60fd94b4a8fd5aefcc0fcaae28f7`
+Metadata repository license: MIT
+
+The imported source provides structured `youtube_id`, `type` (`short` or `standard`), priority, optional start time, aspect ratio and channel metadata. The trainer imports only conservative exact-name/equipment matches, then adds explicitly reviewed fallbacks for the four supplemental movements that are outside free-exercise-db: Cable Squat, Cable Romanian Deadlift, Bulgarian Split Squat and Cable Leg Curl.
+
+Playback order is now: exact/high-confidence wger video → curated YouTube short clip → exact Anatome animation → free-exercise-db start/end images or anatomy reference. YouTube playback uses the privacy-enhanced `youtube-nocookie.com` embed and limits standard fallback videos to a short 6–15 second movement preview. The user must open the exercise demo before any remote video is requested, so the app still does not prefetch or bulk-cache the video library.
+
+The MIT license applies to the workout-database software/metadata. The referenced YouTube videos remain hosted by YouTube and subject to the individual video owners' rights and YouTube terms. The app embeds/streams them rather than copying or redistributing the video files.
+
+Three explicitly reviewed YouTube fallbacks are recorded directly in the local index because the supplemental cable movements do not have reliable exact matches in the metadata source:
+- Cable Squat: Live Lean TV Daily Exercises, `X60Uv2Fftkg`
+- Cable Romanian Deadlift: Jim Stoppani, PhD, `kMdsruYbF9k`
+- Cable Leg Curl: Andrew Heming, `_V0Y9YFAyFo`
+
+Bulgarian Split Squat uses the workout-database short-video entry `or1frhkjBDc`.
+
