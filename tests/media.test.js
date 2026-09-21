@@ -38,3 +38,16 @@ test('trainer uses privacy-enhanced YouTube embeds only on demand',async()=>{
  assert.match(app,/lookupDemoVideos\(c\)[\s\S]*lookupYoutubeDemos\(c\)/);
  assert.match(app,/Math\.min\(15/);
 });
+
+
+test('YouTube embeds are allowed by CSP and bad demos can be skipped locally',async()=>{
+ const [app,index]=await Promise.all([
+  readFile(new URL('app.js',assets),'utf8'),
+  readFile(new URL('index.html',assets),'utf8')
+ ]);
+ assert.match(index,/frame-src https:\/\/www\.youtube-nocookie\.com https:\/\/www\.youtube\.com/);
+ assert.match(app,/data-demo-problem/);
+ assert.match(app,/demoProblems/);
+ assert.match(app,/Reset skipped demos/);
+ assert.match(app,/sort\(\(x,y\)=>x\.priority-y\.priority/);
+});
