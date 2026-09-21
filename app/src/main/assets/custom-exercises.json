@@ -156,5 +156,41 @@
     "secondaryMuscles": [
       "calves"
     ]
+  },
+  {
+    "id": "Single_Leg_Cable_Leg_Extension",
+    "name": "Single-Leg Cable Leg Extension",
+    "muscle": "quadriceps",
+    "equipment": "cable",
+    "source": "trainer-common",
+    "muscleSlug": "quadriceps",
+    "secondaryMuscleSlugs": [],
+    "demoGif": "",
+    "exerciseInfoUrl": "",
+    "demoLookupNames": [
+      "Single-Leg Cable Leg Extension",
+      "Single Leg Cable Leg Extension",
+      "Cable Leg Extension"
+    ],
+    "aliases": [
+      "single leg cable leg extension",
+      "single-leg cable leg extension",
+      "cable leg extension",
+      "ankle strap leg extension"
+    ],
+    "instructions": [
+      "Attach an ankle cuff to a low cable and secure it around one ankle. Stand facing away from the pulley and hold a stable support for balance.",
+      "Begin with the working knee bent comfortably while keeping the thigh mostly still and the torso upright.",
+      "Extend the knee until the leg is nearly straight without snapping or locking the joint.",
+      "Pause briefly, then return under control against the cable tension. Complete the set and switch legs."
+    ],
+    "images": [
+      "https://api.anatome.dev/generateImage?gender=male&view=front&layers=DC2626%3Aquadriceps&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw",
+      "https://api.anatome.dev/generateImage?gender=male&view=front&layers=DC2626%3Aquadriceps&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw"
+    ],
+    "primaryMuscles": [
+      "quadriceps"
+    ],
+    "secondaryMuscles": []
   }
 ]
