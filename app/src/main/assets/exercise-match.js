@@ -29,7 +29,7 @@ const aliasMap={
  Cable_Squat:['cable squat','dual cable squat','low cable squat','functional trainer squat'],
  Cable_Romanian_Deadlift:['cable rdl','dual cable rdl','cable romanian deadlift','dual cable romanian deadlift','romanian deadlift cable','functional trainer rdl'],
  Bulgarian_Split_Squat:['bulgarian split squat','dumbbell bulgarian split squat','rear foot elevated split squat','rfess'],
- Cable_Leg_Curl:['cable leg curl','standing cable leg curl','cable hamstring curl','ankle strap leg curl']
+ Cable_Leg_Curl:['cable leg curl','standing cable leg curl','cable hamstring curl','ankle strap leg curl'],
  Single_Leg_Cable_Leg_Extension:['single leg cable leg extension','single-leg cable leg extension','cable leg extension','ankle strap leg extension']
 };
 
