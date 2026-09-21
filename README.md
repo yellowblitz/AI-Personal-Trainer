@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.12.2
+# AI Personal Trainer — Android v0.12.3
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -33,10 +33,21 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.2-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.3-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
+
+## v0.12.3 — faster, recoverable ChatGPT handoff
+
+- Complete day-by-day workout responses are parsed on-device first. Common PPL responses no longer need a Gemini network round-trip when exercise names, sets, reps, loads and rest are explicit.
+- Markdown headers such as **Monday — Push** are recognized, along with compact `Monday Push:` formatting, rest times such as `2:00–2:30`, per-side/per-leg loads and `3×12/leg` notation.
+- Gemini is now a fallback for ambiguous prose rather than the first step for every handoff. Its translator request is smaller and uses low thinking instead of high thinking.
+- Translator timeouts are adaptive: successful response times are learned locally per model, and the timeout is adjusted within safe bounds. Timeout/network/429/5xx failures fall through to another configured Gemini model, even if the user selected the last model in the list.
+- The last successful command translation is saved locally. **Restore last translation** brings it back for review even after discard, apply, reload or a failed later apply.
+- Applying handoff commands is transactional: the app verifies the saved week/profile/memory after writing. If verification fails, the previous trainer state is restored and the command batch remains available.
+- After a multi-day handoff, the Workout page stays on the currently selected day when that day changed, so the user immediately sees the applied update instead of being moved to the first command day.
+- Added a native **Single-Leg Cable Leg Extension** catalog entry and extra functional-trainer aliases used by the current PPL plan.
 
 ## v0.12.2 — collapsible exercise cards
 
