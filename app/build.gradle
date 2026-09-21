@@ -13,7 +13,7 @@ android {
             }
         }
     }
-    defaultConfig { applicationId 'com.yellowblitz.trainer'; minSdk 26; targetSdk 35; versionCode 24; versionName '0.15.0-deepseek-exp' }
+    defaultConfig { applicationId 'com.yellowblitz.trainer.deepseekexp'; minSdk 26; targetSdk 35; versionCode 24; versionName '0.15.0-deepseek-exp' }
     buildTypes {
         debug {
             if (stableKeystorePath) signingConfig signingConfigs.stableDebug
