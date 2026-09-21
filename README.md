@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.12.3
+# AI Personal Trainer — Android v0.13.0
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -33,10 +33,23 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.3-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.13.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
+
+## v0.13.0 — calendar, transparent muscle progress and smarter training feedback
+
+- **Progress calendar:** the Progress page now includes a monthly calendar that marks logged workouts on their actual dates and shows the recurring weekly schedule as planned days. Tap a date to inspect the workout recorded there.
+- **Weekly review:** summarizes the last seven days with completed workouts, logged sets, target completion, average RIR, form warnings and the most-trained muscle groups.
+- **Transparent Muscle Progress:** each trained muscle gets an eight-week performance trend built from logged exercise performance and training volume, with target completion, average RIR and a confidence label shown separately. The app explains the components instead of presenting the number as a direct measurement of muscle size or a scientifically validated proprietary score.
+- **Detailed muscle graphics:** exercise cards and demo views expose more specific primary and secondary muscle information when the catalog provides it. A weekly front/back anatomy heat map visualizes relative set exposure; primary sets count fully and secondary-muscle exposure counts as half a set for this visual.
+- **Richer post-exercise feedback:** RIR is joined by quick difficulty, form-quality and discomfort buttons. These signals are stored with the session and passed into future Gemini progression decisions.
+- **Conservative progression signals:** exercise cards can show why the recent data suggests progressing, holding, reducing, reviewing an exercise, or simply collecting more history. A single unusual workout is not treated as proof of a trend.
+- **Smarter substitutions:** each exercise has a Replace action that ranks alternatives using muscle match, equipment and the user's local add/remove/completion preferences. Sets/reps/rest are preserved while load resets rather than assuming two exercises use equivalent weights.
+- **Persistent exercise setup notes:** save cable height, bench position, grip or other setup reminders directly on an exercise. Notes reappear on the card and are available to the trainer when future plans are generated.
+- **More reliable demos:** the Content Security Policy now explicitly permits the privacy-enhanced YouTube embed origin used by the app, curated videos are prioritized by their reviewed priority, and every motion demo has **Try another demo** / **Demo problem** controls. Flagged clips are skipped locally on future opens and can be restored from Settings.
+- Wger remains the first motion-video source, with curated YouTube and local animation/anatomy fallbacks. Videos are still loaded only when the user opens a demo.
 
 ## v0.12.3 — faster, recoverable ChatGPT handoff
 
@@ -108,13 +121,13 @@ python -m http.server 8000 --directory app/src/main/assets
 Open http://localhost:8000. The API key is intentionally not persisted in the browser preview. A current Android System WebView is required for the packaged interface.
 
 ## Security boundaries
-The WebView only displays packaged assets at `https://appassets.androidplatform.net/assets/index.html`. Its native bridge exposes only encrypted key read/write. A Content Security Policy disallows remote scripts, frames and objects, and permits network connections only to the local asset origin and Google's Gemini endpoint. The AI Studio key link opens in the external browser. All other remote navigation is blocked.
+The WebView only displays packaged trainer assets at `https://appassets.androidplatform.net/assets/index.html`. Its native bridge exposes only encrypted key read/write. A Content Security Policy disallows remote scripts and objects, limits network connections to the trainer's approved data/API sources, and permits frames only from the YouTube domains used for on-demand exercise demos. The AI Studio key link opens in the external browser. All other remote navigation is blocked.
 
 ## Media
-Catalog and photos: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), declared Unlicense. See `MEDIA-SOURCES.md` and the included upstream license. Demonstrations loop two photos; they are not full-motion videos. Check asset rights before commercial distribution. Optional full-motion/short demos are streamed on demand from wger or embedded YouTube references; `MEDIA-SOURCES.md` records source and licensing notes.
+Catalog and photos: [yuhonas/free-exercise-db](https://github.com/yuhonas/free-exercise-db), declared Unlicense. See `MEDIA-SOURCES.md` and the included upstream license. Static/animated catalog media remains available as a fallback. Optional full-motion demos are streamed on demand from wger or embedded YouTube references; `MEDIA-SOURCES.md` records source and licensing notes. Check asset rights before commercial distribution.
 
 ## Limitations
-Rest deadlines survive background suspension, but alerts only fire while the app is active. Session duration is still an estimate based on reps, rest and transition assumptions; real completion time depends on pace and interruptions. The schedule is a recurring weekly template, not a dated calendar. No background notifications, cloud sync, kg selector, or export yet. Physical device/Keystore QA and live Gemini calls are not covered by the browser test.
+Rest deadlines survive background suspension, but alerts only fire while the app is active. Session duration is still an estimate based on reps, rest and transition assumptions; real completion time depends on pace and interruptions. Planning remains a recurring weekly template; the calendar visualizes logged dates and recurring scheduled days rather than storing independent date-specific plans. No background notifications, cloud sync, kg selector, or export yet. Physical device/Keystore QA and live Gemini calls are not covered by the browser test.
 
 ## v0.6.1 behavior
 - HTTP 503 `UNAVAILABLE` / high-demand responses automatically retry the next available selected Flash generation (3.8 → 3.7 → 3.6). If every fallback is busy, the error report records every attempted model.
