@@ -27,7 +27,7 @@ let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.12.0';
+const APP_VERSION='0.12.1';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -216,9 +216,11 @@ async function lookupExerciseInfo(c){
 }
 
 let wgerExerciseIndexPromise=null;
+let youtubeDemoIndexPromise=null;
 function safeWgerVideoUrl(value){
  try{const u=new URL(value);return u.protocol==='https:'&&(u.hostname==='wger.de'||u.hostname.endsWith('.wger.de'))?u.href:null;}catch{return null;}
 }
+function safeYoutubeId(value){const id=String(value||'').trim();return /^[A-Za-z0-9_-]{6,20}$/.test(id)?id:null;}
 async function lookupDemoVideos(c){
  const cached=demoMetaCache[c.id];
  if(cached?.videos?.length){cached.usedAt=new Date().toISOString();saveDemoMetaCache();return cached.videos;}
@@ -242,16 +244,44 @@ async function lookupDemoVideos(c){
     }
    }
    return {item,score:best};
-  }).sort((a,b)=>b.score-a.score);
+  }).sort((x,y)=>y.score-x.score);
   const match=candidates[0]?.score===2||(
    candidates[0]?.score>=.88&&(!candidates[1]||candidates[0].score-candidates[1].score>=.12)
   )?candidates[0].item:null;
-  const videos=(match?.videos||[]).map(v=>({url:safeWgerVideoUrl(v.video),author:String(v.license_author||'').slice(0,120),title:String(v.license_title||'').slice(0,160),isMain:!!v.is_main,duration:Number(v.duration)||0})).filter(v=>v.url).sort((a,b)=>Number(b.isMain)-Number(a.isMain)).slice(0,4);
+  const videos=(match?.videos||[]).map(v=>({url:safeWgerVideoUrl(v.video),author:String(v.license_author||'').slice(0,120),title:String(v.license_title||'').slice(0,160),isMain:!!v.is_main,duration:Number(v.duration)||0,source:'wger'})).filter(v=>v.url).sort((x,y)=>Number(y.isMain)-Number(x.isMain)).slice(0,4);
   if(videos.length){demoMetaCache[c.id]={...(demoMetaCache[c.id]||{}),videos,usedAt:new Date().toISOString(),videoSource:'wger'};saveDemoMetaCache();}
   return videos;
  }catch{return [];}
 }
-
+async function lookupYoutubeDemos(c){
+ const cached=demoMetaCache[c.id];
+ if(cached?.youtubeDemos?.length){cached.usedAt=new Date().toISOString();saveDemoMetaCache();return cached.youtubeDemos;}
+ try{
+  if(!youtubeDemoIndexPromise)youtubeDemoIndexPromise=fetch('youtube-demos.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('youtube demo index unavailable');return r.json();});
+  const index=await youtubeDemoIndexPromise,raw=Array.isArray(index?.demos?.[c.id])?index.demos[c.id]:[];
+  const demos=raw.map(v=>({
+   youtubeId:safeYoutubeId(v.youtubeId),
+   type:v.type==='short'?'short':'standard',
+   priority:Number.isFinite(Number(v.priority))?Number(v.priority):99,
+   startSeconds:Number.isFinite(Number(v.startSeconds))?Math.max(0,Math.floor(Number(v.startSeconds))):0,
+   durationSeconds:Number.isFinite(Number(v.durationSeconds))?Math.max(0,Math.floor(Number(v.durationSeconds))):0,
+   clipSeconds:Number.isFinite(Number(v.clipSeconds))?Math.max(6,Math.min(15,Math.floor(Number(v.clipSeconds)))):0,
+   aspectRatio:String(v.aspectRatio||''),
+   channel:String(v.channel||'').slice(0,120),
+   title:String(v.title||'').slice(0,160),
+   source:String(v.source||'youtube')
+  })).filter(v=>v.youtubeId).sort((x,y)=>Number(y.type==='short')-Number(x.type==='short')||x.priority-y.priority).slice(0,3);
+  if(demos.length){demoMetaCache[c.id]={...(demoMetaCache[c.id]||{}),youtubeDemos:demos,usedAt:new Date().toISOString(),youtubeSource:'curated'};saveDemoMetaCache();}
+  return demos;
+ }catch{return [];}
+}
+function youtubeEmbedUrl(v){
+ const id=safeYoutubeId(v?.youtubeId);if(!id)return '';
+ const start=Math.max(0,Math.floor(Number(v.startSeconds)||0));
+ const requested=Number(v.clipSeconds)||(v.type==='short'?(Number(v.durationSeconds)||15):12);
+ const clip=Math.max(6,Math.min(15,Math.floor(requested||12))),end=start+clip;
+ return 'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&mute=1&playsinline=1&controls=1&rel=0&modestbranding=1&start='+start+'&end='+end+'&loop=1&playlist='+id;
+}
 function startImageDemo(c){
  const media=$('demoMedia');if(!media)return;
  const images=[...new Set((c.images||[]).filter(Boolean))];
@@ -270,18 +300,30 @@ function renderAnimatedDemo(c){
  const img=$('demoGif');if(img)img.onerror=()=>startImageDemo(c);
 }
 async function openExerciseDemo(c){
- modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Full-motion videos are used only when a high-confidence open-source match is available. '+(c.demoGif?'This base-library exercise also has an exact animated demo.':'Supplemental exercises use an anatomy fallback when no exact motion demo is available.')+' Media is cached only after you open it.</p>');
- const [info,videos]=await Promise.all([lookupExerciseInfo(c),lookupDemoVideos(c)]);
+ modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Demo priority: exact/high-confidence wger video → curated YouTube short clip → exact animated demo → start/end images or anatomy. Only media you open is requested; the app does not bundle or bulk-download the video libraries.</p>');
+ const infoPromise=lookupExerciseInfo(c);
+ let videos=await lookupDemoVideos(c),youtubeDemos=[];
+ if(!videos.length)youtubeDemos=await lookupYoutubeDemos(c);
+ const info=await infoPromise;
  if(!$('modal').open||!$('demoMedia'))return;
  $('anatomyDetail').innerHTML=musclePicture(c,true,info);
+ const animatedLabel=c.demoGif?'Animated demo':'Anatomy reference';
  const renderVideo=index=>{
-  const v=videos[index];
-  $('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video><div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">Video '+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>Animated demo</button></div><p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+'</p>';
-  $('demoVideo').play?.().catch(()=>{});
+  const v=videos[index];if(!v){renderAnimatedDemo(c);return;}
+  $('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video><div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">Video '+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div><p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+(v.title?' · '+escape(v.title):'')+'</p>';
+  const player=$('demoVideo');player?.play?.().catch(()=>{});
+  if(player)player.onerror=async()=>{youtubeDemos=await lookupYoutubeDemos(c);if(youtubeDemos.length)renderYoutube(0);else renderAnimatedDemo(c);};
  };
- if(videos.length)renderVideo(0);else renderAnimatedDemo(c);
+ const renderYoutube=index=>{
+  const v=youtubeDemos[index];if(!v){renderAnimatedDemo(c);return;}
+  const src=youtubeEmbedUrl(v);if(!src){renderAnimatedDemo(c);return;}
+  const vertical=v.aspectRatio==='9:16',label=v.type==='short'?'Short '+(index+1):'Clip '+(index+1);
+  $('demoMedia').innerHTML='<iframe id="demoYoutube" class="demo-youtube'+(vertical?' vertical':'')+'" src="'+escape(src)+'" title="Short exercise demonstration for '+escape(c.name)+'" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="demo-switcher">'+youtubeDemos.map((x,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-youtube-view="'+i+'">'+(x.type==='short'?'Short ':'Clip ')+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div><p class="small muted">'+escape(label+' · YouTube'+(v.channel?' · '+v.channel:''))+' · streamed on demand</p>';
+ };
+ if(videos.length)renderVideo(0);else if(youtubeDemos.length)renderYoutube(0);else renderAnimatedDemo(c);
  $('demoMedia').onclick=e=>{
   const b=e.target.closest('[data-demo-view]');if(b){renderVideo(Number(b.dataset.demoView)||0);return;}
+  const y=e.target.closest('[data-youtube-view]');if(y){renderYoutube(Number(y.dataset.youtubeView)||0);return;}
   if(e.target.closest('[data-demo-animated]'))renderAnimatedDemo(c);
  };
 }
