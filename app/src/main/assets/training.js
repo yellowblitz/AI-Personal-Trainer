@@ -212,7 +212,7 @@ export function muscleTrainingLoad(history,catalog,days=7,now=Date.now()){
  for(const session of Array.isArray(history)?history:[]){
   const when=Date.parse(session?.date);if(!Number.isFinite(when)||when<since||when>Number(now)+86400000)continue;
   for(const raw of session.plan?.exercises||[]){
-   const m=completedExerciseMetrics(raw);if(!m)return;
+   const m=completedExerciseMetrics(raw);if(!m)continue;
    const muscles=exerciseMuscles(byId.get(m.ex.id));
    for(const slug of muscles.primary)scores.set(slug,(scores.get(slug)||0)+m.ex.done);
    for(const slug of muscles.secondary)scores.set(slug,(scores.get(slug)||0)+m.ex.done*.5);
