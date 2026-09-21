@@ -11,6 +11,7 @@ import androidx.credentials.CustomCredential;
 import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.GetCredentialException;
+import androidx.core.content.ContextCompat;
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import org.json.JSONObject;
@@ -47,7 +48,7 @@ public final class GoogleAuthBridge {
                     activity,
                     request,
                     null,
-                    activity.getMainExecutor(),
+                    ContextCompat.getMainExecutor(activity),
                     new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
                         @Override public void onResult(GetCredentialResponse result) {
                             handleCredential(result.getCredential());
