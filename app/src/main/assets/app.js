@@ -24,10 +24,11 @@ week=normalizeWeek(week);
 let selected=read('selectedDay',validPlan(legacy,ids)?'mon':DAYS[(new Date().getDay()+6)%7]);
 if(!DAYS.includes(selected))selected='mon';
 let plan=week.days[DAYS.indexOf(selected)].plan||makePlan(),timer=read('timer',{}),history=read('history',[]),undo=null,busy=false,demoInterval;
+let collapsedExercises=new Set((Array.isArray(read('collapsedExercises',[]))?read('collapsedExercises',[]):[]).filter(x=>typeof x==='string').slice(-200));
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.12.1';
+const APP_VERSION='0.12.2';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null;
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -68,6 +69,8 @@ function selectDay(id){selected=id;plan=currentDay().plan?normalizePlan(currentD
 try { apiKey=window.TrainerKeys?.getKey()||''; } catch {}
 localStorage.removeItem('endpoint');
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function exerciseCollapseKey(id){return selected+':'+id;}
+function saveCollapsedExercises(){localStorage.setItem('collapsedExercises',JSON.stringify([...collapsedExercises].slice(-200)));}
 function save(){
  if(currentDay().enabled)currentDay().plan=plan;
  localStorage.setItem('week',JSON.stringify(week));localStorage.setItem('selectedDay',JSON.stringify(selected));
@@ -340,6 +343,7 @@ function promptExerciseFeedback(index){
 
 function renderExerciseCard(raw,i){
  const e=normalizeExercise(raw),c=catalog.find(x=>x.id===e.id);plan.exercises[i]=e;
+ const collapsed=collapsedExercises.has(exerciseCollapseKey(e.id)),bodyId='exercise-body-'+i;
  const previous=lastExercisePerformance(history,e.id);
  const last=previous?'<p class="small muted last-performance"><b>Last · '+escape(new Date(previous.date).toLocaleDateString())+'</b><br>'+escape(previous.sets.map((v,n)=>'S'+(n+1)+' '+v.reps+(v.weight?' @ '+v.weight+' lb':' BW')+(v.reps<v.plannedReps?' · target '+v.plannedReps:'')).join(' · '))+(previous.rir!=null?'<br>RIR '+(previous.rir===4?'4+':previous.rir):'')+'</p>':'';
  const rows=e.setReps.map((reps,n)=>{
@@ -347,7 +351,7 @@ function renderExerciseCard(raw,i){
   return '<div class="set-row '+(n<e.done?'done':'')+'"><div class="set-target"><b>Set '+(n+1)+'</b><small>Target '+escape(target)+'</small></div><label>Actual<input aria-label="'+escape(c.name)+' set '+(n+1)+' actual reps" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="reps" min="1" max="50" value="'+reps+'" '+(busy?'disabled':'')+'></label><label>Load<input aria-label="'+escape(c.name)+' set '+(n+1)+' actual load" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="weight" min="0" max="1000" step="0.5" value="'+e.setWeights[n]+'" '+(busy?'disabled':'')+'></label><button class="set-button '+(n<e.done?'done':'')+'" data-set="'+i+'" data-n="'+n+'" '+(busy?'disabled':'')+'>'+(n<e.done?'✓':'Done')+'</button></div>';
  }).join('');
  const feedback=e.done===e.sets?'<button class="secondary" data-feedback="'+i+'">'+(e.rir==null?'Rate effort':'RIR '+(e.rir===4?'4+':e.rir))+'</button>':'';
- return '<article class="card exercise-card"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" class="thumb-button"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div class="exercise-title"><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div>'+musclePicture(c)+'</div>'+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set / target</span><span>Actual</span><span>Load</span><span></span></div>'+rows+'</div><div class="row exercise-actions"><button class="secondary" data-demo="'+e.id+'">Demo</button>'+feedback+'<button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></article>';
+ return '<article class="card exercise-card '+(collapsed?'collapsed':'')+'"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" class="thumb-button"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div class="exercise-title"><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div>'+musclePicture(c)+'<button class="exercise-collapse-button" data-collapse="'+i+'" aria-expanded="'+(!collapsed)+'" aria-controls="'+bodyId+'" aria-label="'+(collapsed?'Expand ':'Collapse ')+escape(c.name)+'"><span aria-hidden="true">⌄</span></button></div><div id="'+bodyId+'" class="exercise-card-body" '+(collapsed?'hidden':'')+'>'+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set / target</span><span>Actual</span><span>Load</span><span></span></div>'+rows+'</div><div class="row exercise-actions"><button class="secondary" data-demo="'+e.id+'">Demo</button>'+feedback+'<button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></div></article>';
 }
 
 function render(){
@@ -372,6 +376,12 @@ $('exercises').onchange=e=>{
 
 $('exercises').onclick=e=>{
  const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.collapse!==undefined){
+  const i=Number(b.dataset.collapse),ex=plan.exercises[i];if(!Number.isInteger(i)||!ex)return;
+  const key=exerciseCollapseKey(ex.id);
+  if(collapsedExercises.has(key))collapsedExercises.delete(key);else collapsedExercises.add(key);
+  saveCollapsedExercises();render();return;
+ }
  if(b.dataset.demo){const c=catalog.find(x=>x.id===b.dataset.demo);if(c)openExerciseDemo(c);return;}
  if(b.dataset.feedback!==undefined){promptExerciseFeedback(Number(b.dataset.feedback));return;}
  if(busy)return;
