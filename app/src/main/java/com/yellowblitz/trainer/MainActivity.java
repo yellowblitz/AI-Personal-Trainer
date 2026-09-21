@@ -119,12 +119,17 @@ public class MainActivity extends Activity {
         trainer.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri uri = req.getUrl();
-                if ("https".equals(uri.getScheme()) && "aistudio.google.com".equals(uri.getHost())) {
+                String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+                boolean https = "https".equals(uri.getScheme());
+                boolean youtube = "youtube.com".equals(host) || host.endsWith(".youtube.com") || "youtu.be".equals(host);
+                boolean youtubeEmbed = "youtube-nocookie.com".equals(host) || host.endsWith(".youtube-nocookie.com") || youtube;
+                if (req.isForMainFrame() && https && ("aistudio.google.com".equals(host) || youtube)) {
                     try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) { }
                     return true;
                 }
-                return !("https".equals(uri.getScheme())
-                    && "appassets.androidplatform.net".equals(uri.getHost())
+                if (!req.isForMainFrame() && https && youtubeEmbed) return false;
+                return !(https
+                    && "appassets.androidplatform.net".equals(host)
                     && "/assets/index.html".equals(uri.getPath()));
             }
             @Override public void onPageFinished(WebView view, String url) {
