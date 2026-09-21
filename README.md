@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.13.0
+# AI Personal Trainer — Android v0.14.0
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -33,10 +33,22 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.13.0-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.14.0-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
+
+## v0.14.0 — Option 1 modern UI
+
+- **Option 1 visual direction:** the Android app now uses the selected dark premium dashboard style with deep navy surfaces, luminous green/blue accents, rounded cards, softer shadows and cleaner visual hierarchy.
+- **Graphical icon system:** the app header, dashboard statistics, workout actions and bottom navigation now use vector icons rather than text-only symbols.
+- **Training dashboard:** the Workout/Home screen adds a live 7-day summary for workouts, logged sets, target completion and scheduled-day consistency.
+- **Modern weekly strip:** training days are now compact scrollable cards with a brighter active-day treatment.
+- **Hero workout card:** the selected session is presented as a richer workout card with a muscle illustration, progress bar and clearer primary actions.
+- **AI coach shortcut:** a dedicated coach card on the dashboard opens the existing in-app ChatGPT workflow without changing the underlying handoff behavior.
+- **Exercise-card polish:** exercise rows, set tracking, action buttons, muscle graphics and progression signals were visually refreshed while keeping the existing logging workflow intact.
+- **Progress, calendar, coach, profile, modal and rest-timer surfaces** were restyled to the same visual system for consistency.
+- Android system-bar safe areas and the existing mobile layout protections remain in place.
 
 ## v0.13.0 — calendar, transparent muscle progress and smarter training feedback
 

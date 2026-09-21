@@ -9,20 +9,48 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="logo">↗</div>
-  <div><b>FORM / TRAINER</b><small>Train. Track. Progress.</small></div>
-  <button id="settings" class="icon" aria-label="Settings">⚙</button>
+<header class="app-header">
+  <div class="brand-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M3 9v6M6 7v10M9 10h6M15 7v10M18 9v6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+  </div>
+  <div class="brand-copy"><b><span>AI</span> Personal Trainer</b><small>Smarter workouts. Stronger you.</small></div>
+  <button id="settings" class="icon header-icon" aria-label="Settings">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Zm7-3.4 1.6-1.2-1.8-3.1-2 .8a7.8 7.8 0 0 0-1.5-.9L15 5.5h-6l-.3 2.1c-.5.2-1 .5-1.5.9l-2-.8-1.8 3.1L5 12c-.1.6-.1 1.2 0 1.8L3.4 15l1.8 3.1 2-.8c.5.4 1 .7 1.5.9l.3 2.1h6l.3-2.1c.5-.2 1-.5 1.5-.9l2 .8 1.8-3.1-1.6-1.2c.1-.6.1-1.2 0-1.8Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+  </button>
 </header>
 
 <main>
 <section id="workout" class="page">
-  <h1>Workout</h1>
-  <div class="section-title compact-title">
+  <div class="page-intro workout-intro">
+    <div>
+      <span class="micro-label">TRAINING DASHBOARD</span>
+      <h1>Ready to train?</h1>
+      <p class="muted">Your plan, performance and coach in one place.</p>
+    </div>
+    <div class="today-chip" aria-label="Today's date">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span id="todayDateLabel">Today</span>
+    </div>
+  </div>
+
+  <div class="section-title compact-title week-heading">
     <div><h2>This week</h2><p id="weekSummary" class="muted small"></p></div>
-    <button id="editWeek" class="secondary">Edit</button>
+    <button id="editWeek" class="secondary icon-button"><span aria-hidden="true">✎</span> Edit</button>
   </div>
   <div id="weekDays"></div>
+
+  <section id="dashboardStats" class="dashboard-stats" aria-label="Recent training summary">
+    <article class="dashboard-stat"><span class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M4 9v6m3-8v10m3-5h4m3-5v10m3-8v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><small>Workouts</small><strong id="dashWorkouts">0</strong><span>last 7 days</span></article>
+    <article class="dashboard-stat"><span class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M5 19V9m5 10V5m5 14v-7m5 7V3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><small>Logged sets</small><strong id="dashSets">0</strong><span>training volume</span></article>
+    <article class="dashboard-stat"><span class="stat-icon cyan"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><small>On target</small><strong id="dashAdherence">—</strong><span>set completion</span></article>
+    <article class="dashboard-stat"><span class="stat-icon violet"><svg viewBox="0 0 24 24"><path d="M8 4h8v3a4 4 0 0 1-8 0V4Zm-3 2H3v2a4 4 0 0 0 4 4m12-6h2v2a4 4 0 0 1-4 4M12 11v5m-4 4h8m-4-4c-2.2 0-4 1.8-4 4h8c0-2.2-1.8-4-4-4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><small>Consistency</small><strong id="dashConsistency">0%</strong><span>scheduled days</span></article>
+  </section>
+
+  <article class="dashboard-coach-card">
+    <div class="coach-orb" aria-hidden="true"><span></span><svg viewBox="0 0 24 24"><path d="M8 10h8a4 4 0 0 1 4 4v4H4v-4a4 4 0 0 1 4-4Zm1-4h6m-3-3v3M9 14h.01M15 14h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+    <div><span class="micro-label">AI COACH</span><h3>Train smarter from your own data</h3><p class="small muted">Ask ChatGPT for advice, then apply verified changes to your planner.</p></div>
+    <button id="dashboardCoachOpen" class="coach-open" aria-label="Open AI coach">›</button>
+  </article>
 
   <article id="nextWeekCard" class="card next-week-card">
     <div class="section-title compact-title">
@@ -40,18 +68,21 @@
   <div id="updateNotice" class="notice" hidden></div>
 
   <div class="hero">
-    <span id="sessionLabel">SELECTED SESSION</span>
-    <h2 id="planName"></h2>
-    <p id="summary"></p>
-    <progress id="progress" value="0" max="1"></progress>
-    <div class="row">
-      <button id="newWorkout" class="secondary">New session</button>
-      <button id="undo" class="secondary" disabled>Undo</button>
+    <div class="hero-copy">
+      <span id="sessionLabel">SELECTED SESSION</span>
+      <h2 id="planName"></h2>
+      <p id="summary"></p>
+      <progress id="progress" value="0" max="1"></progress>
+      <div class="row hero-actions">
+        <button id="newWorkout" class="primary hero-primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z" fill="currentColor"/></svg> New session</button>
+        <button id="undo" class="secondary" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 5 11l4 4M6 11h7a5 5 0 0 1 5 5v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Undo</button>
+      </div>
     </div>
+    <div id="heroMuscle" class="hero-muscle" aria-hidden="true"></div>
   </div>
 
   <div id="trainingDetails">
-    <div class="section-title compact-title"><h2>Exercises</h2><button id="add" class="secondary">＋ Add</button></div>
+    <div class="section-title compact-title"><div><span class="micro-label">TODAY'S WORKOUT</span><h2>Exercises</h2></div><button id="add" class="secondary icon-button"><span aria-hidden="true">＋</span> Add exercise</button></div>
     <div id="exercises"></div>
     <button id="finish" class="primary wide">Finish & save</button>
   </div>
@@ -179,11 +210,11 @@
   <button id="skip" class="secondary">Skip</button>
 </aside>
 
-<nav>
-  <button data-tab="workout" class="active">◉ Workout</button>
-  <button data-tab="coach">✦ ChatGPT</button>
-  <button data-tab="history">▥ Progress</button>
-  <button data-tab="profilePage">◎ Profile</button>
+<nav class="app-nav">
+  <button data-tab="workout" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20h-6v-5H9v5H3v-8.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="nav-label">Home</span></button>
+  <button data-tab="coach"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9h10a4 4 0 0 1 4 4v5H3v-5a4 4 0 0 1 4-4Zm2-4h6m-3-2v2M8 13h.01M16 13h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="nav-label">Coach</span><span class="nav-badge" hidden></span></button>
+  <button data-tab="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10m5 10V4m5 16v-7m5 7V7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="nav-label">Progress</span></button>
+  <button data-tab="profilePage"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="nav-label">Profile</span></button>
 </nav>
 
 <dialog id="modal">
