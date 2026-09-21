@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com https://api.anatome.dev; connect-src 'self' https://generativelanguage.googleapis.com https://wger.de https://api.anatome.dev; media-src 'self' https://wger.de https://*.wger.de; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com https://api.anatome.dev; connect-src 'self' https://generativelanguage.googleapis.com https://wger.de https://api.anatome.dev; media-src 'self' https://wger.de https://*.wger.de; frame-src https://www.youtube-nocookie.com https://www.youtube.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="dark light">
 <title>AI Personal Trainer</title>
 <link rel="stylesheet" href="style.css">
@@ -108,9 +108,41 @@
 
 <section id="history" class="page" hidden>
   <h1>Progress</h1>
+
+  <article id="weeklyReviewCard" class="card weekly-review-card">
+    <div class="section-title compact-title">
+      <div><span class="micro-label">LAST 7 DAYS</span><h2>Weekly review</h2></div>
+      <span id="weeklyReviewRange" class="small muted"></span>
+    </div>
+    <div id="weeklyReview"></div>
+  </article>
+
+  <article id="calendarCard" class="card calendar-card">
+    <div class="section-title calendar-title">
+      <button id="calendarPrev" class="secondary icon" aria-label="Previous month">‹</button>
+      <div><span class="micro-label">TRAINING HISTORY</span><h2 id="calendarTitle"></h2></div>
+      <button id="calendarNext" class="secondary icon" aria-label="Next month">›</button>
+    </div>
+    <div class="calendar-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div id="calendarGrid" class="calendar-grid"></div>
+    <div class="calendar-legend small muted"><span><i class="calendar-dot logged"></i>Logged</span><span><i class="calendar-dot planned"></i>Scheduled</span></div>
+    <div id="calendarDayDetails" class="calendar-day-details small muted">Tap a day to see its workout.</div>
+  </article>
+
+  <article id="muscleProgressCard" class="card muscle-progress-card">
+    <div class="section-title compact-title">
+      <div><span class="micro-label">PERFORMANCE TREND</span><h2>Muscle progress</h2></div>
+      <span class="small muted">8 weeks</span>
+    </div>
+    <p class="small muted">Based on your logged performance, estimated strength, volume, target completion, RIR and training consistency. This is a transparent training trend, not a direct measurement of muscle growth.</p>
+    <div id="weeklyMuscleMap"></div>
+    <div id="muscleProgressList"></div>
+  </article>
+
   <article id="progressionCard" class="card progression-card">
     <label for="progressExercise">Exercise</label>
     <select id="progressExercise"></select>
+    <div id="progressHighlights"></div>
     <div id="progressCharts"></div>
   </article>
   <div id="historyList"></div>
