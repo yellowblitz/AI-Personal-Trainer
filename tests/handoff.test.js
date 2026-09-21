@@ -137,7 +137,7 @@ test('explicit day coverage detects a partial replacement before it can be appli
 });
 
 test('Gemini fallback can repair an explicit day the local parser cannot fully resolve',async()=>{
- const source='Friday Legs: Mystery cable squat 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15.';
+ const source='Friday Legs: ZXQ Unmapped Leg Thing 80 lb/side 4x10; Cable RDL 70 lb/side 3x10; Bulgarian Split Squat 20 lb 3x10/leg; Cable Leg Curl 40 lb 3x12/leg; DB Calf Raise 30 lb 3x15.';
  let calls=0;
  const batch=await interpretChatGPTResponse({sourceText:source,week,profile,memory:'',selectedDay:'fri',model:'gemini-3.8-flash'},catalog,'key',async()=>{
   calls++;
