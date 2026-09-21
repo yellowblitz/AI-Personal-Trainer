@@ -1,4 +1,4 @@
-# AI Personal Trainer — Android v0.12.1
+# AI Personal Trainer — Android v0.12.2
 
 AI workout planner with an embedded regular ChatGPT coaching view plus Gemini command translation. No OpenAI API key is required; users still need their normal ChatGPT account for the embedded chat and their own Gemini API key for command interpretation.
 
@@ -33,10 +33,17 @@ On Android, the key is encrypted with an AES-GCM key in Android Keystore. The ke
 - Invalid-key, quota, network, blocked-response and invalid-plan errors leave the workout unchanged. AI failures are stored in **Settings → Error reports** with the selected model, HTTP/provider status, request text and exact validation issues; the Gemini API key is redacted and never included.
 
 ## Install
-Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.1-debug`, unzip and install the APK on Android 8+.
+Open **Actions → Android APK → latest successful run → Artifacts**. Download `AI-Personal-Trainer-0.12.2-debug`, unzip and install the APK on Android 8+.
 
 This is a development build, not a production release. Starting with v0.6.0, CI keeps a stable development signing key in the repository Actions cache so subsequent main-branch APKs can install as updates over v0.6.0 instead of conflicting. Because v0.5.1 and earlier used a different ephemeral CI key, installing v0.6.0 may require one final uninstall. A private production signing key is still required before public distribution; if the CI signing cache is ever lost, the development signature can change.
 
+
+## v0.12.2 — collapsible exercise cards
+
+- Every workout exercise card now has a compact dropdown button in its header.
+- Collapsing a card hides the sets, rest/load fields, previous-performance detail and action row while keeping the exercise name, thumbnail and muscle illustration visible.
+- Expanded/collapsed state is remembered per workout day and exercise across rerenders and app reloads.
+- The dropdown exposes `aria-expanded` / `aria-controls` for accessibility, and a browser regression test covers collapse, persistence and re-expansion.
 
 ## v0.12.1 — broader short demo coverage
 
