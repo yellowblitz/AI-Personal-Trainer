@@ -162,3 +162,8 @@ dialog{padding:12px 18px 18px}
  .set-head,.set-row{grid-template-columns:.8fr .85fr .85fr .65fr}
  .comparison-stats strong{font-size:19px}
 }
+
+/* v0.12.3 handoff recovery */
+.handoff-history{align-items:center;margin-top:8px}
+.handoff-history button{flex:0 0 auto}
+.handoff-history span{flex:1;min-width:160px;line-height:1.35}
