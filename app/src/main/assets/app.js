@@ -1,7 +1,7 @@
 import {DAYS,dayName,makeWeek,normalizeWeek,validWeek,weekKey,weekChanges,applyProposal} from './week.js';
 import {askGemini,MODELS,DEFAULT_MODEL} from './gemini.js';
 import {templates,makePlan,validPlan,secondsLeft,normalizeTimer} from './core.js';
-import {normalizeExercise,normalizePlan,resizeSets,setSetValue,setExerciseFeedback,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance,comparePlanPerformance,exerciseProgress} from './training.js';
+import {normalizeExercise,normalizePlan,resizeSets,setSetValue,setExerciseFeedback,completedSetTotal,totalSets,estimatePlanMinutes,summarizeHistory,lastExercisePerformance,comparePlanPerformance,exerciseProgress,exerciseProgressionSignal,exerciseRecords,muscleTrainingLoad,muscleProgress,weeklyTrainingReview} from './training.js';
 import {buildChatGPTContext,interpretChatGPTResponse,applyCommandBatch} from './handoff.js';
 const $=id=>document.getElementById(id);
 const [baseCatalog,customCatalog]=await Promise.all([fetch('catalog.json').then(r=>r.json()),fetch('custom-exercises.json').then(r=>r.ok?r.json():[]).catch(()=>[])]),catalog=[...baseCatalog,...customCatalog],ids=catalog.map(e=>e.id);
@@ -28,7 +28,7 @@ let collapsedExercises=new Set((Array.isArray(read('collapsedExercises',[]))?rea
 if(!Array.isArray(history))history=[];
 history=history.filter(h=>h&&Number.isFinite(Date.parse(h.date))&&validPlan(h.plan,ids)).slice(0,200);
 timer=normalizeTimer(timer);
-const APP_VERSION='0.12.3';
+const APP_VERSION='0.13.0';
 let apiKey='',messages=read('chat',[]),pending=read('proposal',null),geminiModel=read('geminiModel',DEFAULT_MODEL),errorReports=read('errorReports',[]),handoffDraft=null,handoffTiming=read('handoffTiming',{}),lastHandoff=read('lastHandoff',null);
 if(!MODELS.some(m=>m.id===geminiModel))geminiModel=DEFAULT_MODEL;
 if(!Array.isArray(errorReports))errorReports=[];errorReports=errorReports.filter(r=>r&&typeof r==='object').slice(0,20);
@@ -47,10 +47,14 @@ const saveMemory=()=>localStorage.setItem('coachMemory',JSON.stringify(coachMemo
 let nextWeekRecommendation=read('nextWeekRecommendation',null),recommendationBusy=false;
 if(nextWeekRecommendation&&(!nextWeekRecommendation.week||!validWeek(nextWeekRecommendation.week,ids))){nextWeekRecommendation=null;localStorage.removeItem('nextWeekRecommendation');}
 const saveNextWeekRecommendation=()=>{if(nextWeekRecommendation)localStorage.setItem('nextWeekRecommendation',JSON.stringify(nextWeekRecommendation));else localStorage.removeItem('nextWeekRecommendation');};
-let exercisePreferences=read('exercisePreferences',{}),demoMetaCache=read('demoMetaCache',{});
+let exercisePreferences=read('exercisePreferences',{}),demoMetaCache=read('demoMetaCache',{}),demoProblems=read('demoProblems',{}),exerciseNotes=read('exerciseNotes',{});
 if(!exercisePreferences||typeof exercisePreferences!=='object'||Array.isArray(exercisePreferences))exercisePreferences={};
 if(!demoMetaCache||typeof demoMetaCache!=='object'||Array.isArray(demoMetaCache))demoMetaCache={};
+if(!demoProblems||typeof demoProblems!=='object'||Array.isArray(demoProblems))demoProblems={};
+if(!exerciseNotes||typeof exerciseNotes!=='object'||Array.isArray(exerciseNotes))exerciseNotes={};
 const saveExercisePreferences=()=>localStorage.setItem('exercisePreferences',JSON.stringify(exercisePreferences));
+const saveExerciseNotes=()=>localStorage.setItem('exerciseNotes',JSON.stringify(exerciseNotes));
+const saveDemoProblems=()=>localStorage.setItem('demoProblems',JSON.stringify(demoProblems));
 function recordExercisePreference(id,field){
  if(!id||!['added','removed','completed'].includes(field))return;
  const old=exercisePreferences[id]&&typeof exercisePreferences[id]==='object'?exercisePreferences[id]:{};
@@ -58,8 +62,10 @@ function recordExercisePreference(id,field){
  exercisePreferences[id][field]++;exercisePreferences[id].lastUsed=new Date().toISOString();saveExercisePreferences();
 }
 function compactPreferences(){
- return Object.entries(exercisePreferences).map(([id,v])=>({id,added:Number(v.added)||0,removed:Number(v.removed)||0,completed:Number(v.completed)||0,lastUsed:v.lastUsed||null}))
-  .filter(v=>v.added||v.removed||v.completed).sort((a,b)=>(b.completed+b.added-b.removed)-(a.completed+a.added-a.removed)).slice(0,80);
+ const idsWithNotes=Object.keys(exerciseNotes).filter(id=>typeof exerciseNotes[id]==='string'&&exerciseNotes[id].trim());
+ const allIds=[...new Set([...Object.keys(exercisePreferences),...idsWithNotes])];
+ return allIds.map(id=>{const v=exercisePreferences[id]&&typeof exercisePreferences[id]==='object'?exercisePreferences[id]:{};return {id,added:Number(v.added)||0,removed:Number(v.removed)||0,completed:Number(v.completed)||0,lastUsed:v.lastUsed||null,note:String(exerciseNotes[id]||'').trim().slice(0,300)};})
+  .filter(v=>v.added||v.removed||v.completed||v.note).sort((a,b)=>(b.completed+b.added-b.removed)-(a.completed+a.added-a.removed)).slice(0,80);
 }
 const saveDemoMetaCache=()=>{const entries=Object.entries(demoMetaCache).sort((a,b)=>(Date.parse(b[1]?.usedAt)||0)-(Date.parse(a[1]?.usedAt)||0)).slice(0,50);demoMetaCache=Object.fromEntries(entries);localStorage.setItem('demoMetaCache',JSON.stringify(demoMetaCache));};
 
@@ -211,16 +217,20 @@ function anatomyImageUrl(primary,secondary=[],large=false){
  const view=anatomyView(p,large);
  return 'https://api.anatome.dev/generateImage?gender=male&view='+view+'&layers='+encodeURIComponent(layers)+'&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw';
 }
-function anatomyLabel(primary,secondary=[]){
- const p=safeMuscleSlugs(primary).map(x=>ANATOMICAL_NAMES[x]),s=safeMuscleSlugs(secondary).filter(x=>!primary.includes(x)).map(x=>ANATOMICAL_NAMES[x]);
- return '<div class="muscle-legend"><span><i class="primary-dot"></i>Primary: '+escape(p.join(', ')||'Unknown')+'</span>'+(s.length?'<span><i class="secondary-dot"></i>Secondary: '+escape(s.join(', '))+'</span>':'')+'</div>';
+function prettyMuscle(value){return String(value||'').replace(/[-_]+/g,' ').replace(/\b\w/g,m=>m.toUpperCase());}
+function anatomyLabel(primary,secondary=[],info=null){
+ const fallbackPrimary=safeMuscleSlugs(primary).map(x=>ANATOMICAL_NAMES[x]),fallbackSecondary=safeMuscleSlugs(secondary).filter(x=>!primary.includes(x)).map(x=>ANATOMICAL_NAMES[x]);
+ const p=(Array.isArray(info?.primaryMuscles)&&info.primaryMuscles.length?info.primaryMuscles.map(prettyMuscle):fallbackPrimary);
+ const sec=(Array.isArray(info?.secondaryMuscles)&&info.secondaryMuscles.length?info.secondaryMuscles.map(prettyMuscle):fallbackSecondary);
+ const uniqueP=[...new Set(p)],uniqueS=[...new Set(sec.filter(x=>!uniqueP.includes(x)))];
+ return '<div class="muscle-legend detailed"><span><i class="primary-dot"></i><b>Primary</b> '+escape(uniqueP.join(', ')||'Unknown')+'</span>'+(uniqueS.length?'<span><i class="secondary-dot"></i><b>Secondary</b> '+escape(uniqueS.join(', '))+'</span>':'')+'</div>';
 }
 function musclePicture(c,large=false,info=null){
  const primary=safeMuscleSlugs(info?.anatome_primary_slugs?.length?info.anatome_primary_slugs:(Array.isArray(c.anatomePrimarySlugs)&&c.anatomePrimarySlugs.length?c.anatomePrimarySlugs:[c.muscleSlug]));
  const secondary=safeMuscleSlugs(info?.anatome_secondary_slugs?.length?info.anatome_secondary_slugs:(c.secondaryMuscleSlugs||[]));
  const url=anatomyImageUrl(primary,secondary,large);
  if(!url)return '';
- return '<div class="muscle-picture '+(large?'large':'')+'"><img loading="lazy" src="'+escape(url)+'" alt="'+escape((primary.map(x=>ANATOMICAL_NAMES[x]).join(', ')||c.muscle)+' highlighted on an anatomical body diagram')+'">'+(large?anatomyLabel(primary,secondary):'<small>'+escape(ANATOMICAL_NAMES[primary[0]]||c.muscle)+'</small>')+'</div>';
+ return '<div class="muscle-picture '+(large?'large':'')+'"><img loading="lazy" src="'+escape(url)+'" alt="'+escape((primary.map(x=>ANATOMICAL_NAMES[x]).join(', ')||c.muscle)+' highlighted on an anatomical body diagram')+'">'+(large?anatomyLabel(primary,secondary,info):'<small>'+escape(ANATOMICAL_NAMES[primary[0]]||c.muscle)+(secondary.length?' <span class="muscle-secondary-mini">+ '+escape(secondary.map(x=>ANATOMICAL_NAMES[x]).join(', '))+'</span>':'')+'</small>')+'</div>';
 }
 async function lookupExerciseInfo(c){
  const localInfo={
@@ -302,7 +312,7 @@ async function lookupYoutubeDemos(c){
    channel:String(v.channel||'').slice(0,120),
    title:String(v.title||'').slice(0,160),
    source:String(v.source||'youtube')
-  })).filter(v=>v.youtubeId).sort((x,y)=>Number(y.type==='short')-Number(x.type==='short')||x.priority-y.priority).slice(0,3);
+  })).filter(v=>v.youtubeId).sort((x,y)=>x.priority-y.priority||Number(x.type==='short')-Number(y.type==='short')).slice(0,3);
   if(demos.length){demoMetaCache[c.id]={...(demoMetaCache[c.id]||{}),youtubeDemos:demos,usedAt:new Date().toISOString(),youtubeSource:'curated'};saveDemoMetaCache();}
   return demos;
  }catch{return [];}
@@ -332,55 +342,112 @@ function renderAnimatedDemo(c){
  const img=$('demoGif');if(img)img.onerror=()=>startImageDemo(c);
 }
 async function openExerciseDemo(c){
- modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Demo priority: exact/high-confidence wger video → curated YouTube short clip → exact animated demo → start/end images or anatomy. Only media you open is requested; the app does not bundle or bulk-download the video libraries.</p>');
+ modal('<h2>'+escape(c.name)+'</h2><div id="anatomyDetail">'+musclePicture(c,true)+'</div><div id="demoMedia" class="demo-media"><div class="notice">Loading demo…</div></div><details class="compact-details"><summary><b>Instructions</b></summary><ol>'+c.instructions.map(s=>'<li>'+escape(s)+'</li>').join('')+'</ol></details><p class="small muted">Demo priority: verified wger video → curated YouTube clip → exact animated demo → start/end images or anatomy. If a clip is wrong or unavailable, tap Demo problem and the app will remember to skip it on this device.</p>');
  const infoPromise=lookupExerciseInfo(c);
- let videos=await lookupDemoVideos(c),youtubeDemos=[];
- if(!videos.length)youtubeDemos=await lookupYoutubeDemos(c);
+ const problemKey=(kind,v)=>kind==='wger'?'wger:'+String(v?.url||''):'youtube:'+String(v?.youtubeId||'')+':'+String(v?.startSeconds||0);
+ const blocked=key=>!!demoProblems[c.id]?.[key];
+ const flag=key=>{if(!key)return;const current=demoProblems[c.id]&&typeof demoProblems[c.id]==='object'?demoProblems[c.id]:{};current[key]=new Date().toISOString();demoProblems[c.id]=current;saveDemoProblems();};
+ let videos=(await lookupDemoVideos(c)).filter(v=>!blocked(problemKey('wger',v))),youtubeDemos=[];
+ if(!videos.length)youtubeDemos=(await lookupYoutubeDemos(c)).filter(v=>!blocked(problemKey('youtube',v)));
  const info=await infoPromise;
  if(!$('modal').open||!$('demoMedia'))return;
  $('anatomyDetail').innerHTML=musclePicture(c,true,info);
  const animatedLabel=c.demoGif?'Animated demo':'Anatomy reference';
+ let active=null;
+ const actions=()=>'<div class="demo-health-actions"><button class="secondary" data-demo-next>Try another demo</button>'+(active?'<button class="secondary" data-demo-problem>Demo problem</button>':'')+'</div>';
+ const renderAnimated=message=>{active=null;renderAnimatedDemo(c);if(message&&$('demoMedia'))$('demoMedia').insertAdjacentHTML('beforeend','<p class="small muted">'+escape(message)+'</p>');};
+ const ensureYoutube=async()=>{if(!youtubeDemos.length)youtubeDemos=(await lookupYoutubeDemos(c)).filter(v=>!blocked(problemKey('youtube',v)));return youtubeDemos;};
  const renderVideo=index=>{
-  const v=videos[index];if(!v){renderAnimatedDemo(c);return;}
-  $('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video><div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">Video '+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div><p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+(v.title?' · '+escape(v.title):'')+'</p>';
+  const v=videos[index];if(!v){ensureYoutube().then(list=>list.length?renderYoutube(0):renderAnimated('No other verified motion demo is available yet.'));return;}
+  active={kind:'wger',key:problemKey('wger',v),index};
+  $('demoMedia').innerHTML='<video id="demoVideo" class="demo-video" controls muted loop playsinline preload="metadata" src="'+escape(v.url)+'"></video><div class="demo-switcher">'+videos.map((_,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-demo-view="'+i+'">Video '+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div>'+actions()+'<p class="small muted">'+escape(v.author?'Video by '+v.author:'Video via wger')+(v.title?' · '+escape(v.title):'')+'</p>';
   const player=$('demoVideo');player?.play?.().catch(()=>{});
-  if(player)player.onerror=async()=>{youtubeDemos=await lookupYoutubeDemos(c);if(youtubeDemos.length)renderYoutube(0);else renderAnimatedDemo(c);};
+  if(player)player.onerror=async()=>{flag(active?.key);videos=videos.filter(x=>problemKey('wger',x)!==active?.key);const list=await ensureYoutube();if(list.length)renderYoutube(0);else if(videos.length)renderVideo(0);else renderAnimated('That video failed to load and was skipped.');};
  };
  const renderYoutube=index=>{
-  const v=youtubeDemos[index];if(!v){renderAnimatedDemo(c);return;}
-  const src=youtubeEmbedUrl(v);if(!src){renderAnimatedDemo(c);return;}
+  const v=youtubeDemos[index];if(!v){renderAnimated('No other verified motion demo is available yet.');return;}
+  const src=youtubeEmbedUrl(v);if(!src){renderAnimated('This clip could not be opened.');return;}
+  active={kind:'youtube',key:problemKey('youtube',v),index};
   const vertical=v.aspectRatio==='9:16',label=v.type==='short'?'Short '+(index+1):'Clip '+(index+1);
-  $('demoMedia').innerHTML='<iframe id="demoYoutube" class="demo-youtube'+(vertical?' vertical':'')+'" src="'+escape(src)+'" title="Short exercise demonstration for '+escape(c.name)+'" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="demo-switcher">'+youtubeDemos.map((x,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-youtube-view="'+i+'">'+(x.type==='short'?'Short ':'Clip ')+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div><p class="small muted">'+escape(label+' · YouTube'+(v.channel?' · '+v.channel:''))+' · streamed on demand</p>';
+  $('demoMedia').innerHTML='<iframe id="demoYoutube" class="demo-youtube'+(vertical?' vertical':'')+'" src="'+escape(src)+'" title="Exercise demonstration for '+escape(c.name)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="demo-switcher">'+youtubeDemos.map((x,i)=>'<button class="'+(i===index?'primary':'secondary')+'" data-youtube-view="'+i+'">'+(x.type==='short'?'Short ':'Clip ')+(i+1)+'</button>').join('')+'<button class="secondary" data-demo-animated>'+animatedLabel+'</button></div>'+actions()+'<p class="small muted">'+escape(label+' · YouTube'+(v.channel?' · '+v.channel:''))+' · streamed on demand</p>';
  };
- if(videos.length)renderVideo(0);else if(youtubeDemos.length)renderYoutube(0);else renderAnimatedDemo(c);
- $('demoMedia').onclick=e=>{
+ const nextDemo=async()=>{
+  if(active?.kind==='wger'){
+   if(videos[active.index+1])return renderVideo(active.index+1);
+   const list=await ensureYoutube();if(list.length)return renderYoutube(0);
+  }else if(active?.kind==='youtube'&&youtubeDemos[active.index+1])return renderYoutube(active.index+1);
+  renderAnimated('Showing the local fallback.');
+ };
+ if(videos.length)renderVideo(0);else{youtubeDemos=await ensureYoutube();if(youtubeDemos.length)renderYoutube(0);else renderAnimated('No verified motion demo matched this exercise yet.');}
+ $('demoMedia').onclick=async e=>{
   const b=e.target.closest('[data-demo-view]');if(b){renderVideo(Number(b.dataset.demoView)||0);return;}
   const y=e.target.closest('[data-youtube-view]');if(y){renderYoutube(Number(y.dataset.youtubeView)||0);return;}
-  if(e.target.closest('[data-demo-animated]'))renderAnimatedDemo(c);
+  if(e.target.closest('[data-demo-animated]')){renderAnimated('Showing the local fallback.');return;}
+  if(e.target.closest('[data-demo-next]')){await nextDemo();return;}
+  if(e.target.closest('[data-demo-problem]')&&active){
+   const bad={...active};flag(bad.key);
+   if(bad.kind==='wger')videos=videos.filter(v=>problemKey('wger',v)!==bad.key);else youtubeDemos=youtubeDemos.filter(v=>problemKey('youtube',v)!==bad.key);
+   toast('Demo skipped. The app will avoid it next time.');await nextDemo();
+  }
  };
 }
 
 function promptExerciseFeedback(index){
- const ex=normalizeExercise(plan.exercises[index]),c=catalog.find(x=>x.id===ex.id);if(!c)return;
- modal('<h2>'+escape(c.name)+'</h2><p>How many more good reps could you have done?</p><div class="rir-grid">'+[0,1,2,3,4].map(v=>'<button data-rir="'+v+'" class="'+(ex.rir===v?'primary':'secondary')+'">'+(v===4?'4+':v)+'</button>').join('')+'</div><label>Note <input id="exerciseNote" maxlength="500" placeholder="Optional: form, setup, fatigue…" value="'+escape(ex.note||'')+'"></label><button id="skipRir" class="secondary wide">Skip</button>');
+ let ex=normalizeExercise(plan.exercises[index]),c=catalog.find(x=>x.id===ex.id);if(!c)return;
+ const optionButtons=(attr,values,current)=>values.map(([value,label])=>'<button data-'+attr+'="'+value+'" class="'+(current===value?'primary':'secondary')+'">'+label+'</button>').join('');
+ modal('<h2>'+escape(c.name)+'</h2><p>How many more good reps could you have done?</p><div class="rir-grid">'+[0,1,2,3,4].map(v=>'<button data-rir="'+v+'" class="'+(ex.rir===v?'primary':'secondary')+'">'+(v===4?'4+':v)+'</button>').join('')+'</div><label class="feedback-label">Difficulty</label><div class="feedback-choice">'+optionButtons('effort',[['too_easy','Too easy'],['right','About right'],['too_hard','Too hard']],ex.effort)+'</div><label class="feedback-label">Form quality</label><div class="feedback-choice">'+optionButtons('form',[['good','Good'],['breaking','Breaking down'],['poor','Poor']],ex.form)+'</div><label class="feedback-label">Discomfort</label><div class="feedback-choice">'+optionButtons('discomfort',[['none','None'],['mild','Some'],['pain','Painful']],ex.discomfort||'none')+'</div><label>Session note <input id="exerciseNote" maxlength="500" placeholder="Optional: setup, fatigue, technique…" value="'+escape(ex.note||'')+'"></label><p class="small muted">These signals are saved with this workout and used to make future progression more conservative or aggressive. Pain is never used to diagnose an injury.</p><button id="saveFeedback" class="primary wide">Save feedback</button><button id="skipRir" class="secondary wide">Skip</button>');
+ const state={rir:ex.rir,effort:ex.effort,form:ex.form,discomfort:ex.discomfort||'none'};
+ const select=(attr,value)=>{state[attr]=value;$('modalBody').querySelectorAll('[data-'+attr+']').forEach(x=>x.className=x.dataset[attr]===String(value)?'primary':'secondary');};
  $('modalBody').onclick=e=>{
-  const b=e.target.closest('[data-rir]');if(b){plan.exercises[index]=setExerciseFeedback(ex,Number(b.dataset.rir),$('exerciseNote').value);save();render();$('modal').close();return;}
+  const r=e.target.closest('[data-rir]');if(r){select('rir',Number(r.dataset.rir));return;}
+  for(const attr of ['effort','form','discomfort']){const b=e.target.closest('[data-'+attr+']');if(b){select(attr,b.dataset[attr]);return;}}
+  if(e.target.closest('#saveFeedback')){plan.exercises[index]=setExerciseFeedback(ex,state.rir,$('exerciseNote').value,{effort:state.effort,form:state.form,discomfort:state.discomfort});save();render();$('modal').close();return;}
   if(e.target.closest('#skipRir'))$('modal').close();
  };
 }
 
-
+function exerciseMuscleDetail(c){
+ const primary=(Array.isArray(c.primaryMuscles)&&c.primaryMuscles.length?c.primaryMuscles:(Array.isArray(c.anatomePrimarySlugs)&&c.anatomePrimarySlugs.length?c.anatomePrimarySlugs:[c.muscleSlug||c.muscle])).map(prettyMuscle);
+ const secondary=(Array.isArray(c.secondaryMuscles)&&c.secondaryMuscles.length?c.secondaryMuscles:(c.secondaryMuscleSlugs||[])).map(prettyMuscle);
+ return '<div class="exercise-muscle-detail"><span><b>Primary</b> '+escape([...new Set(primary)].join(', ')||prettyMuscle(c.muscle))+'</span>'+(secondary.length?'<span><b>Secondary</b> '+escape([...new Set(secondary)].join(', '))+'</span>':'')+'</div>';
+}
 function renderExerciseCard(raw,i){
  const e=normalizeExercise(raw),c=catalog.find(x=>x.id===e.id);plan.exercises[i]=e;
  const collapsed=collapsedExercises.has(exerciseCollapseKey(e.id)),bodyId='exercise-body-'+i;
- const previous=lastExercisePerformance(history,e.id);
- const last=previous?'<p class="small muted last-performance"><b>Last · '+escape(new Date(previous.date).toLocaleDateString())+'</b><br>'+escape(previous.sets.map((v,n)=>'S'+(n+1)+' '+v.reps+(v.weight?' @ '+v.weight+' lb':' BW')+(v.reps<v.plannedReps?' · target '+v.plannedReps:'')).join(' · '))+(previous.rir!=null?'<br>RIR '+(previous.rir===4?'4+':previous.rir):'')+'</p>':'';
+ const previous=lastExercisePerformance(history,e.id),signal=exerciseProgressionSignal(history,e.id);
+ const last=previous?'<p class="small muted last-performance"><b>Last · '+escape(new Date(previous.date).toLocaleDateString())+'</b><br>'+escape(previous.sets.map((v,n)=>'S'+(n+1)+' '+v.reps+(v.weight?' @ '+v.weight+' lb':' BW')+(v.reps<v.plannedReps?' · target '+v.plannedReps:'')).join(' · '))+(previous.rir!=null?'<br>RIR '+(previous.rir===4?'4+':previous.rir):'')+(previous.effort? ' · '+escape(previous.effort.replaceAll('_',' ')):'')+(previous.form?' · form '+escape(previous.form):'')+(previous.discomfort&&previous.discomfort!=='none'?'<br>Discomfort: '+escape(previous.discomfort):'')+'</p>':'';
  const rows=e.setReps.map((reps,n)=>{
   const target=e.plannedReps[n]+' rep'+(e.plannedReps[n]===1?'':'s')+(e.plannedWeights[n]>0?' @ '+e.plannedWeights[n]+' lb':' · BW');
   return '<div class="set-row '+(n<e.done?'done':'')+'"><div class="set-target"><b>Set '+(n+1)+'</b><small>Target '+escape(target)+'</small></div><label>Actual<input aria-label="'+escape(c.name)+' set '+(n+1)+' actual reps" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="reps" min="1" max="50" value="'+reps+'" '+(busy?'disabled':'')+'></label><label>Load<input aria-label="'+escape(c.name)+' set '+(n+1)+' actual load" type="number" data-index="'+i+'" data-set-index="'+n+'" data-set-field="weight" min="0" max="1000" step="0.5" value="'+e.setWeights[n]+'" '+(busy?'disabled':'')+'></label><button class="set-button '+(n<e.done?'done':'')+'" data-set="'+i+'" data-n="'+n+'" '+(busy?'disabled':'')+'>'+(n<e.done?'✓':'Done')+'</button></div>';
  }).join('');
- const feedback=e.done===e.sets?'<button class="secondary" data-feedback="'+i+'">'+(e.rir==null?'Rate effort':'RIR '+(e.rir===4?'4+':e.rir))+'</button>':'';
- return '<article class="card exercise-card '+(collapsed?'collapsed':'')+'"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" class="thumb-button"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div class="exercise-title"><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div>'+musclePicture(c)+'<button class="exercise-collapse-button" data-collapse="'+i+'" aria-expanded="'+(!collapsed)+'" aria-controls="'+bodyId+'" aria-label="'+(collapsed?'Expand ':'Collapse ')+escape(c.name)+'"><span aria-hidden="true">⌄</span></button></div><div id="'+bodyId+'" class="exercise-card-body" '+(collapsed?'hidden':'')+'>'+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set / target</span><span>Actual</span><span>Load</span><span></span></div>'+rows+'</div><div class="row exercise-actions"><button class="secondary" data-demo="'+e.id+'">Demo</button>'+feedback+'<button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></div></article>';
+ const feedback=e.done===e.sets?'<button class="secondary" data-feedback="'+i+'">'+(e.rir==null?'Rate effort':'RIR '+(e.rir===4?'4+':e.rir)+(e.effort?' · '+e.effort.replaceAll('_',' '):''))+'</button>':'';
+ const permanentNote=String(exerciseNotes[e.id]||'').trim();
+ const signalHtml=signal.sessions?'<div class="progression-signal '+escape(signal.action)+'"><b>'+escape(signal.label)+'</b><span>'+escape(signal.reason)+'</span></div>':'';
+ return '<article class="card exercise-card '+(collapsed?'collapsed':'')+'"><div class="card-top"><button data-demo="'+e.id+'" aria-label="Demonstration for '+escape(c.name)+'" class="thumb-button"><img class="thumb" src="'+c.images[0]+'" alt="'+escape(c.name)+' starting position"></button><div class="exercise-title"><h3>'+escape(c.name)+'</h3><span class="tag">'+escape(c.muscle)+' · '+escape(c.equipment)+'</span></div>'+musclePicture(c)+'<button class="exercise-collapse-button" data-collapse="'+i+'" aria-expanded="'+(!collapsed)+'" aria-controls="'+bodyId+'" aria-label="'+(collapsed?'Expand ':'Collapse ')+escape(c.name)+'"><span aria-hidden="true">⌄</span></button></div><div id="'+bodyId+'" class="exercise-card-body" '+(collapsed?'hidden':'')+'>'+exerciseMuscleDetail(c)+signalHtml+(permanentNote?'<div class="exercise-setup-note"><b>Your setup note</b><span>'+escape(permanentNote)+'</span></div>':'')+last+'<div class="fields two"><label>Sets<input type="number" data-index="'+i+'" data-field="sets" value="'+e.sets+'" min="1" max="10" '+(busy?'disabled':'')+'></label><label>Rest<input type="number" data-index="'+i+'" data-field="rest" value="'+e.rest+'" min="15" max="600" '+(busy?'disabled':'')+'></label></div><div class="set-list"><div class="set-head"><span>Set / target</span><span>Actual</span><span>Load</span><span></span></div>'+rows+'</div><div class="row exercise-actions"><button class="secondary" data-demo="'+e.id+'">Demo</button>'+feedback+'<button class="secondary" data-setup-note="'+i+'">'+(permanentNote?'Setup note ✓':'Setup note')+'</button><button class="secondary" data-replace="'+i+'" '+(busy?'disabled':'')+'>Replace</button><button class="secondary" data-remove="'+i+'" '+(busy?'disabled':'')+'>Remove</button></div></div></article>';
+}
+
+function openSetupNote(index){
+ const e=normalizeExercise(plan.exercises[index]),c=catalog.find(x=>x.id===e.id);if(!c)return;
+ modal('<h2>'+escape(c.name)+' setup note</h2><p class="small muted">This note stays attached to the exercise and is available to the trainer when planning.</p><textarea id="setupNoteText" rows="5" maxlength="300" placeholder="Bench setting, cable height, grip, cues…">'+escape(exerciseNotes[e.id]||'')+'</textarea><div class="row"><button id="saveSetupNote" class="primary">Save</button><button id="clearSetupNote" class="secondary">Clear</button></div>');
+ $('saveSetupNote').onclick=()=>{const value=$('setupNoteText').value.trim().slice(0,300);if(value)exerciseNotes[e.id]=value;else delete exerciseNotes[e.id];saveExerciseNotes();render();$('modal').close();toast('Setup note saved.');};
+ $('clearSetupNote').onclick=()=>{delete exerciseNotes[e.id];saveExerciseNotes();render();$('modal').close();toast('Setup note cleared.');};
+}
+function openReplacementPicker(index){
+ const current=normalizeExercise(plan.exercises[index]),source=catalog.find(x=>x.id===current.id);if(!source)return;
+ if(current.done&&!confirm('Replace this exercise and discard its unsaved completed sets?'))return;
+ const sourceGroup=muscleGroupFor(source.muscle),sourceMuscle=normName(source.muscle),sourceEquipment=normName(source.equipment);
+ const pool=catalog.filter(c=>c.id!==source.id&&!plan.exercises.some((e,i)=>i!==index&&e.id===c.id)).map(c=>{
+  const sameMuscle=normName(c.muscle)===sourceMuscle,sameEquipment=normName(c.equipment)===sourceEquipment,sameGroup=muscleGroupFor(c.muscle)===sourceGroup;
+  const pref=exercisePreferences[c.id]||{},preference=(Number(pref.completed)||0)+(Number(pref.added)||0)-(Number(pref.removed)||0)*1.5;
+  return {c,score:(sameMuscle?12:0)+(sameEquipment?4:0)+(sameGroup?2:0)+Math.max(-4,Math.min(4,preference)),sameMuscle,sameEquipment,sameGroup};
+ }).filter(x=>x.sameMuscle||x.sameGroup).sort((a,b)=>b.score-a.score||a.c.name.localeCompare(b.c.name)).slice(0,30);
+ const button=x=>'<button class="exercise-pick replacement-pick" data-replacement="'+escape(x.c.id)+'"><span>'+escape(x.c.name)+'</span><small>'+escape(x.c.muscle)+' · '+escape(x.c.equipment)+(x.sameMuscle&&x.sameEquipment?' · same muscle & equipment':x.sameMuscle?' · same muscle':' · related muscle group')+'</small></button>';
+ modal('<h2>Replace '+escape(source.name)+'</h2><p class="small muted">Alternatives are ranked by muscle match, equipment and your local exercise preferences. Reps, sets and rest are preserved; load resets because weights are not interchangeable between exercises.</p><div class="exercise-results">'+(pool.length?pool.map(button).join(''):'<div class="notice">No close substitutes found.</div>')+'</div>');
+ $('modalBody').onclick=e=>{const b=e.target.closest('[data-replacement]');if(!b)return;const nextId=b.dataset.replacement;
+  const old=normalizeExercise(plan.exercises[index]),reps=[...old.plannedReps],zero=Array(old.sets).fill(0);
+  plan.exercises[index]=normalizeExercise({id:nextId,sets:old.sets,reps:reps[0],rest:old.rest,weight:0,done:0,setReps:reps,setWeights:zero,plannedReps:reps,plannedWeights:zero});
+  recordExercisePreference(old.id,'removed');recordExercisePreference(nextId,'added');if(timer.day===selected&&timer.exerciseId===old.id)timer={};undo=null;save();markNextWeekStale();render();$('modal').close();toast('Exercise replaced. Set the new exercise load before training.');
+ };
 }
 
 function render(){
@@ -413,7 +480,9 @@ $('exercises').onclick=e=>{
  }
  if(b.dataset.demo){const c=catalog.find(x=>x.id===b.dataset.demo);if(c)openExerciseDemo(c);return;}
  if(b.dataset.feedback!==undefined){promptExerciseFeedback(Number(b.dataset.feedback));return;}
+ if(b.dataset.setupNote!==undefined){openSetupNote(Number(b.dataset.setupNote));return;}
  if(busy)return;
+ if(b.dataset.replace!==undefined){openReplacementPicker(Number(b.dataset.replace));return;}
  let feedbackIndex=null;
  if(b.dataset.remove!==undefined){
   if(plan.exercises.length===1)return toast('Keep at least one exercise.');
@@ -485,7 +554,7 @@ $('finish').onclick=()=>{
  const count=completedSetTotal(plan);if(!count)return toast('Complete a set before saving.');
  const snapshot=normalizePlan(structuredClone(plan)),comparison=comparePlanPerformance(snapshot);
  history.unshift({date:new Date().toISOString(),day:selected,plan:snapshot});history=history.slice(0,200);localStorage.setItem('history',JSON.stringify(history));
- plan.exercises=plan.exercises.map(raw=>{const e=normalizeExercise(raw);return {...e,setReps:[...e.plannedReps],setWeights:[...e.plannedWeights],reps:e.plannedReps[0],weight:e.plannedWeights[0],done:0,rir:null,note:''};});
+ plan.exercises=plan.exercises.map(raw=>{const e=normalizeExercise(raw);return {...e,setReps:[...e.plannedReps],setWeights:[...e.plannedWeights],reps:e.plannedReps[0],weight:e.plannedWeights[0],done:0,rir:null,note:'',effort:'',form:'',discomfort:''};});
  timer={};undo=null;save();render();tick();showSessionComparison(snapshot,comparison);if(apiKey)refreshNextWeekRecommendation('session');
 };
 function tick(){const left=secondsLeft(timer);$('timerLabel').textContent=timer.day?dayName(timer.day)+' · REST':'REST BETWEEN SETS';$('timer').hidden=!timer.end&&timer.paused==null;$('time').textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;$('pause').textContent=timer.paused!=null?'Resume':'Pause';if(timer.end&&left===0){timer={};save();$('timer').hidden=true;toast('Rest complete — ready for your next set.');navigator.vibrate?.([150,80,150]);}}
@@ -500,14 +569,62 @@ function chartSvg(points,keyA,keyB=null,labelA='Actual',labelB='Target'){
  const start=new Date(points[0].date).toLocaleDateString(undefined,{month:'short',day:'numeric'}),end=new Date(points.at(-1).date).toLocaleDateString(undefined,{month:'short',day:'numeric'});
  return '<svg class="progress-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-label="'+escape(labelA+(keyB?' and '+labelB:''))+' progression"><polyline class="chart-line actual" points="'+line(keyA)+'"/>'+(keyB?'<polyline class="chart-line target" points="'+line(keyB)+'"/>':'')+'</svg><div class="chart-axis"><span>'+escape(start)+'</span><span>'+escape(end)+'</span></div><div class="chart-legend"><span class="actual">'+escape(labelA)+'</span>'+(keyB?'<span class="target">'+escape(labelB)+'</span>':'')+'</div>';
 }
+function formatTrend(value){if(value==null)return 'Building baseline';return (value>0?'+':'')+value.toFixed(1)+'%';}
+function localDateKey(value){const d=value instanceof Date?value:new Date(value);if(Number.isNaN(d.getTime()))return '';return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+let calendarCursor=new Date(new Date().getFullYear(),new Date().getMonth(),1),selectedCalendarDate=localDateKey(new Date());
+function anatomyHeatmapUrl(load){
+ const safe=(load||[]).filter(x=>ANATOMICAL_NAMES[x.slug]&&x.sets>0);if(!safe.length)return '';
+ const max=Math.max(...safe.map(x=>x.sets)),strong=safe.filter(x=>x.sets/max>=.67).map(x=>x.slug),medium=safe.filter(x=>x.sets/max>=.34&&x.sets/max<.67).map(x=>x.slug),light=safe.filter(x=>x.sets/max<.34).map(x=>x.slug);
+ const layers=[strong.length?'DC2626:'+strong.join(','):'',medium.length?'F97316:'+medium.join(','):'',light.length?'FACC15:'+light.join(','):''].filter(Boolean).join('|');
+ return 'https://api.anatome.dev/generateImage?gender=male&view=dual&layers='+encodeURIComponent(layers)+'&background=transparent&body_color=575757&contour_color=e5e7eb&border_color=c8c8c8&output=raw';
+}
+function renderWeeklyReview(){
+ const review=weeklyTrainingReview(history,catalog,{days:7,now:Date.now()}),end=new Date(),start=new Date(Date.now()-6*86400000);
+ $('weeklyReviewRange').textContent=start.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'–'+end.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+ if(!review.sessions){$('weeklyReview').innerHTML='<div class="notice">No logged workouts in the last 7 days yet.</div>';return;}
+ const top=review.muscles.slice(0,4).map(x=>(ANATOMICAL_NAMES[x.slug]||prettyMuscle(x.slug))+' '+x.sets+' set exposure').join(' · ');
+ $('weeklyReview').innerHTML='<div class="review-stats"><div><strong>'+review.sessions+'</strong><small>workouts</small></div><div><strong>'+review.sets+'</strong><small>logged sets</small></div><div><strong>'+review.adherencePct+'%</strong><small>targets met</small></div><div><strong>'+(review.avgRir==null?'—':review.avgRir)+'</strong><small>avg RIR</small></div></div>'+(top?'<p class="small muted"><b>Most trained:</b> '+escape(top)+'</p>':'')+(review.formWarnings?'<p class="small muted">'+review.formWarnings+' exercise rating'+(review.formWarnings===1?'':'s')+' reported form breaking down.</p>':'')+(review.discomfortReports?'<p class="small warning-text">'+review.discomfortReports+' discomfort report'+(review.discomfortReports===1?'':'s')+' logged. Progression is paused for those exercises until you reassess them.</p>':'');
+}
+function renderTrainingCalendar(){
+ const y=calendarCursor.getFullYear(),m=calendarCursor.getMonth(),first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),offset=(first.getDay()+6)%7;
+ $('calendarTitle').textContent=first.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+ const sessionsByDate=new Map();for(const h of history){const key=localDateKey(h.date);if(!key)continue;const list=sessionsByDate.get(key)||[];list.push(h);sessionsByDate.set(key,list);}
+ const today=localDateKey(new Date()),cells=[];
+ for(let i=0;i<offset;i++)cells.push('<span class="calendar-cell blank" aria-hidden="true"></span>');
+ for(let d=1;d<=days;d++){
+  const date=new Date(y,m,d),key=localDateKey(date),dayId=DAYS[(date.getDay()+6)%7],scheduled=week.days[DAYS.indexOf(dayId)]?.enabled,logged=sessionsByDate.has(key),classes=['calendar-cell'];
+  if(logged)classes.push('logged');if(scheduled)classes.push('planned');if(key===today)classes.push('today');if(key===selectedCalendarDate)classes.push('selected');
+  cells.push('<button class="'+classes.join(' ')+'" data-calendar-date="'+key+'" aria-label="'+escape(date.toLocaleDateString())+(logged?' logged workout':'')+(scheduled?' scheduled workout':'')+'"><span>'+d+'</span><i class="calendar-markers">'+(logged?'<b class="logged">✓</b>':'')+(scheduled?'<b class="planned">•</b>':'')+'</i></button>');
+ }
+ $('calendarGrid').innerHTML=cells.join('');
+ const chosen=selectedCalendarDate?new Date(Number(selectedCalendarDate.slice(0,4)),Number(selectedCalendarDate.slice(5,7))-1,Number(selectedCalendarDate.slice(8,10))):null;
+ if(!chosen||chosen.getFullYear()!==y||chosen.getMonth()!==m){$('calendarDayDetails').innerHTML='Tap a day to see its workout.';return;}
+ const list=sessionsByDate.get(selectedCalendarDate)||[],dayId=DAYS[(chosen.getDay()+6)%7],scheduled=week.days[DAYS.indexOf(dayId)];
+ let html='<b>'+escape(chosen.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}))+'</b>';
+ if(list.length)html+=list.map(h=>{const p=normalizePlan(h.plan),sets=completedSetTotal(p);return '<div class="calendar-session"><span>'+escape(p.name)+'</span><small>'+sets+' sets · '+p.exercises.filter(e=>normalizeExercise(e).done>0).length+' exercises · '+escape(new Date(h.date).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}))+'</small></div>';}).join('');
+ else if(scheduled?.enabled&&scheduled.plan)html+='<div class="calendar-session scheduled"><span>'+escape(scheduled.plan.name)+' scheduled</span><small>'+scheduled.plan.exercises.length+' exercises · '+scheduled.minutes+' min target</small></div>';
+ else html+='<div class="calendar-session"><span>Rest / no logged workout</span></div>';
+ $('calendarDayDetails').innerHTML=html;
+}
+function renderMuscleProgress(){
+ const rows=muscleProgress(history,catalog,{days:56,now:Date.now()}),load=muscleTrainingLoad(history,catalog,7,Date.now()),mapUrl=anatomyHeatmapUrl(load);
+ $('weeklyMuscleMap').innerHTML=mapUrl?'<div class="weekly-muscle-map"><img loading="lazy" src="'+escape(mapUrl)+'" alt="Muscles trained during the last seven days"><div><b>Last 7 days muscle map</b><small><i class="heat strong"></i>Higher exposure <i class="heat medium"></i>Medium <i class="heat light"></i>Lower</small><p class="small muted">Primary sets count fully; secondary-muscle exposure counts as half a set for this visual only.</p></div></div>':'<div class="notice">Log workouts to build your muscle map.</div>';
+ if(!rows.length){$('muscleProgressList').innerHTML='';return;}
+ $('muscleProgressList').innerHTML='<div class="muscle-progress-list">'+rows.slice(0,14).map(r=>{
+  const label=ANATOMICAL_NAMES[r.slug]||prettyMuscle(r.slug),trendClass=r.trendPct==null?'baseline':r.trendPct>1?'up':r.trendPct<-1?'down':'flat';
+  return '<details class="muscle-progress-row"><summary><span><b>'+escape(label)+'</b><small>'+r.sessions+' logged session'+(r.sessions===1?'':'s')+' · '+r.confidence+' confidence</small></span><strong class="'+trendClass+'">'+escape(formatTrend(r.trendPct))+'</strong></summary><div class="muscle-progress-components"><span>Estimated strength <b>'+escape(formatTrend(r.strengthPct))+'</b></span><span>Training volume <b>'+escape(formatTrend(r.volumePct))+'</b></span><span>Target completion <b>'+r.adherencePct+'%</b></span><span>Average RIR <b>'+(r.avgRir==null?'—':r.avgRir)+'</b></span></div><p class="small muted">Trend combines 70% estimated performance change and 30% volume change when both are available. RIR and target completion are shown separately so you can see whether improvement came with harder effort.</p></details>';
+ }).join('')+'</div>';
+}
 function renderProgressCharts(){
  if(!$('progressExercise')||!$('progressCharts'))return;
  const id=$('progressExercise').value;
- if(!id){$('progressCharts').innerHTML='<div class="notice">Complete an exercise to see progression.</div>';return;}
- const points=exerciseProgress(history,id),hasLoad=points.some(p=>p.actualVolume>0||p.estimated1RM>0);
+ if(!id){$('progressHighlights').innerHTML='';$('progressCharts').innerHTML='<div class="notice">Complete an exercise to see progression.</div>';return;}
+ const points=exerciseProgress(history,id),hasLoad=points.some(p=>p.actualVolume>0||p.estimated1RM>0),records=exerciseRecords(history,id),signal=exerciseProgressionSignal(history,id);
+ $('progressHighlights').innerHTML=records?'<div class="progress-highlights"><div><strong>'+records.sessions+'</strong><small>sessions</small></div>'+(records.bestWeight?'<div><strong>'+records.bestWeight+' lb</strong><small>best load</small></div>':'')+'<div><strong>'+Math.round(records.bestVolume).toLocaleString()+'</strong><small>'+(records.bestWeight?'best volume':'best reps volume')+'</small></div><div><strong>'+escape(signal.label)+'</strong><small>'+escape(signal.reason)+'</small></div></div>':'';
  $('progressCharts').innerHTML='<div class="progress-chart"><h3>Reps · target vs actual</h3>'+chartSvg(points,'actualReps','plannedReps','Actual','Target')+'</div>'+(hasLoad?'<div class="progress-chart"><h3>Training volume</h3>'+chartSvg(points,'actualVolume','plannedVolume','Actual','Target')+'</div><div class="progress-chart"><h3>Estimated strength</h3>'+chartSvg(points,'estimated1RM',null,'Est. 1RM')+'</div>':'')+(points.some(p=>p.rir!=null)?'<div class="progress-chart"><h3>Reps in reserve</h3>'+chartSvg(points,'rir',null,'RIR')+'</div>':'');
 }
 function renderHistory(){
+ renderWeeklyReview();renderTrainingCalendar();renderMuscleProgress();
  const used=[...new Set(history.flatMap(h=>(h.plan?.exercises||[]).filter(e=>normalizeExercise(e).done>0).map(e=>e.id)))];
  const select=$('progressExercise'),previous=select.value;
  select.innerHTML=used.map(id=>'<option value="'+escape(id)+'">'+escape(catalog.find(c=>c.id===id)?.name||id)+'</option>').join('');
@@ -518,11 +635,16 @@ function renderHistory(){
   const exercises=p.exercises.filter(e=>e.done>0).map(raw=>{
    const e=normalizeExercise(raw),name=catalog.find(c=>c.id===e.id)?.name||e.id;
    const detail=Array.from({length:e.done},(_,i)=>'S'+(i+1)+' '+e.plannedReps[i]+'→'+e.setReps[i]+(e.setWeights[i]>0?' @ '+e.setWeights[i]+' lb':' BW')).join(' · ');
-   return '<p class="small muted"><b>'+escape(name)+'</b>'+(e.rir!=null?' · RIR '+(e.rir===4?'4+':e.rir):'')+'<br>'+escape(detail)+(e.note?'<br>“'+escape(e.note)+'”':'')+'</p>';
+   const feedback=[e.rir!=null?'RIR '+(e.rir===4?'4+':e.rir):'',e.effort?e.effort.replaceAll('_',' '):'',e.form?'form '+e.form:'',e.discomfort&&e.discomfort!=='none'?'discomfort '+e.discomfort:''].filter(Boolean).join(' · ');
+   return '<p class="small muted"><b>'+escape(name)+'</b>'+(feedback?' · '+escape(feedback):'')+'<br>'+escape(detail)+(e.note?'<br>“'+escape(e.note)+'”':'')+'</p>';
   }).join('');
   return '<details class="card history-session"><summary><div><span class="tag">'+escape(new Date(h.date).toLocaleString())+'</span><h2>'+escape(p.name)+'</h2></div><span>'+comparison.metRepSets+'/'+sets+' sets on target</span></summary>'+exercises+'</details>';
  }).join(''):'<div class="notice">No saved workouts yet.</div>';
 }
+
+$('calendarPrev').onclick=()=>{calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()-1,1);selectedCalendarDate='';renderTrainingCalendar();};
+$('calendarNext').onclick=()=>{calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+1,1);selectedCalendarDate='';renderTrainingCalendar();};
+$('calendarGrid').onclick=e=>{const b=e.target.closest('[data-calendar-date]');if(!b)return;selectedCalendarDate=b.dataset.calendarDate;renderTrainingCalendar();};
 
 function renderProfilePage(){
  $('profileGoal').value=profile.goal;$('profileExperience').value=profile.experience;$('profileEquipment').value=profile.equipment;
