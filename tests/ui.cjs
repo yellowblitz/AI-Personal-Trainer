@@ -115,6 +115,7 @@ const assert=require('node:assert/strict');
   await page.locator('[data-tab="coach"]').click();assert.equal(await page.locator('#restoreLastHandoff').isVisible(),true);assert.match(await page.locator('#lastHandoffStatus').textContent(),/Last translation/);
   await page.locator('#restoreLastHandoff').click();assert.equal(await page.locator('#handoffPreview').isVisible(),true);assert.match(await page.locator('#handoffCommands').textContent(),/ChatGPT Push/);
   await page.locator('#discardHandoff').click();assert.equal(await page.locator('#restoreLastHandoff').isVisible(),true);
+  await page.locator('[data-tab="workout"]').click();
   await page.locator('#refreshNextWeek').click();await page.waitForFunction(()=>document.querySelector('#nextWeekStatus').textContent.includes('Ready'));assert.match(await page.locator('#nextWeekDays').textContent(),/Next Week Progression/);assert.equal(await page.locator('#viewNextWeek').isVisible(),true);
   await page.locator('#viewNextWeek').click();assert.equal(await page.locator('#closeModalTop').isVisible(),true);assert.match(await page.locator('#modalBody').textContent(),/Next Week Progression/);await page.locator('#closeModalTop').click();
 
